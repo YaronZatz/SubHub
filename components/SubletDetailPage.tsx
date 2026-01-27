@@ -1,0 +1,329 @@
+
+import React, { useEffect, useState, useMemo } from 'react';
+import { Sublet, Language, ListingStatus } from '../types';
+import { translations } from '../translations';
+import { useCurrency } from '../contexts/CurrencyContext';
+import { formatPrice, formatDate } from '../utils/formatters';
+import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+
+interface SubletDetailPageProps {
+  sublet: Sublet;
+  onClose: () => void;
+  language: Language;
+  currentUserId: string;
+  onClaim: (id: string) => void;
+  onEdit: (id: string) => void;
+  onShowToast?: (message: string, type: 'success' | 'error') => void;
+}
+
+const SubletDetailPage: React.FC<SubletDetailPageProps> = ({ 
+  sublet, 
+  onClose, 
+  language, 
+  currentUserId, 
+  onClaim, 
+  onEdit,
+  onShowToast
+}) => {
+  const t = translations[language];
+  const isRTL = language === Language.HE;
+  const isOwner = sublet.ownerId === currentUserId;
+  const { currency } = useCurrency();
+  const [activeImgIndex, setActiveImgIndex] = useState(0);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const images = useMemo(() => {
+    if (sublet.images && sublet.images.length > 0) {
+      return sublet.images;
+    }
+    return [
+      `https://picsum.photos/seed/${sublet.id}-1/1200/800`,
+      `https://picsum.photos/seed/${sublet.id}-2/1200/800`,
+      `https://picsum.photos/seed/${sublet.id}-3/1200/800`,
+      `https://picsum.photos/seed/${sublet.id}-4/1200/800`,
+      `https://picsum.photos/seed/${sublet.id}-5/1200/800`,
+    ];
+  }, [sublet.id, sublet.images]);
+
+  const amenities = [
+    { icon: '📶', label: t.features.wifi },
+    { icon: '❄️', label: t.features.ac },
+    { icon: '🍳', label: t.features.kitchen },
+    { icon: '💼', label: t.features.workspace },
+    { icon: '🐾', label: t.features.petFriendly },
+  ];
+
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImgIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const isNew = (createdAt: number) => {
+    const oneDay = 24 * 60 * 60 * 1000;
+    return (Date.now() - createdAt) < oneDay;
+  };
+
+  const getHoursAgo = (createdAt: number) => {
+    const diff = Date.now() - createdAt;
+    return Math.max(0, Math.floor(diff / (60 * 60 * 1000)));
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}?id=${sublet.id}`;
+    const shareData = {
+      title: `${sublet.location} | SubHub`,
+      text: `Check out this sublet in ${sublet.neighborhood || sublet.city}!`,
+      url: shareUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        onShowToast?.("Link copied to clipboard!", "success");
+      }
+    } catch (err) {
+      console.error("Share failed", err);
+    }
+  };
+
+  return (
+    <div className={`fixed inset-0 z-[100] bg-white overflow-y-auto ${isRTL ? 'font-sans' : ''} animate-in fade-in slide-in-from-right-4 duration-300`}>
+      {/* Header Bar */}
+      <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-100 z-[110] px-4 md:px-8 py-4 flex items-center justify-between">
+        <button 
+          onClick={onClose}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold group transition-colors"
+        >
+          <ChevronLeftIcon className={`w-5 h-5 transition-transform group-hover:${isRTL ? 'translate-x-1' : '-translate-x-1'} ${isRTL ? 'rotate-180' : ''}`} />
+          <span className="hidden sm:inline">Back</span>
+        </button>
+        
+        <div className="flex gap-4">
+          {isOwner && (
+            <button 
+              onClick={() => onEdit(sublet.id)}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-full font-bold text-xs transition-all"
+            >
+              {t.edit}
+            </button>
+          )}
+          <button 
+            onClick={handleShare}
+            className="text-slate-600 hover:text-slate-900 font-bold text-sm flex items-center gap-1.5 underline underline-offset-4"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {t.share}
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+        {/* Title & Status */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{sublet.location}</h1>
+              {isNew(sublet.createdAt) && (
+                <span className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                   <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                   {t.addedXhAgo.replace('{x}', getHoursAgo(sublet.createdAt).toString())}
+                </span>
+              )}
+            </div>
+            <p className="text-slate-500 font-medium">{sublet.neighborhood || sublet.city}</p>
+          </div>
+          {sublet.status === ListingStatus.TAKEN && (
+            <span className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-black uppercase self-start">{t.taken}</span>
+          )}
+        </div>
+
+        {/* Responsive Image Gallery */}
+        <div className="mb-8 space-y-3">
+          {/* Main Viewer */}
+          <div className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg">
+            <img 
+              src={images[activeImgIndex]} 
+              className="w-full h-full object-cover transition-opacity duration-300" 
+              alt={`View ${activeImgIndex + 1}`} 
+            />
+            
+            {/* Nav Arrows */}
+            {images.length > 1 && (
+              <>
+                <button 
+                  onClick={prevImage}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90`}
+                >
+                  <ChevronLeftIcon className="w-6 h-6" />
+                </button>
+                <button 
+                  onClick={nextImage}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90`}
+                >
+                  <ChevronRightIcon className="w-6 h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Counter Overlay */}
+            <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+              {activeImgIndex + 1} / {images.length}
+            </div>
+          </div>
+
+          {/* Thumbnail Strip */}
+          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x no-scrollbar md:justify-center">
+            {images.map((img, i) => (
+              <button 
+                key={i} 
+                onClick={() => setActiveImgIndex(i)}
+                className={`relative shrink-0 w-20 h-14 md:w-28 md:h-20 rounded-xl overflow-hidden border-2 transition-all snap-start
+                  ${activeImgIndex === i ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
+                `}
+              >
+                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt={`Thumb ${i + 1}`} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Left Column: Info */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="flex justify-between items-start border-b border-slate-100 pb-8">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 mb-1">{t.hostInfo}</h2>
+                <p className="text-slate-500 text-sm md:text-base">
+                  {t.subletTypes[sublet.type]} • {sublet.neighborhood || sublet.city}
+                </p>
+                {!sublet.ownerId && (
+                  <button 
+                    onClick={() => onClaim(sublet.id)}
+                    className="mt-3 text-blue-600 hover:text-blue-700 text-xs font-bold underline underline-offset-4"
+                  >
+                    {t.claimThis}
+                  </button>
+                )}
+              </div>
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-200 rounded-full flex items-center justify-center text-2xl shadow-inner">
+                👤
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-slate-900">{t.description}</h3>
+              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
+                {sublet.originalText}
+              </p>
+            </div>
+
+            <div className="space-y-6 pt-8 border-t border-slate-100">
+              <h3 className="text-lg font-bold text-slate-900">{t.amenities}</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                {amenities.map((item, i) => (
+                  <div key={i} className="flex items-center gap-4 text-slate-700 p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
+                    <span className="text-2xl">{item.icon}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Sticky Booking Widget */}
+          <div className="relative">
+            <div className="lg:sticky lg:top-28 bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-1">
+                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.totalPrice}</div>
+                <div className="flex items-baseline gap-1 dir-ltr">
+                  <span className="text-3xl font-black text-slate-900">
+                    {formatPrice(sublet.price, currency, language)}
+                  </span>
+                </div>
+                <div className="pt-1">
+                   <span className="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded tracking-wider">
+                    {t.subletTypes[sublet.type]}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs shadow-sm">
+                <div className="grid grid-cols-2 border-b border-slate-200">
+                  <div className="p-4 border-r border-slate-200 bg-white">
+                    <div className="font-black uppercase mb-1 text-slate-400 text-[9px] tracking-widest">{t.startDate}</div>
+                    <div className="text-slate-900 font-bold">{formatDate(sublet.startDate)}</div>
+                  </div>
+                  <div className="p-4 bg-white">
+                    <div className="font-black uppercase mb-1 text-slate-400 text-[9px] tracking-widest">{t.endDate}</div>
+                    <div className="text-slate-900 font-bold">
+                      {sublet.endDate ? formatDate(sublet.endDate) : t.flexible}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {isOwner ? (
+                <button 
+                  onClick={() => onEdit(sublet.id)}
+                  className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black uppercase tracking-widest text-sm"
+                >
+                  {t.edit}
+                </button>
+              ) : (
+                sublet.sourceUrl ? (
+                  <a 
+                    href={sublet.sourceUrl} 
+                    target="_blank" 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 uppercase tracking-widest text-sm"
+                  >
+                    {t.contactHost}
+                    <ExternalLinkIcon className="w-4 h-4" />
+                  </a>
+                ) : (
+                  <button 
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 uppercase tracking-widest text-sm"
+                  >
+                    Direct Listing - Contact Hidden
+                  </button>
+                )
+              )}
+
+              {/* Added Share Button */}
+              <button 
+                onClick={handleShare}
+                className="w-full bg-white border-2 border-slate-100 hover:border-slate-300 text-slate-700 font-black py-3 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] uppercase tracking-widest text-xs"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {t.share}
+              </button>
+
+              <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="shrink-0 mt-0.5">
+                  <InfoIcon className="w-5 h-5 text-indigo-400" />
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                  {t.noCommission}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="h-20" />
+    </div>
+  );
+};
+
+export default SubletDetailPage;

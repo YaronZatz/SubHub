@@ -1,0 +1,7 @@
+{
+  "name": "SubHub",
+  "description": "Next.js AI-Powered Aggregator",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

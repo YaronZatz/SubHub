@@ -1,0 +1,12 @@
+# apphosting.yaml
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "gen-lang-client-0322888127"
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "gen-lang-client-0322888127"
+  - variable: GEMINI_API_KEY
+    value: "AIzaSyBBYge12EVtGZkf3kba3flL_p-bXzO4GRk"
