@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from '../types';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -16,7 +17,8 @@ import {
   HeartIcon
 } from '../components/Icons';
 
-import MapVisualizer from '../components/MapVisualizer';
+// Leaflet uses `window` at load time; load map only on client to avoid prerender error
+const MapVisualizer = dynamic(() => import('../components/MapVisualizer'), { ssr: false });
 import AddListingModal from '../components/AddListingModal';
 import EditListingModal from '../components/EditListingModal';
 import SubletDetailPage from '../components/SubletDetailPage';
