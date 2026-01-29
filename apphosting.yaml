@@ -11,4 +11,4 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "gen-lang-client-0322888127"
   - variable: GEMINI_API_KEY
-    secret: GEMINI_API_KEY
+    secret: "GEMINI_API_KEY"
