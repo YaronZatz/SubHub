@@ -11,7 +11,7 @@
     "react-dom": "^19.0.0",
     "firebase": "^10.8.0",
     "leaflet": "^1.9.4",
-    "lucide-react": "^0.344.0"
+    "lucide-react": "^0.461.0"
   },
   "devDependencies": {
     "@types/leaflet": "^1.9.8",
