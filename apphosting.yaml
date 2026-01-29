@@ -6,15 +6,23 @@ runConfig:
   memoryMiB: 512
 
 env:
-- variable: NEXT_PUBLIC_FIREBASE_API_KEY
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyBO1YsFaPoL30LxrW0nsMYR8h2BKzNKe0s"
-    availability: [BUILD, RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "gen-lang-client-0322888127"
-    availability: [BUILD, RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     value: "gen-lang-client-0322888127.firebaseapp.com"
-    availability: [BUILD, RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: GEMINI_API_KEY
     secret: "GEMINI_API_KEY"
-    availability: [BUILD, RUNTIME]
+    availability:
+      - BUILD
+      - RUNTIME
