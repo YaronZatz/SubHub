@@ -42,7 +42,7 @@ body {
   min-height: 200px;
 }
 [data-root] main .map-area {
-  flex: 0 0 35%;
+  flex: 0 0 45%;
   min-width: 280px;
   flex-shrink: 0;
 }

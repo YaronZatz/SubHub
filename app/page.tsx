@@ -404,7 +404,7 @@ export default function Home() {
            </div>
         </aside>
 
-        <div className="map-area flex-[0_0_35%] min-w-[280px] relative bg-slate-50 shrink-0">
+        <div className="map-area flex-[0_0_45%] min-w-[280px] relative bg-slate-50 shrink-0">
            <MapVisualizer 
              sublets={filteredSublets} 
              onMarkerClick={(s) => setSelectedSubletId(s.id)}
