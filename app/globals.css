@@ -42,14 +42,16 @@ body {
   min-height: 200px;
 }
 [data-root] main .map-area {
-  flex: 1 1 0%;
-  min-width: 0;
+  flex: 0 0 35%;
+  min-width: 280px;
+  flex-shrink: 0;
 }
 [data-root] main .listings-panel {
-  flex-shrink: 0;
-  width: 450px;
+  flex: 1 1 0%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .custom-scrollbar::-webkit-scrollbar {

@@ -199,8 +199,8 @@ export default function Home() {
         <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t.aiPowered}</p>
       </div>
 
-      <main className="flex flex-1 overflow-hidden">
-        <aside className="listings-panel w-[450px] bg-white border-r border-slate-200 flex flex-col shadow-2xl relative z-10 shrink-0">
+      <main className="flex flex-1 overflow-hidden min-h-0">
+        <aside className="listings-panel flex-1 min-w-0 bg-white border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden">
            <div className="p-4 border-b border-slate-100 bg-white">
              <div className="flex items-center justify-between mb-3">
                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
@@ -328,14 +328,15 @@ export default function Home() {
              )}
            </div>
            
-           <div className="flex-1 overflow-y-auto p-4 space-y-5 custom-scrollbar bg-slate-50/30">
+           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/30 min-h-0">
              {isLoading ? (
                <div className="flex flex-col items-center justify-center h-full space-y-3">
                   <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Scanning map...</p>
                </div>
              ) : filteredSublets.length > 0 ? (
-               filteredSublets.map(sublet => (
+               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-4">
+               {filteredSublets.map(sublet => (
                  <div 
                    key={sublet.id} 
                    onClick={() => setSelectedSubletId(sublet.id)}
@@ -370,7 +371,8 @@ export default function Home() {
                      </div>
                    </div>
                  </div>
-               ))
+               ))}
+               </div>
              ) : (
                <div className="text-center py-10">
                   <p className="text-slate-400 text-sm font-medium">{t.noResults}</p>
@@ -402,7 +404,7 @@ export default function Home() {
            </div>
         </aside>
 
-        <div className="map-area flex-1 relative bg-slate-50">
+        <div className="map-area flex-[0_0_35%] min-w-[280px] relative bg-slate-50 shrink-0">
            <MapVisualizer 
              sublets={filteredSublets} 
              onMarkerClick={(s) => setSelectedSubletId(s.id)}
