@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CurrencyProvider } from "../contexts/CurrencyContext";
 
+export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: "SubHub | One Map. Zero Noise.",
   description: "AI-Powered Facebook Sublet Aggregator",
