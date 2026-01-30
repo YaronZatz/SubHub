@@ -81,11 +81,18 @@ export default function Home() {
       list = list.filter(s => savedListingIds.has(s.id));
     }
     return list.filter(s => {
-      const matchesSearch = s.location.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            s.originalText.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = s.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            s.originalText.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            (s.city?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                            (s.neighborhood?.toLowerCase().includes(searchQuery.toLowerCase()));
       const matchesPrice = s.price >= filters.minPrice && s.price <= filters.maxPrice;
       const matchesStatus = filters.showTaken || s.status !== ListingStatus.TAKEN;
-      return matchesSearch && matchesPrice && matchesStatus;
+      const matchesType = !filters.type || s.type === filters.type;
+      const matchesCity = !filters.city.trim() || (s.city?.toLowerCase().includes(filters.city.toLowerCase()));
+      const matchesNeighborhood = !filters.neighborhood.trim() || (s.neighborhood?.toLowerCase().includes(filters.neighborhood.toLowerCase()));
+      const matchesDates = !filters.startDate || !filters.endDate || (s.startDate <= filters.endDate && s.endDate >= filters.startDate);
+      const matchesPets = !filters.petsAllowed || (s.amenities?.some(a => /pet|dog|cat|friendly|חיית|כלב|חתול/i.test(a)) ?? true);
+      return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -217,7 +224,7 @@ export default function Home() {
                 />
              </div>
              {isFilterExpanded && (
-               <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+               <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
                  <PriceRangeFilter
                    min={filters.minPrice}
                    max={filters.maxPrice}
@@ -226,7 +233,88 @@ export default function Home() {
                    language={language}
                    onChange={(min, max) => setFilters(f => ({ ...f, minPrice: min, maxPrice: max }))}
                  />
+
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.type}</label>
+                   <select
+                     value={filters.type ?? ''}
+                     onChange={(e) => setFilters(f => ({ ...f, type: e.target.value ? (e.target.value as SubletType) : undefined }))}
+                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
+                   >
+                     <option value="">{t.allTypes}</option>
+                     {[SubletType.ENTIRE, SubletType.ROOMMATE, SubletType.STUDIO].map(type => (
+                       <option key={type} value={type}>{(t as { subletTypes: Record<SubletType, string> }).subletTypes[type]}</option>
+                     ))}
+                   </select>
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.city}</label>
+                   <input
+                     type="text"
+                     placeholder={t.allCities}
+                     value={filters.city}
+                     onChange={(e) => setFilters(f => ({ ...f, city: e.target.value }))}
+                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
+                   />
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.neighborhood}</label>
+                   <input
+                     type="text"
+                     placeholder={t.allNeighborhoods}
+                     value={filters.neighborhood}
+                     onChange={(e) => setFilters(f => ({ ...f, neighborhood: e.target.value }))}
+                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
+                   />
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.dateMode}</label>
+                   <select
+                     value={filters.dateMode}
+                     onChange={(e) => setFilters(f => ({ ...f, dateMode: e.target.value as DateMode }))}
+                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
+                   >
+                     <option value={DateMode.EXACT}>{t.exact}</option>
+                     <option value={DateMode.FLEXIBLE}>{t.flexible}</option>
+                   </select>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-3">
+                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.startDate}</label>
+                     <input
+                       type="date"
+                       value={filters.startDate}
+                       onChange={(e) => setFilters(f => ({ ...f, startDate: e.target.value }))}
+                       className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
+                     />
+                   </div>
+                   <div className="space-y-1.5">
+                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.endDate}</label>
+                     <input
+                       type="date"
+                       value={filters.endDate}
+                       onChange={(e) => setFilters(f => ({ ...f, endDate: e.target.value }))}
+                       className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500"
+                     />
+                   </div>
+                 </div>
+
                  <div className="flex items-center gap-2">
+                   <input
+                     type="checkbox"
+                     id="filter-pets"
+                     checked={filters.petsAllowed}
+                     onChange={(e) => setFilters(f => ({ ...f, petsAllowed: e.target.checked }))}
+                     className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                   />
+                   <label htmlFor="filter-pets" className="text-xs font-bold text-slate-600">{t.petsAllowed}</label>
+                 </div>
+
+                 <div className="flex items-center gap-2 pt-1">
                    <input
                      type="checkbox"
                      id="show-taken"
