@@ -20,6 +20,38 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+/* Critical layout fallbacks so main content shows in production if Tailwind is delayed or purged */
+html,
+body {
+  height: 100%;
+  min-height: 100vh;
+}
+[data-root] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+}
+[data-root] main {
+  flex: 1 1 0%;
+  display: flex;
+  min-height: 300px;
+}
+[data-root] main > div,
+[data-root] main > aside {
+  min-height: 200px;
+}
+[data-root] main .map-area {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+[data-root] main .listings-panel {
+  flex-shrink: 0;
+  width: 450px;
+  display: flex;
+  flex-direction: column;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }

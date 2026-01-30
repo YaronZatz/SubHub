@@ -11,6 +11,7 @@ coverage
 dist
 build
 .next
+.next-build
 
 # Misc
 .DS_Store
