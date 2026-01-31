@@ -5,6 +5,17 @@ runConfig:
   cpu: 1
   memoryMiB: 512
 
+# Force npm run build (next build --webpack) so Tailwind/PostCSS run; Next.js 16 defaults to Turbopack which can skip PostCSS.
+# runCommand ensures next start is used so the default .next output is found.
+scripts:
+  buildCommand: npm run build
+  runCommand: next start
+
+# Keep all build output (including .next) when using custom buildCommand; otherwise framework adapter optimizations may prune it.
+outputFiles:
+  serverApp:
+    include: ["."]
+
 # Set NEXT_PUBLIC_APP_URL to your deployed URL (e.g. https://your-backend--project-id.us-central1.hosted.app) for correct share links and metadata
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
