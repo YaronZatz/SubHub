@@ -2,7 +2,6 @@
   "name": "subhub",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
   "dependencies": {
     "@google/genai": "^1.36.0",
     "@types/dotenv": "^6.1.1",
