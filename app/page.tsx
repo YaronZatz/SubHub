@@ -200,7 +200,7 @@ export default function Home() {
       </div>
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-        <aside className="listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden order-1">
+        <aside className="listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden order-2 md:order-1">
            <div className="p-4 border-b border-slate-100 bg-white">
              <div className="flex items-center justify-between mb-3">
                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
@@ -404,7 +404,7 @@ export default function Home() {
            </div>
         </aside>
 
-        <div className="map-area h-[40vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-2">
+        <div className="map-area h-[40vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2">
            <MapVisualizer 
              sublets={filteredSublets} 
              onMarkerClick={(s) => setSelectedSubletId(s.id)}
