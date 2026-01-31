@@ -36,7 +36,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ language, setLangua
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-all text-xs font-black shadow-sm group border border-transparent hover:border-slate-200"
+        className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-all text-[10px] sm:text-xs font-black shadow-sm group border border-transparent hover:border-slate-200"
         aria-haspopup="true"
         aria-expanded={isOpen}
       >

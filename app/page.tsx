@@ -128,13 +128,13 @@ export default function Home() {
 
   return (
     <div data-root className="flex flex-col h-screen overflow-hidden bg-white">
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between z-[60] shadow-sm">
-        <div className="flex items-center gap-4 flex-1 min-w-0">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-md">
-              <MapIcon className="w-5 h-5 text-white" />
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-4 md:px-6 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3 z-[60] shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg shadow-md">
+              <MapIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <h1 className="text-xl font-extrabold text-slate-900 tracking-tight hidden sm:block">{t.appName}</h1>
+            <h1 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight hidden sm:block">{t.appName}</h1>
           </div>
           <div className="relative max-w-md w-full hidden md:block">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -146,48 +146,48 @@ export default function Home() {
               className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white"
             />
           </div>
-          <nav className="flex items-center gap-1 shrink-0 ml-2">
+          <nav className="flex items-center gap-0.5 sm:gap-1 shrink-0 ml-0 sm:ml-2">
             <button
               onClick={() => setViewMode(ViewMode.BROWSE)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${viewMode === ViewMode.BROWSE ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors ${viewMode === ViewMode.BROWSE ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               {t.browse}
             </button>
             <button
               onClick={() => setViewMode(ViewMode.SAVED)}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${viewMode === ViewMode.SAVED ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-colors flex items-center gap-1 sm:gap-1.5 ${viewMode === ViewMode.SAVED ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
             >
-              <HeartIcon className="w-4 h-4" filled={viewMode === ViewMode.SAVED} />
-              {t.savedListings}
+              <HeartIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" filled={viewMode === ViewMode.SAVED} />
+              <span className="hidden sm:inline">{t.savedListings}</span>
             </button>
           </nav>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0 pl-4">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 shrink-0 pl-0 sm:pl-2 md:pl-4 md:border-l md:border-slate-200">
           <button 
             onClick={handleAddPostClick}
-            className="bg-indigo-600 text-white px-5 py-2.5 rounded-full hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 active:scale-95 font-bold text-sm"
+            className="bg-indigo-600 text-white p-2 sm:px-4 sm:py-2.5 rounded-full hover:bg-indigo-700 transition-all flex items-center gap-1.5 sm:gap-2 shadow-lg shadow-indigo-100 active:scale-95 font-bold text-xs sm:text-sm"
           >
             <PlusIcon className="w-4 h-4" />
-            <span>{t.addPost}</span>
+            <span className="hidden sm:inline">{t.addPost}</span>
           </button>
           
-          <div className="flex items-center gap-2 border-l border-slate-200 pl-4">
+          <div className="flex items-center gap-1 sm:gap-2 border-l border-slate-200 pl-1.5 sm:pl-2 md:pl-4">
             <LanguageSwitcher language={language} setLanguage={setLanguageState} />
             <CurrencySwitcher />
           </div>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm">
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              <div className="w-7 h-7 sm:w-9 sm:h-9 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 border-white shadow-sm shrink-0">
                 {user.name.charAt(0).toUpperCase()}
               </div>
-              <button onClick={logout} className="text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-widest">Log Out</button>
+              <button onClick={logout} className="text-[10px] sm:text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-widest hidden sm:inline">Log Out</button>
             </div>
           ) : (
             <button 
               onClick={() => setIsAuthModalOpen(true)} 
-              className="text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors px-4 py-2 rounded-full border border-indigo-50 hover:bg-indigo-50"
+              className="text-xs sm:text-sm font-bold text-indigo-600 hover:text-indigo-800 transition-colors px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full border border-indigo-50 hover:bg-indigo-50"
             >
               Log In
             </button>
@@ -195,12 +195,12 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="bg-slate-50 border-b border-slate-100 px-6 py-2 flex items-center justify-center">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t.aiPowered}</p>
+      <div className="bg-slate-50 border-b border-slate-100 px-3 sm:px-6 py-1.5 sm:py-2 flex items-center justify-center">
+        <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-widest">{t.aiPowered}</p>
       </div>
 
-      <main className="flex flex-1 overflow-hidden min-h-0">
-        <aside className="listings-panel flex-1 min-w-0 bg-white border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden">
+      <main className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
+        <aside className="listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden order-1">
            <div className="p-4 border-b border-slate-100 bg-white">
              <div className="flex items-center justify-between mb-3">
                <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
@@ -404,7 +404,7 @@ export default function Home() {
            </div>
         </aside>
 
-        <div className="map-area flex-[0_0_45%] min-w-[280px] relative bg-slate-50 shrink-0">
+        <div className="map-area h-[40vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-2">
            <MapVisualizer 
              sublets={filteredSublets} 
              onMarkerClick={(s) => setSelectedSubletId(s.id)}

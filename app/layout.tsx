@@ -22,6 +22,7 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width' as const,
   initialScale: 1,
+  maximumScale: 1,
 };
 
 // Fix: Added React import above to resolve 'Cannot find namespace React' error for React.ReactNode

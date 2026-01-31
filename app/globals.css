@@ -35,16 +35,22 @@ body {
 [data-root] main {
   flex: 1 1 0%;
   display: flex;
-  min-height: 300px;
+  min-height: 200px;
 }
 [data-root] main > div,
 [data-root] main > aside {
-  min-height: 200px;
+  min-height: 0;
 }
-[data-root] main .map-area {
-  flex: 0 0 45%;
-  min-width: 280px;
-  flex-shrink: 0;
+@media (min-width: 768px) {
+  [data-root] main > div.map-area,
+  [data-root] main > aside {
+    min-height: 200px;
+  }
+  [data-root] main .map-area {
+    flex: 0 0 45%;
+    min-width: 280px;
+    flex-shrink: 0;
+  }
 }
 [data-root] main .listings-panel {
   flex: 1 1 0%;
