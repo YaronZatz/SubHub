@@ -4,14 +4,23 @@ import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CurrencyProvider } from "../contexts/CurrencyContext";
 
+function getMetadataBase(): URL | undefined {
+  try {
+    const url = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    return new URL(url);
+  } catch {
+    return undefined;
+  }
+}
+
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: "SubHub | One Map. Zero Noise.",
   description: "AI-Powered Facebook Sublet Aggregator",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  metadataBase: getMetadataBase(),
 };
 export const viewport = {
-  width: 'device-width',
+  width: 'device-width' as const,
   initialScale: 1,
 };
 

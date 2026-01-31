@@ -5,6 +5,7 @@ runConfig:
   cpu: 1
   memoryMiB: 512
 
+# Set NEXT_PUBLIC_APP_URL to your deployed URL (e.g. https://your-backend--project-id.us-central1.hosted.app) for correct share links and metadata
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyBO1YsFaPoL30LxrW0nsMYR8h2BKzNKe0s"
