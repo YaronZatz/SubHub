@@ -1,10 +1,12 @@
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Sublet, Language, ListingStatus } from '../types';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { formatPrice, formatDate } from '../utils/formatters';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+
+const SWIPE_THRESHOLD = 50;
 
 interface SubletDetailPageProps {
   sublet: Sublet;
@@ -30,6 +32,11 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   const isOwner = sublet.ownerId === currentUserId;
   const { currency } = useCurrency();
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+  const [touchDelta, setTouchDelta] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -65,6 +72,43 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
     e.stopPropagation();
     setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
   };
+
+  const handleGalleryTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+    setTouchDelta(0);
+  }, []);
+
+  const handleGalleryTouchMove = useCallback((e: React.TouchEvent) => {
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - touchStartX.current;
+    const dy = y - touchStartY.current;
+    if (!isSwiping.current) {
+      const isHorizontal = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
+      if (isHorizontal) isSwiping.current = true;
+    }
+    if (isSwiping.current) {
+      e.preventDefault();
+      const width = galleryRef.current?.offsetWidth ?? 400;
+      const maxDrag = width * 0.4;
+      const capped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+      setTouchDelta(capped);
+    }
+  }, []);
+
+  const handleGalleryTouchEnd = useCallback(() => {
+    if (isSwiping.current && Math.abs(touchDelta) > SWIPE_THRESHOLD) {
+      if (touchDelta < 0) {
+        setActiveImgIndex((prev) => (prev + 1) % images.length);
+      } else {
+        setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    }
+    setTouchDelta(0);
+    isSwiping.current = false;
+  }, [touchDelta, images.length]);
 
   const isNew = (createdAt: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
@@ -149,26 +193,49 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
         {/* Responsive Image Gallery */}
         <div className="mb-8 space-y-3">
-          {/* Main Viewer */}
-          <div className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg">
-            <img 
-              src={images[activeImgIndex]} 
-              className="w-full h-full object-cover transition-opacity duration-300" 
-              alt={`View ${activeImgIndex + 1}`} 
-            />
-            
+          {/* Main Viewer - sliding track with touch support */}
+          <div
+            ref={galleryRef}
+            className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg select-none touch-pan-y"
+            style={{ touchAction: 'pan-y' }}
+            onTouchStart={handleGalleryTouchStart}
+            onTouchMove={handleGalleryTouchMove}
+            onTouchEnd={handleGalleryTouchEnd}
+            onTouchCancel={handleGalleryTouchEnd}
+          >
+            <div
+              className="flex h-full w-full"
+              style={{
+                width: `${images.length * 100}%`,
+                transform: `translateX(calc(-${activeImgIndex * (100 / images.length)}% + ${touchDelta}px))`,
+                transition: touchDelta !== 0 ? 'none' : 'transform 0.3s ease-out',
+              }}
+            >
+              {images.map((src, i) => (
+                <div key={i} className="shrink-0 w-full h-full" style={{ flex: `0 0 ${100 / images.length}%` }}>
+                  <img
+                    src={src}
+                    className="w-full h-full object-cover select-none"
+                    alt={`View ${i + 1}`}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    draggable={false}
+                  />
+                </div>
+              ))}
+            </div>
+
             {/* Nav Arrows */}
             {images.length > 1 && (
               <>
                 <button 
                   onClick={prevImage}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90`}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-10`}
                 >
                   <ChevronLeftIcon className="w-6 h-6" />
                 </button>
                 <button 
                   onClick={nextImage}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90`}
+                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-10`}
                 >
                   <ChevronRightIcon className="w-6 h-6" />
                 </button>
@@ -176,7 +243,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
             )}
 
             {/* Counter Overlay */}
-            <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+            <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest z-10">
               {activeImgIndex + 1} / {images.length}
             </div>
           </div>
