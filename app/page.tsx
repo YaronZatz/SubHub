@@ -12,6 +12,7 @@ import { formatPrice } from '../utils/formatters';
 import { 
   FilterIcon, 
   MapIcon, 
+  ListIcon,
   PlusIcon, 
   SearchIcon, 
   HeartIcon,
@@ -41,6 +42,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguageState] = useState<Language>(Language.EN);
   const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
+  const [showMapView, setShowMapView] = useState(true);
   
   const { currency } = useCurrency();
   const { user, logout } = useAuth();
@@ -201,18 +203,29 @@ export default function Home() {
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
         <aside className="listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden order-2 md:order-1">
-           <div className="p-4 border-b border-slate-100 bg-white">
-             <div className="flex items-center justify-between mb-3">
-               <h2 className="text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
-               <button 
-                  onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
-                  className={`p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${isFilterExpanded ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-               >
-                  <FilterIcon className="w-4 h-4" />
-                  {t.filters}
-               </button>
+           <div className="p-3 md:p-4 border-b border-slate-100 bg-white">
+             <div className="flex items-center justify-between mb-2 md:mb-3">
+               <h2 className="text-base md:text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
+               <div className="flex items-center gap-1.5 sm:gap-2">
+                 <button
+                   onClick={() => setShowMapView(!showMapView)}
+                   className={`p-2.5 rounded-xl transition-all flex items-center gap-1.5 sm:gap-2 text-sm font-bold ${showMapView ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'}`}
+                   title={showMapView ? 'List only' : 'Show map'}
+                   aria-label={showMapView ? 'Switch to list only view' : 'Switch to map view'}
+                 >
+                   <ListIcon className="w-4 h-4" />
+                   <span className="hidden sm:inline">{showMapView ? 'List only' : 'Map'}</span>
+                 </button>
+                 <button 
+                    onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
+                    className={`p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${isFilterExpanded ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                 >
+                    <FilterIcon className="w-4 h-4" />
+                    {t.filters}
+                 </button>
+               </div>
              </div>
-             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-3">{filteredSublets.length} {t.results}</p>
+             <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 md:mb-3">{filteredSublets.length} {t.results}</p>
              <div className="relative md:hidden">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input 
@@ -328,22 +341,22 @@ export default function Home() {
              )}
            </div>
            
-           <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50/30 min-h-0">
+           <div className="flex-1 overflow-y-auto p-3 md:p-4 custom-scrollbar bg-slate-50/30 min-h-0">
              {isLoading ? (
                <div className="flex flex-col items-center justify-center h-full space-y-3">
                   <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Scanning map...</p>
                </div>
              ) : filteredSublets.length > 0 ? (
-               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 md:gap-4">
                {filteredSublets.map(sublet => (
                  <div 
                    key={sublet.id} 
                    onClick={() => setSelectedSubletId(sublet.id)}
                    className={`rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-xl bg-white border ${selectedSubletId === sublet.id ? 'border-indigo-600 ring-2 ring-indigo-100 shadow-lg' : 'border-slate-100 shadow-sm'}`}
                  >
-                   <div className="relative aspect-[4/3] bg-slate-100">
-                     <ListingCarousel id={sublet.id} images={sublet.images} aspectRatio="aspect-[4/3]" className="w-full" />
+                   <div className="relative aspect-[3/2] md:aspect-[4/3] bg-slate-100">
+                     <ListingCarousel id={sublet.id} images={sublet.images} aspectRatio="" className="w-full h-full object-cover" />
                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-indigo-600/90 text-white text-[10px] font-bold">
                        • Added {addedAgo(sublet.createdAt)} ago
                      </span>
@@ -404,7 +417,8 @@ export default function Home() {
            </div>
         </aside>
 
-        <div className="map-area h-[40vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2">
+        {showMapView && (
+        <div className="map-area h-[26vh] sm:h-[28vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2">
            <MapVisualizer 
              sublets={filteredSublets} 
              onMarkerClick={(s) => setSelectedSubletId(s.id)}
@@ -412,6 +426,7 @@ export default function Home() {
              language={language}
            />
         </div>
+      )}
       </main>
 
       {isAddModalOpen && user && (
