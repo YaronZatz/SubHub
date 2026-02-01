@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 interface ListingCarouselProps {
@@ -9,6 +9,8 @@ interface ListingCarouselProps {
   className?: string;
 }
 
+const SWIPE_THRESHOLD = 50;
+
 const ListingCarousel: React.FC<ListingCarouselProps> = ({ 
   id, 
   images: customImages,
@@ -16,6 +18,11 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   className = "" 
 }) => {
   const [index, setIndex] = useState(0);
+  const [touchDelta, setTouchDelta] = useState(0);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isSwiping = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   const images = useMemo(() => {
     if (customImages && customImages.length > 0) {
@@ -40,14 +47,65 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
     setIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    isSwiping.current = false;
+    setTouchDelta(0);
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - touchStartX.current;
+    const dy = y - touchStartY.current;
+
+    if (!isSwiping.current) {
+      const isHorizontal = Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
+      if (isHorizontal) isSwiping.current = true;
+    }
+    if (isSwiping.current) {
+      e.preventDefault();
+      const width = containerRef.current?.offsetWidth ?? 300;
+      const maxDrag = width * 0.4;
+      const capped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+      setTouchDelta(capped);
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (isSwiping.current && Math.abs(touchDelta) > SWIPE_THRESHOLD) {
+      if (touchDelta < 0) {
+        setIndex((prev) => (prev + 1) % images.length);
+      } else {
+        setIndex((prev) => (prev - 1 + images.length) % images.length);
+      }
+    }
+    setTouchDelta(0);
+    isSwiping.current = false;
+  }, [touchDelta, images.length]);
+
   if (images.length === 0) return null;
 
+  const trackStyle = {
+    transform: `translateX(calc(-${index * 100}% + ${touchDelta}px))`,
+    transition: touchDelta !== 0 ? 'none' : 'transform 0.3s ease-out',
+  };
+
   return (
-    <div className={`relative group overflow-hidden ${aspectRatio} ${className}`}>
+    <div
+      ref={containerRef}
+      className={`relative group overflow-hidden touch-pan-y ${aspectRatio} ${className}`}
+      style={{ touchAction: 'pan-y' }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+    >
       {/* Image Slider */}
       <div 
-        className="flex w-full h-full transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${index * 100}%)` }}
+        className="flex w-full h-full select-none"
+        style={trackStyle}
       >
         {images.map((src, i) => (
           <img 
