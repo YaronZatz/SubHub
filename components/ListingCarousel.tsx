@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 interface ListingCarouselProps {
@@ -22,6 +22,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
+  const touchDeltaRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const images = useMemo(() => {
@@ -47,14 +48,14 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
     setIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     isSwiping.current = false;
     setTouchDelta(0);
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleTouchMove = useCallback((e: TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
     const dx = x - touchStartX.current;
@@ -69,21 +70,39 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       const width = containerRef.current?.offsetWidth ?? 300;
       const maxDrag = width * 0.4;
       const capped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+      touchDeltaRef.current = capped;
       setTouchDelta(capped);
     }
   }, []);
 
   const handleTouchEnd = useCallback(() => {
-    if (isSwiping.current && Math.abs(touchDelta) > SWIPE_THRESHOLD) {
-      if (touchDelta < 0) {
+    const delta = touchDeltaRef.current;
+    if (isSwiping.current && Math.abs(delta) > SWIPE_THRESHOLD) {
+      if (delta < 0) {
         setIndex((prev) => (prev + 1) % images.length);
       } else {
         setIndex((prev) => (prev - 1 + images.length) % images.length);
       }
     }
+    touchDeltaRef.current = 0;
     setTouchDelta(0);
     isSwiping.current = false;
-  }, [touchDelta, images.length]);
+  }, [images.length]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('touchstart', handleTouchStart, { passive: true });
+    el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd);
+    el.addEventListener('touchcancel', handleTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', handleTouchStart);
+      el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   if (images.length === 0) return null;
 
@@ -97,10 +116,6 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       ref={containerRef}
       className={`relative group overflow-hidden touch-pan-y ${aspectRatio} ${className}`}
       style={{ touchAction: 'pan-y' }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      onTouchCancel={handleTouchEnd}
     >
       {/* Image Slider */}
       <div 

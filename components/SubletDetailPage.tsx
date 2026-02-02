@@ -36,6 +36,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
+  const touchDeltaRef = useRef(0);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,14 +74,15 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
     setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const handleGalleryTouchStart = useCallback((e: React.TouchEvent) => {
+  const handleGalleryTouchStart = useCallback((e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
     isSwiping.current = false;
+    touchDeltaRef.current = 0;
     setTouchDelta(0);
   }, []);
 
-  const handleGalleryTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleGalleryTouchMove = useCallback((e: TouchEvent) => {
     const x = e.touches[0].clientX;
     const y = e.touches[0].clientY;
     const dx = x - touchStartX.current;
@@ -94,21 +96,39 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
       const width = galleryRef.current?.offsetWidth ?? 400;
       const maxDrag = width * 0.4;
       const capped = Math.max(-maxDrag, Math.min(maxDrag, dx));
+      touchDeltaRef.current = capped;
       setTouchDelta(capped);
     }
   }, []);
 
   const handleGalleryTouchEnd = useCallback(() => {
-    if (isSwiping.current && Math.abs(touchDelta) > SWIPE_THRESHOLD) {
-      if (touchDelta < 0) {
+    const delta = touchDeltaRef.current;
+    if (isSwiping.current && Math.abs(delta) > SWIPE_THRESHOLD) {
+      if (delta < 0) {
         setActiveImgIndex((prev) => (prev + 1) % images.length);
       } else {
         setActiveImgIndex((prev) => (prev - 1 + images.length) % images.length);
       }
     }
+    touchDeltaRef.current = 0;
     setTouchDelta(0);
     isSwiping.current = false;
-  }, [touchDelta, images.length]);
+  }, [images.length]);
+
+  useEffect(() => {
+    const el = galleryRef.current;
+    if (!el) return;
+    el.addEventListener('touchstart', handleGalleryTouchStart, { passive: true });
+    el.addEventListener('touchmove', handleGalleryTouchMove, { passive: false });
+    el.addEventListener('touchend', handleGalleryTouchEnd);
+    el.addEventListener('touchcancel', handleGalleryTouchEnd);
+    return () => {
+      el.removeEventListener('touchstart', handleGalleryTouchStart);
+      el.removeEventListener('touchmove', handleGalleryTouchMove);
+      el.removeEventListener('touchend', handleGalleryTouchEnd);
+      el.removeEventListener('touchcancel', handleGalleryTouchEnd);
+    };
+  }, [handleGalleryTouchStart, handleGalleryTouchMove, handleGalleryTouchEnd]);
 
   const isNew = (createdAt: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
@@ -198,10 +218,6 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
             ref={galleryRef}
             className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg select-none touch-pan-y"
             style={{ touchAction: 'pan-y' }}
-            onTouchStart={handleGalleryTouchStart}
-            onTouchMove={handleGalleryTouchMove}
-            onTouchEnd={handleGalleryTouchEnd}
-            onTouchCancel={handleGalleryTouchEnd}
           >
             <div
               className="flex h-full w-full"

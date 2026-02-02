@@ -261,9 +261,13 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
     }));
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+      <form onSubmit={handleFormSubmit} className="bg-white rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
         
         <div className="bg-white px-6 pt-6 pb-2 border-b border-slate-50">
           <div className="flex justify-between items-center mb-6">
@@ -273,11 +277,12 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               </div>
               {isReviewing ? "Review & Verify" : t.addListingTitle}
             </h2>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 text-2xl leading-none">&times;</button>
+            <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 text-2xl leading-none touch-none">&times;</button>
           </div>
 
           <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-4">
             <button 
+              type="button"
               onClick={() => handleTabSwitch('ai')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all
                 ${mode === 'ai' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
@@ -286,6 +291,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               {t.importFromFb}
             </button>
             <button 
+              type="button"
               onClick={() => handleTabSwitch('manual')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all
                 ${mode === 'manual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
@@ -527,29 +533,31 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
         </div>
 
         <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-4">
-          <button onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100">
+          <button type="button" onClick={onClose} className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100 touch-none">
             {t.cancel}
           </button>
           {mode === 'ai' && (
             <button
+              type="button"
               onClick={handleTextExtract}
               disabled={loading || !text.trim()}
-              className="flex-2 py-4 px-8 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100"
+              className="flex-2 py-4 px-8 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 touch-none"
             >
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Verify & Extract Link"}
             </button>
           )}
           {mode === 'manual' && (
             <button
+              type="button"
               onClick={handleFinalSubmit}
               disabled={loading}
-              className="flex-2 py-4 px-8 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-xl shadow-indigo-100"
+              className="flex-2 py-4 px-8 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-xl shadow-indigo-100 touch-none"
             >
               {loading ? "Posting..." : (isReviewing ? "Confirm & Post" : t.postListing)}
             </button>
           )}
         </div>
-      </div>
+      </form>
     </div>
   );
 };
