@@ -28,6 +28,7 @@ import PriceRangeFilter from '../components/PriceRangeFilter';
 import CityAutocomplete from '../components/CityAutocomplete';
 import EditListingModal from '../components/EditListingModal';
 import SubletDetailPage from '../components/SubletDetailPage';
+import FeatureIcons from '../components/FeatureIcons';
 import CurrencySwitcher from '../components/CurrencySwitcher';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AuthModal from '../components/AuthModal';
@@ -388,6 +389,7 @@ export default function Home() {
                      {sublet.neighborhood && (
                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{sublet.neighborhood}</p>
                      )}
+                     <FeatureIcons apartment_details={sublet.apartment_details} className="mt-1.5" />
                      <div className="flex items-center gap-1.5 mt-2 text-[11px] text-slate-500">
                        <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
                        <span>{sublet.startDate} – {sublet.endDate}</span>
@@ -427,6 +429,7 @@ export default function Home() {
                      {selectedSublet.neighborhood && (
                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedSublet.neighborhood}</p>
                      )}
+                     <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1" />
                      <div className="flex items-center gap-1.5 mt-1 text-[10px] sm:text-[11px] text-slate-500">
                        <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
                        <span>{selectedSublet.startDate} – {selectedSublet.endDate}</span>

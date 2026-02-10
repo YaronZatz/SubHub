@@ -42,6 +42,15 @@ export interface User {
   createdAt: number;
 }
 
+export interface ApartmentDetails {
+  has_elevator?: boolean;
+  has_air_con?: boolean;
+  has_balcony?: boolean;
+  is_pet_friendly?: boolean;
+  floor?: number;
+  rooms_count?: number;
+}
+
 export interface Sublet {
   id: string;
   sourceUrl: string;
@@ -60,8 +69,12 @@ export interface Sublet {
   neighborhood?: string;
   city?: string;
   amenities?: string[];
-  ownerId?: string; 
+  ownerId?: string;
   images?: string[];
+  ai_summary?: string;
+  apartment_details?: ApartmentDetails;
+  needs_review?: boolean;
+  is_flexible?: boolean;
 }
 
 export interface Filters {

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Sublet, ListingStatus, Language } from '../types';
@@ -7,6 +6,26 @@ import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 import { NavigationIcon } from './Icons';
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function getPopupHtml(sublet: Sublet, priceText: string): string {
+  const summary = escapeHtml(sublet.ai_summary || sublet.location || 'No summary');
+  const ad = sublet.apartment_details;
+  const icons: string[] = [];
+  if (ad?.has_elevator) icons.push('<span title="Elevator" style="display:inline-block;width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4-4-4 4"/><path d="M12 16V4"/></svg></span>');
+  if (ad?.has_air_con) icons.push('<span title="Air conditioning" style="display:inline-block;width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2 2 0 1 1 19 4H2m12.27 11.73A2 2 0 1 0 22 16H2"/></svg></span>');
+  if (ad?.has_balcony) icons.push('<span title="Balcony" style="display:inline-block;width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span>');
+  if (ad?.is_pet_friendly) icons.push('<span title="Pet friendly" style="display:inline-block;width:16px;height:16px;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.5 9.51a4.22 4.22 0 0 1-1.91-1.34A5.77 5.77 0 0 0 12 6a4.72 4.72 0 0 0-5 4 3.23 3.23 0 0 1 3.5-1.49 4.32 4.32 0 0 1 1.75 1.34 4.22 4.22 0 0 1 1.91 1.34"/><path d="M12 22v-4"/><path d="M10 18v.01"/><path d="M14 18v.01"/><path d="M8 14v.01"/><path d="M16 14v.01"/><path d="M11 10v.01"/><path d="M13 10v.01"/></svg></span>');
+  const iconRow = icons.length ? `<div style="display:flex;gap:6px;margin-top:6px;color:#64748b;">${icons.join('')}</div>` : '';
+  return `<div style="max-width:260px;min-width:140px;word-wrap:break-word;font-size:12px;line-height:1.4;">
+    <div style="font-weight:600;color:#0f172a;">${priceText}</div>
+    <div style="color:#475569;margin-top:4px;">${summary}</div>
+    ${iconRow}
+  </div>`;
+}
 
 interface MapVisualizerProps {
   sublets: Sublet[];
@@ -87,12 +106,18 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
         iconAnchor: [20, 20]
       });
 
+      const popupHtml = getPopupHtml(sublet, priceText);
+
       if (markersRef.current[sublet.id]) {
-        markersRef.current[sublet.id].setLatLng([sublet.lat, sublet.lng]);
-        markersRef.current[sublet.id].setIcon(icon);
+        const marker = markersRef.current[sublet.id];
+        marker.setLatLng([sublet.lat, sublet.lng]);
+        marker.setIcon(icon);
+        const popup = marker.getPopup();
+        if (popup) popup.setContent(popupHtml);
       } else {
         const marker = L.marker([sublet.lat, sublet.lng], { icon })
           .addTo(mapRef.current!)
+          .bindPopup(popupHtml, { maxWidth: 280 })
           .on('click', () => onMarkerClick(sublet));
         markersRef.current[sublet.id] = marker;
       }

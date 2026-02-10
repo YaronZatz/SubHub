@@ -11,6 +11,7 @@ import CityAutocomplete from './components/CityAutocomplete';
 import CurrencySwitcher from './components/CurrencySwitcher';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import ListingCarousel from './components/ListingCarousel';
+import FeatureIcons from './components/FeatureIcons';
 import AuthModal from './components/AuthModal';
 import { CurrencyProvider, useCurrency } from './contexts/CurrencyContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -567,8 +568,8 @@ const AppContent: React.FC = () => {
                       </div>
                       
                       <h3 className="font-bold text-slate-900 text-base mb-1 truncate">{sublet.location}</h3>
-                      <p className="text-xs text-slate-400 font-medium uppercase mb-4">{sublet.neighborhood || sublet.city}</p>
-                      
+                      <p className="text-xs text-slate-400 font-medium uppercase mb-1">{sublet.neighborhood || sublet.city}</p>
+                      <FeatureIcons apartment_details={sublet.apartment_details} className="mb-3" />
                       <div className="flex items-center justify-between pt-3 border-t border-slate-50">
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
                           <svg className="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
@@ -651,6 +652,7 @@ const AppContent: React.FC = () => {
                      {formatPrice(selectedSublet.price, currency, language)}
                    </div>
                    <div className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">{selectedSublet.neighborhood || selectedSublet.city}</div>
+                   <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1.5" />
                  </div>
 
                  <div className="mt-4 flex gap-2">
