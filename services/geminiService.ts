@@ -13,7 +13,9 @@ const parseExtractedText = (text: string, sources: any[] = []): Partial<Sublet> 
   const price = parseFloat(getValue('PRICE') || '0');
   const currency = getValue('CURRENCY') || 'NIS';
   const location = getValue('LOCATION') || 'Unknown Address';
-  const city = getValue('CITY') || 'Tel Aviv';
+  const rawCity = getValue('CITY');
+  const invalidCityPattern = /^(start_date|end_date|price|location|type|amenities|currency|images?)(:.*)?$/i;
+  const city = (rawCity && !invalidCityPattern.test(rawCity.trim())) ? rawCity : 'Tel Aviv';
   const startDate = getValue('START_DATE') || new Date().toISOString().split('T')[0];
   const endDate = getValue('END_DATE') || '';
   const rawType = getValue('TYPE') || 'Entire Place';
@@ -44,8 +46,15 @@ const parseExtractedText = (text: string, sources: any[] = []): Partial<Sublet> 
   };
 };
 
+const getGeminiApiKey = () =>
+  process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+
 export const parsePostWithGemini = async (input: string): Promise<Partial<Sublet> & { imageUrls?: string[], sources?: any[] }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY or API_KEY is not configured. Add it to .env.local');
+  }
+  const ai = new GoogleGenAI({ apiKey });
   const isUrl = input.trim().startsWith('http');
 
   try {
@@ -105,7 +114,11 @@ export const parsePostWithGemini = async (input: string): Promise<Partial<Sublet
 };
 
 export const parseImageListingWithGemini = async (base64Image: string, mimeType: string): Promise<Partial<Sublet> & { imageUrls?: string[], sources?: any[] }> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY or API_KEY is not configured. Add it to .env.local');
+  }
+  const ai = new GoogleGenAI({ apiKey });
   
   // Strip metadata from base64 string if present (data:image/jpeg;base64,...)
   const cleanBase64 = base64Image.split(',')[1] || base64Image;

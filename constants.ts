@@ -1,6 +1,16 @@
 
 import { Sublet, SubletType, ListingStatus } from './types';
 
+/** Global list of major cities for autocomplete (sublet hubs worldwide) */
+export const GLOBAL_CITIES: string[] = [
+  'Amsterdam', 'Austin', 'Barcelona', 'Berlin', 'Boston', 'Brussels', 'Budapest',
+  'Chicago', 'Copenhagen', 'Dublin', 'Hong Kong', 'Istanbul', 'Jerusalem', 'Lisbon',
+  'London', 'Los Angeles', 'Madrid', 'Melbourne', 'Mexico City', 'Miami', 'Montreal',
+  'Munich', 'New York', 'Oslo', 'Paris', 'Prague', 'Rome', 'San Francisco', 'Seattle',
+  'Singapore', 'Stockholm', 'Sydney', 'Tel Aviv', 'Tokyo', 'Toronto', 'Vienna',
+  'Warsaw', 'Washington DC', 'Zurich'
+];
+
 export const CITY_CENTERS: Record<string, { lat: number; lng: number }> = {
   'Tel Aviv': { lat: 32.0853, lng: 34.7818 },
   'New York': { lat: 40.7128, lng: -74.0060 },

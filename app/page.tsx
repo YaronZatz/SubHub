@@ -5,6 +5,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from '../types';
 import { translations } from '../translations';
+import { GLOBAL_CITIES } from '../constants';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { persistenceService } from '../services/persistenceService';
@@ -24,6 +25,7 @@ const MapVisualizer = dynamic(() => import('../components/MapVisualizer'), { ssr
 import AddListingModal from '../components/AddListingModal';
 import ListingCarousel from '../components/ListingCarousel';
 import PriceRangeFilter from '../components/PriceRangeFilter';
+import CityAutocomplete from '../components/CityAutocomplete';
 import EditListingModal from '../components/EditListingModal';
 import SubletDetailPage from '../components/SubletDetailPage';
 import CurrencySwitcher from '../components/CurrencySwitcher';
@@ -97,6 +99,14 @@ export default function Home() {
       return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
+
+  const cityOptions = useMemo(() => {
+    const invalidCityPattern = /^(start_date|end_date|price|location|type|amenities|currency|images?)(:.*)?$/i;
+    const fromSublets = new Set(
+      sublets.map(s => s.city).filter(c => c && !invalidCityPattern.test(c.trim()))
+    );
+    return Array.from(new Set([...GLOBAL_CITIES, ...fromSublets])).sort();
+  }, [sublets]);
 
   const handleAddPostClick = () => {
     if (user) {
@@ -263,12 +273,12 @@ export default function Home() {
 
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.city}</label>
-                   <input
-                     type="text"
-                     placeholder={t.allCities}
+                   <CityAutocomplete
                      value={filters.city}
-                     onChange={(e) => setFilters(f => ({ ...f, city: e.target.value }))}
-                     className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-indigo-500"
+                     options={cityOptions}
+                     placeholder={t.allCities}
+                     onChange={(city) => setFilters(f => ({ ...f, city }))}
+                     onCitySelect={(city) => setFilters(f => ({ ...f, city, neighborhood: '' }))}
                    />
                  </div>
 

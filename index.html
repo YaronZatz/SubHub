@@ -43,14 +43,9 @@
         }
     </style>
 <script>
-    // Critical: Expose platform-injected API_KEY to the browser context
+    // Safe shim only; never expose server-side API keys to the browser.
     window.process = window.process || {};
     window.process.env = window.process.env || {};
-    
-    // Fallback logic: If NEXT_PUBLIC variables aren't set, use the generic API_KEY
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        window.process.env.API_KEY = process.env.API_KEY;
-    }
 </script>
 <script type="importmap">
 {

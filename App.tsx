@@ -1,12 +1,13 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from './types';
-import { CITY_CENTERS } from './constants';
+import { CITY_CENTERS, GLOBAL_CITIES } from './constants';
 import MapVisualizer from './components/MapVisualizer';
 import AddListingModal from './components/AddListingModal';
 import EditListingModal from './components/EditListingModal';
 import SubletDetailPage from './components/SubletDetailPage';
 import PriceRangeFilter from './components/PriceRangeFilter';
+import CityAutocomplete from './components/CityAutocomplete';
 import CurrencySwitcher from './components/CurrencySwitcher';
 import LanguageSwitcher from './components/LanguageSwitcher';
 import ListingCarousel from './components/ListingCarousel';
@@ -204,10 +205,16 @@ const AppContent: React.FC = () => {
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
-  const uniqueCities = useMemo(() => Array.from(new Set(sublets.map(s => s.city).filter(Boolean))), [sublets]);
+  const cityOptions = useMemo(() => {
+    const invalidCityPattern = /^(start_date|end_date|price|location|type|amenities|currency|images?)(:.*)?$/i;
+    const fromSublets = new Set(
+      sublets.map(s => s.city).filter(c => c && !invalidCityPattern.test(c.trim()))
+    );
+    return Array.from(new Set([...GLOBAL_CITIES, ...fromSublets])).sort();
+  }, [sublets]);
   
   const handleCityChange = (city: string) => {
-    setFilters({ ...filters, city, neighborhood: '' });
+    setFilters(prev => ({ ...prev, city, neighborhood: '' }));
   };
 
   const handleAddPostClick = () => {
@@ -424,10 +431,13 @@ const AppContent: React.FC = () => {
 
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.city}</label>
-                   <select value={filters.city} onChange={(e) => handleCityChange(e.target.value)} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                     <option value="">{t.allCities}</option>
-                     {uniqueCities.map(city => <option key={city} value={city}>{city}</option>)}
-                   </select>
+                   <CityAutocomplete
+                     value={filters.city}
+                     options={cityOptions}
+                     placeholder={t.allCities}
+                     onChange={(city) => setFilters(prev => ({ ...prev, city }))}
+                     onCitySelect={(city) => handleCityChange(city)}
+                   />
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.type}</label>

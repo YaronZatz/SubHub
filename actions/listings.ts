@@ -1,26 +1,13 @@
-
 import { Sublet } from '../types';
-import { persistenceService } from '../services/persistenceService';
 
 /**
- * Server Action: Saves a new listing to the database.
+ * Reserved for future server-side persistence (e.g. DB).
+ * New listings are currently saved client-side via persistenceService (IndexedDB)
+ * in AddListingModal. Do not call persistenceService from the server.
  */
-export const saveNewListing = async (data: Partial<Sublet>) => {
-  try {
-    // In direct listings, sourceUrl might be empty.
-    // We only validate it if we are specifically expecting a Facebook import.
-    
-    const result = await persistenceService.saveListing(data as Sublet);
-    
-    return { 
-      success: true, 
-      data: result 
-    };
-  } catch (error) {
-    console.error("Database Save Error:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Unknown database error" 
-    };
-  }
+export const saveNewListing = async (_data: Partial<Sublet>) => {
+  return {
+    success: false,
+    error: 'Server-side save not configured. Listings are saved in the browser (IndexedDB).',
+  };
 };

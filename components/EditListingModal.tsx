@@ -1,7 +1,7 @@
-
 import React, { useState } from 'react';
 import { Sublet, ListingStatus, Language, SubletType } from '../types';
 import { translations } from '../translations';
+import { validateListingForm } from '../utils/listingValidation';
 import { WarningIcon } from './Icons';
 
 interface EditListingModalProps {
@@ -15,11 +15,37 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
   const t = translations[language];
   const [formData, setFormData] = useState<Sublet>({ ...sublet });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSave = () => {
+    const validation = validateListingForm({
+      location: formData.location,
+      price: formData.price,
+      city: formData.city,
+      neighborhood: formData.neighborhood,
+      startDate: formData.startDate,
+      endDate: formData.endDate ?? '',
+      description: formData.originalText,
+    });
+    if (!validation.valid) {
+      setError(validation.errors[0] ?? 'Please fix the form errors.');
+      return;
+    }
+    setError(null);
+    const sanitized = validation.sanitized!;
+    const updated: Sublet = {
+      ...formData,
+      location: sanitized.location ?? formData.location,
+      price: Number(sanitized.price ?? formData.price),
+      city: sanitized.city ?? formData.city,
+      neighborhood: sanitized.neighborhood ?? formData.neighborhood,
+      startDate: sanitized.startDate ?? formData.startDate,
+      endDate: sanitized.endDate ?? formData.endDate ?? '',
+      originalText: sanitized.description ?? formData.originalText,
+    };
     setLoading(true);
     setTimeout(() => {
-      onSave(formData);
+      onSave(updated);
       setLoading(false);
       onClose();
     }, 600);
@@ -98,6 +124,13 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
               className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
             />
           </div>
+
+          {error && (
+            <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold border border-red-100 flex items-center gap-2">
+              <WarningIcon className="w-4 h-4" />
+              {error}
+            </div>
+          )}
 
           <div className="pt-4 border-t border-slate-100">
             <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">

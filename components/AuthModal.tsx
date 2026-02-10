@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { validateAuthEmail, validateAuthPassword, validateAuthName } from '../utils/listingValidation';
 import { WarningIcon } from './Icons';
 
 interface AuthModalProps {
@@ -21,19 +21,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
+    const emailError = validateAuthEmail(email);
+    if (emailError) {
+      setError(emailError);
+      return;
+    }
+    const passwordError = validateAuthPassword(password, mode === 'signup');
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    if (mode === 'signup') {
+      const nameError = validateAuthName(name);
+      if (nameError) {
+        setError(nameError);
+        return;
+      }
+    }
+
+    setLoading(true);
     try {
       let result;
       if (mode === 'signup') {
-        if (!name.trim()) {
-          setError("Name is required");
-          setLoading(false);
-          return;
-        }
-        result = await signup(name, email, password);
+        result = await signup(name.trim(), email.trim(), password);
       } else {
-        result = await login(email, password);
+        result = await login(email.trim(), password);
       }
 
       if (result.success) {

@@ -10,6 +10,7 @@ import {
 import type { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types';
 
+/** Local storage key for mock user only. Used only when Firebase is not configured (e.g. dev). Not for production. */
 const LOCAL_USER_KEY = 'subhub_local_user';
 
 export const authService = {
@@ -27,9 +28,12 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
-    // Fallback to Mock Auth if Firebase is not initialized
+    // Fallback to Mock Auth only when Firebase is not initialized (e.g. dev). Not for production.
     if (!auth) {
-      console.log("Auth: Using Local Mock Mode");
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, error: 'Authentication is not configured.' };
+      }
+      console.warn('SubHub: Development/mock auth only; not for production.');
       return new Promise((resolve) => {
         setTimeout(() => {
           const mockUser: User = {
@@ -58,8 +62,12 @@ export const authService = {
   },
 
   async signup(name: string, email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
-    // Fallback to Mock Auth if Firebase is not initialized
+    // Fallback to Mock Auth only when Firebase is not initialized (e.g. dev). Not for production.
     if (!auth) {
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, error: 'Authentication is not configured.' };
+      }
+      console.warn('SubHub: Development/mock auth only; not for production.');
       return new Promise((resolve) => {
         setTimeout(() => {
           const mockUser: User = {

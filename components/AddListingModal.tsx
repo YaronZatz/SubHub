@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { parsePostWithGemini, parseImageListingWithGemini } from '../services/geminiService';
-import { saveNewListing } from '../actions/listings';
+import { extractListingFromText, extractListingFromImage } from '../actions/gemini';
+import { persistenceService } from '../services/persistenceService';
+import { validateListingForm } from '../utils/listingValidation';
 import { Sublet, ListingStatus, Language, SubletType, User } from '../types';
 import { PlusIcon, WarningIcon, InfoIcon, ExternalLinkIcon, HeartIcon, CameraIcon } from './Icons';
 import { translations } from '../translations';
@@ -139,7 +140,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
         const base64 = await processImage(file);
         
         // Parse with Gemini
-        const parsedData = await parseImageListingWithGemini(base64, 'image/jpeg');
+        const parsedData = await extractListingFromImage(base64, 'image/jpeg');
         
         // Add source image to gallery if not present in extracted urls (usually not)
         const currentImages = [...manualData.images, base64];
@@ -191,34 +192,52 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
     setError(null);
     
     try {
-      const parsedData = await parsePostWithGemini(text);
+      const parsedData = await extractListingFromText(text);
       populateFormWithParsedData(parsedData, text);
     } catch (err) {
-      setError("Extraction failed. This might be a private post or an invalid link. Try pasting the text manually.");
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('not configured')) {
+        setError('Gemini API key is missing. Add GEMINI_API_KEY or API_KEY to .env.local');
+      } else if (msg.includes('quota') || msg.includes('rate')) {
+        setError('API rate limit reached. Please try again later.');
+      } else {
+        setError("Extraction failed. This might be a private post or an invalid link. Try pasting the text manually.");
+      }
       setLoading(false);
     }
   };
 
   const handleFinalSubmit = async () => {
-    if (!manualData.location || !manualData.price || !manualData.startDate) {
-      setError("Please fill in the required fields (Location, Price, Start Date).");
+    const validation = validateListingForm({
+      location: manualData.location,
+      price: manualData.price,
+      city: manualData.city,
+      neighborhood: manualData.location.split(',')[0],
+      startDate: manualData.startDate,
+      endDate: manualData.endDate,
+      description: manualData.description,
+    });
+    if (!validation.valid) {
+      setError(validation.errors[0] ?? 'Please fix the form errors.');
       return;
     }
 
+    const sanitized = validation.sanitized!;
     setLoading(true);
-    const cityCoords = CITY_CENTERS[manualData.city] || CITY_CENTERS['Tel Aviv'];
+    const city = sanitized.city ?? manualData.city ?? 'Tel Aviv';
+    const cityCoords = CITY_CENTERS[city] || CITY_CENTERS['Tel Aviv'];
 
     const newSublet: Sublet = {
       id: Math.random().toString(36).substr(2, 9),
       sourceUrl: (isReviewing && detectedLink) ? text.trim() : '',
-      originalText: manualData.description || `Subletting at ${manualData.location}`,
-      price: Number(manualData.price),
+      originalText: sanitized.description ?? `Subletting at ${sanitized.location}`,
+      price: Number(sanitized.price),
       currency: 'NIS',
-      startDate: manualData.startDate,
-      endDate: manualData.endDate,
-      location: manualData.location,
-      city: manualData.city,
-      neighborhood: manualData.location.split(',')[0],
+      startDate: sanitized.startDate!,
+      endDate: sanitized.endDate ?? '',
+      location: sanitized.location!,
+      city,
+      neighborhood: sanitized.neighborhood ?? (sanitized.location ?? '').split(',')[0],
       lat: cityCoords.lat + (Math.random() - 0.5) * 0.01,
       lng: cityCoords.lng + (Math.random() - 0.5) * 0.01,
       type: manualData.type,
@@ -231,13 +250,9 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
     };
 
     try {
-      const result = await saveNewListing(newSublet);
-      if (result.success && result.data) {
-        onAdd(result.data);
-        onClose();
-      } else {
-        setError(result.error || "Failed to save listing.");
-      }
+      const saved = await persistenceService.saveListing(newSublet);
+      onAdd(saved);
+      onClose();
     } catch (err) {
       setError("An unexpected error occurred.");
     } finally {

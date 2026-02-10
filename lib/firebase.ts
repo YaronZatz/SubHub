@@ -22,7 +22,7 @@ const getEnv = (key: string): string => {
     }
 };
 
-const apiKey = getEnv('NEXT_PUBLIC_FIREBASE_API_KEY') || getEnv('API_KEY');
+const apiKey = getEnv('NEXT_PUBLIC_FIREBASE_API_KEY');
 const projectId = getEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
 
 const firebaseConfig = {
