@@ -5,7 +5,12 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut,
-  updateProfile
+  updateProfile,
+  signInWithPopup,
+  signInWithRedirect,
+  GoogleAuthProvider,
+  OAuthProvider,
+  FacebookAuthProvider
 } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types';
@@ -92,6 +97,114 @@ export const authService = {
       let message = "Failed to create account";
       if (error.code === 'auth/email-already-in-use') message = "Email already registered";
       if (error.code === 'auth/weak-password') message = "Password is too weak";
+      return { success: false, error: message };
+    }
+  },
+
+  async loginWithGoogle(): Promise<{ success: boolean; user?: User; error?: string }> {
+    if (!auth) {
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, error: 'Authentication is not configured.' };
+      }
+      console.warn('SubHub: Development/mock auth only; not for production.');
+      const mockUser: User = {
+        id: 'mock-google-' + Math.random().toString(36).substr(2, 9),
+        name: 'Google User',
+        email: 'google@example.com',
+        createdAt: Date.now()
+      };
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(mockUser));
+      return { success: true, user: mockUser };
+    }
+    try {
+      const provider = new GoogleAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = this.mapFirebaseUser(userCredential.user);
+      return { success: true, user: user || undefined };
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, new GoogleAuthProvider());
+          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+        } catch (redirectErr: any) {
+          console.error('Firebase Google redirect error:', redirectErr);
+          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+        }
+      }
+      console.error('Firebase Google Login Error:', error);
+      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Google sign-in failed');
+      return { success: false, error: message };
+    }
+  },
+
+  async loginWithApple(): Promise<{ success: boolean; user?: User; error?: string }> {
+    if (!auth) {
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, error: 'Authentication is not configured.' };
+      }
+      console.warn('SubHub: Development/mock auth only; not for production.');
+      const mockUser: User = {
+        id: 'mock-apple-' + Math.random().toString(36).substr(2, 9),
+        name: 'Apple User',
+        email: 'apple@example.com',
+        createdAt: Date.now()
+      };
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(mockUser));
+      return { success: true, user: mockUser };
+    }
+    try {
+      const provider = new OAuthProvider('apple.com');
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = this.mapFirebaseUser(userCredential.user);
+      return { success: true, user: user || undefined };
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, new OAuthProvider('apple.com'));
+          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+        } catch (redirectErr: any) {
+          console.error('Firebase Apple redirect error:', redirectErr);
+          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+        }
+      }
+      console.error('Firebase Apple Login Error:', error);
+      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Apple sign-in failed');
+      return { success: false, error: message };
+    }
+  },
+
+  async loginWithFacebook(): Promise<{ success: boolean; user?: User; error?: string }> {
+    if (!auth) {
+      if (process.env.NODE_ENV === 'production') {
+        return { success: false, error: 'Authentication is not configured.' };
+      }
+      console.warn('SubHub: Development/mock auth only; not for production.');
+      const mockUser: User = {
+        id: 'mock-facebook-' + Math.random().toString(36).substr(2, 9),
+        name: 'Facebook User',
+        email: 'facebook@example.com',
+        createdAt: Date.now()
+      };
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(mockUser));
+      return { success: true, user: mockUser };
+    }
+    try {
+      const provider = new FacebookAuthProvider();
+      const userCredential = await signInWithPopup(auth, provider);
+      const user = this.mapFirebaseUser(userCredential.user);
+      return { success: true, user: user || undefined };
+    } catch (error: any) {
+      if (error.code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, new FacebookAuthProvider());
+          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+        } catch (redirectErr: any) {
+          console.error('Firebase Facebook redirect error:', redirectErr);
+          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+        }
+      }
+      console.error('Firebase Facebook Login Error:', error);
+      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Facebook sign-in failed');
       return { success: false, error: message };
     }
   },

@@ -6,13 +6,16 @@ import { User } from '../types';
 import { authService } from '../services/authService';
 import { auth } from '../lib/firebase';
 // Fix: Import onAuthStateChanged from modular firebase/auth to resolve "no exported member" error
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  loginWithApple: () => Promise<{ success: boolean; error?: string }>;
+  loginWithFacebook: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   isLocalMode: boolean;
 }
@@ -35,7 +38,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return;
     }
 
-    // Real Firebase auth state listener
+    let cancelled = false;
+    getRedirectResult(auth).then((result) => {
+      if (cancelled) return;
+      if (result?.user) {
+        setUser(authService.mapFirebaseUser(result.user));
+      }
+    }).catch(() => {}).finally(() => {
+      if (cancelled) return;
+      setIsLoading(false);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser(authService.mapFirebaseUser(firebaseUser));
@@ -45,7 +58,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -64,13 +80,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return { success: result.success, error: result.error };
   };
 
+  const loginWithGoogle = async () => {
+    const result = await authService.loginWithGoogle();
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+    return { success: result.success, error: result.error };
+  };
+
+  const loginWithApple = async () => {
+    const result = await authService.loginWithApple();
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+    return { success: result.success, error: result.error };
+  };
+
+  const loginWithFacebook = async () => {
+    const result = await authService.loginWithFacebook();
+    if (result.success && result.user) {
+      setUser(result.user);
+    }
+    return { success: result.success, error: result.error };
+  };
+
   const logout = async () => {
     await authService.logout();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, isLocalMode }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, loginWithGoogle, loginWithApple, loginWithFacebook, logout, isLocalMode }}>
       {children}
     </AuthContext.Provider>
   );
