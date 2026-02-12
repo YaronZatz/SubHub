@@ -263,6 +263,7 @@ export async function POST(req: NextRequest) {
             createdAt: now,
             lastScrapedAt: payload.scrapedAt || new Date().toISOString(),
             images: persistentImages,
+            attachmentUrls: payload.images,
             apartment_details: structuredData.apartment_details || {},
             ai_summary: structuredData.ai_summary || '',
             needs_review: false,
@@ -291,6 +292,7 @@ export async function POST(req: NextRequest) {
             createdAt: now,
             lastScrapedAt: payload.scrapedAt || new Date().toISOString(),
             images: persistentImages,
+            attachmentUrls: payload.images,
             needs_review: true,
           };
           await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });
