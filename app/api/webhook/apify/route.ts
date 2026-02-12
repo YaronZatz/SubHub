@@ -5,6 +5,7 @@ import { adminDb, adminStorage } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType } from '@/types';
+import { fetchDatasetItems } from '@/services/apifyService';
 
 const GEMINI_MODEL = 'gemini-3-pro-preview';
 
@@ -184,6 +185,52 @@ POST TEXT:
 const DEFAULT_LAT = 32.0853;
 const DEFAULT_LNG = 34.7818;
 
+/** Apify sends run-completion events with eventType and eventData.actorRunId (not dataset items). */
+function isApifyRunEvent(parsed: unknown): boolean {
+  if (!parsed || typeof parsed !== 'object') return false;
+  const p = parsed as Record<string, unknown>;
+  const eventType = p.eventType ?? p.event_type;
+  if (typeof eventType !== 'string') return false;
+  return eventType === 'ACTOR.RUN.SUCCEEDED' || eventType === 'ACTOR.RUN.FAILED' || eventType.startsWith('ACTOR.RUN.');
+}
+
+function getActorRunIdFromEvent(parsed: unknown): string | null {
+  if (!parsed || typeof parsed !== 'object') return null;
+  const p = parsed as Record<string, unknown>;
+  const eventData = (p.eventData ?? p.event_data) as Record<string, unknown> | undefined;
+  if (eventData && typeof eventData.actorRunId === 'string') return eventData.actorRunId;
+  if (eventData && typeof eventData.actor_run_id === 'string') return eventData.actor_run_id;
+  if (typeof p.resourceId === 'string') return p.resourceId;
+  if (typeof p.resource_id === 'string') return p.resource_id;
+  const resource = p.resource as Record<string, unknown> | undefined;
+  if (resource && typeof resource.id === 'string') return resource.id;
+  return null;
+}
+
+function ensureStringArray(arr: unknown): string[] {
+  if (!Array.isArray(arr)) return [];
+  return arr.map((x) => (typeof x === 'string' ? x : (x && typeof x === 'object' && 'url' in x ? (x as { url: string }).url : null))).filter((s): s is string => typeof s === 'string');
+}
+
+/** Map Facebook Groups Scraper (and similar) dataset output to our ApifyPayload shape. */
+function mapDatasetItemToPayload(item: unknown): ApifyPayload {
+  if (item && typeof item === 'object') {
+    const r = item as Record<string, unknown>;
+    const attachments = ensureStringArray(r.attachments ?? r.images);
+    return {
+      postID: r.postID ?? r.id ?? r.postId,
+      postUrl: r.postUrl ?? r.url,
+      postText: r.postText ?? r.text ?? r.message ?? r.content,
+      posterName: r.posterName ?? r.authorName ?? r.author,
+      attachments,
+      images: attachments,
+      scrapedAt: r.scrapedAt ?? r.time ?? r.createdAt,
+      ...r,
+    } as ApifyPayload;
+  }
+  return {} as ApifyPayload;
+}
+
 export async function POST(req: NextRequest) {
   const logPrefix = '[Apify Webhook]';
   let rawBody: string | null = null;
@@ -192,7 +239,7 @@ export async function POST(req: NextRequest) {
     rawBody = await req.text();
     if (!rawBody || rawBody.trim() === '') {
       console.warn(`${logPrefix} Empty request body received`);
-      return NextResponse.json({ error: 'Empty request body' }, { status: 400 });
+      return NextResponse.json({ received: true, error: 'Empty request body', processed: 0 }, { status: 200 });
     }
 
     let parsed: unknown;
@@ -203,10 +250,41 @@ export async function POST(req: NextRequest) {
         error: parseErr instanceof Error ? parseErr.message : String(parseErr),
         bodyPreview: rawBody.slice(0, 500),
       });
-      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+      return NextResponse.json({ received: true, error: 'Invalid JSON', processed: 0 }, { status: 200 });
     }
 
-    const items: ApifyPayload[] = Array.isArray(parsed) ? parsed : [parsed as ApifyPayload];
+    let items: ApifyPayload[];
+    if (isApifyRunEvent(parsed)) {
+      const actorRunId = getActorRunIdFromEvent(parsed);
+      if (!actorRunId) {
+        console.warn(`${logPrefix} Apify run event received but no actorRunId/resourceId found. Keys: ${Object.keys((parsed as object) || {}).join(', ')}`);
+        return NextResponse.json({ received: true, error: 'Missing actorRunId/resourceId in Apify event', processed: 0 }, { status: 200 });
+      }
+      const eventType = (parsed as Record<string, unknown>).eventType ?? (parsed as Record<string, unknown>).event_type;
+      if (eventType !== 'ACTOR.RUN.SUCCEEDED') {
+        console.log(`${logPrefix} Ignoring non-success event: ${eventType}`);
+        return NextResponse.json({ received: true, processed: 0, reason: 'event_not_succeeded' }, { status: 200 });
+      }
+      try {
+        const datasetItems = await fetchDatasetItems(actorRunId);
+        items = datasetItems.map(mapDatasetItemToPayload);
+        console.log(`${logPrefix} Fetched ${items.length} dataset items for run ${actorRunId}`);
+      } catch (fetchErr: unknown) {
+        console.error(`${logPrefix} Failed to fetch dataset for run ${actorRunId}:`, fetchErr);
+        return NextResponse.json(
+          {
+            received: true,
+            error: 'Failed to fetch Apify dataset',
+            details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+            processed: 0,
+          },
+          { status: 200 }
+        );
+      }
+    } else {
+      items = Array.isArray(parsed) ? (parsed as ApifyPayload[]) : [parsed as ApifyPayload];
+    }
+
     const results: { id?: string; error?: string }[] = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -316,12 +394,16 @@ export async function POST(req: NextRequest) {
     const failCount = results.filter((r) => r.error).length;
     console.log(`${logPrefix} Batch complete | success=${successCount} | failed=${failCount}`);
 
-    return NextResponse.json({
-      success: failCount === 0,
-      processed: successCount,
-      failed: failCount,
-      results,
-    });
+    return NextResponse.json(
+      {
+        received: true,
+        success: failCount === 0,
+        processed: successCount,
+        failed: failCount,
+        results,
+      },
+      { status: 200 }
+    );
   } catch (error: unknown) {
     console.error(`${logPrefix} Ingestion Pipeline Error:`, {
       error: error instanceof Error ? error.message : String(error),
@@ -330,10 +412,12 @@ export async function POST(req: NextRequest) {
     });
     return NextResponse.json(
       {
+        received: true,
         error: 'Internal Server Error',
         details: error instanceof Error ? error.message : String(error),
+        processed: 0,
       },
-      { status: 500 }
+      { status: 200 }
     );
   }
 }
