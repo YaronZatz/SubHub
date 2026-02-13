@@ -5,7 +5,7 @@ import { adminDb, adminStorage } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType } from '@/types';
-import { fetchDatasetItems } from '@/services/apifyService';
+import { fetchDatasetItems, fetchDatasetItemsByDatasetId } from '@/services/apifyService';
 
 const GEMINI_MODEL = 'gemini-3-pro-preview';
 
@@ -235,6 +235,8 @@ export async function POST(req: NextRequest) {
   const logPrefix = '[Apify Webhook]';
   let rawBody: string | null = null;
 
+  console.log(`${logPrefix} Webhook hit`);
+
   try {
     rawBody = await req.text();
     if (!rawBody || rawBody.trim() === '') {
@@ -254,7 +256,27 @@ export async function POST(req: NextRequest) {
     }
 
     let items: ApifyPayload[];
-    if (isApifyRunEvent(parsed)) {
+    const p = parsed as Record<string, unknown> | null;
+    const resourceId = p?.resourceId != null ? String(p.resourceId).trim() : p?.resource_id != null ? String(p.resource_id).trim() : null;
+
+    if (resourceId && !isApifyRunEvent(parsed)) {
+      try {
+        const datasetItems = await fetchDatasetItemsByDatasetId(resourceId);
+        items = datasetItems.map(mapDatasetItemToPayload);
+        console.log(`${logPrefix} Dataset fetched (${items.length})`);
+      } catch (fetchErr: unknown) {
+        console.error(`${logPrefix} Failed to fetch dataset by resourceId ${resourceId}:`, fetchErr);
+        return NextResponse.json(
+          {
+            received: true,
+            error: 'Failed to fetch Apify dataset',
+            details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+            processed: 0,
+          },
+          { status: 200 }
+        );
+      }
+    } else if (isApifyRunEvent(parsed)) {
       const actorRunId = getActorRunIdFromEvent(parsed);
       if (!actorRunId) {
         console.warn(`${logPrefix} Apify run event received but no actorRunId/resourceId found. Keys: ${Object.keys((parsed as object) || {}).join(', ')}`);
@@ -268,7 +290,7 @@ export async function POST(req: NextRequest) {
       try {
         const datasetItems = await fetchDatasetItems(actorRunId);
         items = datasetItems.map(mapDatasetItemToPayload);
-        console.log(`${logPrefix} Fetched ${items.length} dataset items for run ${actorRunId}`);
+        console.log(`${logPrefix} Dataset fetched (${items.length})`);
       } catch (fetchErr: unknown) {
         console.error(`${logPrefix} Failed to fetch dataset for run ${actorRunId}:`, fetchErr);
         return NextResponse.json(
@@ -283,6 +305,7 @@ export async function POST(req: NextRequest) {
       }
     } else {
       items = Array.isArray(parsed) ? (parsed as ApifyPayload[]) : [parsed as ApifyPayload];
+      if (items.length > 0) console.log(`${logPrefix} Dataset fetched (${items.length})`);
     }
 
     const results: { id?: string; error?: string }[] = [];
@@ -301,6 +324,7 @@ export async function POST(req: NextRequest) {
 
       const docId = payload.postID;
       console.log(`${logPrefix} Processing item ${i + 1}/${items.length} | postID=${docId} | url=${payload.url.slice(0, 80)}...`);
+      console.log(`${logPrefix} Gemini processing started`);
 
       try {
         let structuredData: GeminiResponse | null = null;
@@ -348,6 +372,7 @@ export async function POST(req: NextRequest) {
           };
           await adminDb.collection('sublets').doc(docId).set(finalListing, { merge: true });
           results.push({ id: docId });
+          console.log(`${logPrefix} Document saved to Firestore`);
           console.log(`${logPrefix} Success | docId=${docId} | imagesProcessed=${persistentImages.length}`);
         } else {
           const fallbackListing = {
@@ -375,6 +400,7 @@ export async function POST(req: NextRequest) {
           };
           await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });
           results.push({ id: docId });
+          console.log(`${logPrefix} Document saved to Firestore`);
           console.log(`${logPrefix} Stored with needs_review | docId=${docId} | imagesProcessed=${persistentImages.length}`);
         }
       } catch (itemErr: unknown) {

@@ -208,3 +208,21 @@ export async function fetchDatasetItems(runId: string): Promise<unknown[]> {
   const items = (await res.json()) as unknown[];
   return Array.isArray(items) ? items : [];
 }
+
+/**
+ * Fetch dataset items by dataset ID (resourceId from Apify webhook).
+ * Uses APIFY_API_TOKEN or APIFY_TOKEN from env.
+ */
+export async function fetchDatasetItemsByDatasetId(datasetId: string): Promise<unknown[]> {
+  const token = getApiToken();
+  const res = await fetch(
+    `${APIFY_BASE}/datasets/${datasetId}/items?token=${token}`,
+    { method: 'GET' }
+  );
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Apify dataset fetch failed (${res.status}): ${errText}`);
+  }
+  const items = (await res.json()) as unknown[];
+  return Array.isArray(items) ? items : [];
+}
