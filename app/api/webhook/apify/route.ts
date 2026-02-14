@@ -427,8 +427,10 @@ export async function POST(req: NextRequest) {
     // Return plain 200 OK so Apify does not retry the webhook
     return new NextResponse('OK', { status: 200 });
   } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    console.error('>>> ERROR IN WEBHOOK:', errMsg);
     console.error(`${logPrefix} Ingestion Pipeline Error:`, {
-      error: error instanceof Error ? error.message : String(error),
+      error: errMsg,
       stack: error instanceof Error ? error.stack : undefined,
       bodyPreview: rawBody?.slice(0, 500),
     });

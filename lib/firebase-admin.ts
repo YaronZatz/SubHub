@@ -1,17 +1,34 @@
 import admin from 'firebase-admin';
 
+function parseAdminSdkConfig(jsonString: string | undefined): admin.ServiceAccount | null {
+  if (!jsonString || typeof jsonString !== 'string') return null;
+  try {
+    const parsed = JSON.parse(jsonString) as unknown;
+    if (parsed && typeof parsed === 'object' && 'client_email' in parsed && 'private_key' in parsed) {
+      return parsed as admin.ServiceAccount;
+    }
+  } catch {
+    // Invalid JSON – ignore
+  }
+  return null;
+}
+
 function getAdminApp() {
-  if (!admin.apps.length) {
+  if (admin.apps.length === 0) {
+    const serviceAccount = parseAdminSdkConfig(process.env.ADMIN_SDK_CONFIG);
+    if (!serviceAccount) {
+      throw new Error('ADMIN_SDK_CONFIG must be set with valid service account JSON');
+    }
     admin.initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-      storageBucket: `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`,
+      credential: admin.credential.cert(serviceAccount),
+      projectId: serviceAccount.project_id,
+      storageBucket: `${serviceAccount.project_id}.firebasestorage.app`,
     });
   }
   return admin.app();
 }
 
-// Lazy getters: only initialize Firebase when actually used at runtime (e.g. in API routes).
-// This avoids "default Firebase app does not exist" during `next build` when env may be unset.
+// Lazy getters: initialize only when used at runtime (e.g. in API routes).
 export const adminDb = new Proxy({} as admin.firestore.Firestore, {
   get(_, prop) {
     getAdminApp();
@@ -22,11 +39,5 @@ export const adminStorage = new Proxy({} as admin.storage.Storage, {
   get(_, prop) {
     getAdminApp();
     return (admin.storage() as unknown as Record<string, unknown>)[prop as string];
-  },
-});
-export const adminAuth = new Proxy({} as admin.auth.Auth, {
-  get(_, prop) {
-    getAdminApp();
-    return (admin.auth() as unknown as Record<string, unknown>)[prop as string];
   },
 });

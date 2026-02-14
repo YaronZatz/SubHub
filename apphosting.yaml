@@ -31,7 +31,7 @@ env:
       - RUNTIME
   # Set value in Firebase Console to e.g. gen-lang-client-0322888127.firebaseapp.com
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "gen-lang-client-0322888127.firebaseapp.com"
+    value: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
     availability:
       - BUILD
       - RUNTIME
@@ -39,4 +39,9 @@ env:
     value: "GEMINI_API_KEY"
     availability:
       - BUILD
+      - RUNTIME
+  # Admin SDK config (service account JSON) – set via: firebase apphosting:secrets:set ADMIN_SDK_CONFIG
+  - variable: ADMIN_SDK_CONFIG
+    value: "ADMIN_SDK_CONFIG"
+    availability:
       - RUNTIME
