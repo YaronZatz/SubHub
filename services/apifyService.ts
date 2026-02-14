@@ -232,3 +232,13 @@ export async function fetchDatasetItemsByDatasetId(datasetId: string): Promise<u
   const items = (await res.json()) as unknown[];
   return Array.isArray(items) ? items : [];
 }
+
+/**
+ * Fetch dataset items using apify-client by resourceId (dataset ID).
+ * Use this when webhook sends a custom payload with resourceId.
+ */
+export async function fetchDatasetItemsWithClient(resourceId: string): Promise<unknown[]> {
+  const client = getApifyClient();
+  const { items } = await client.dataset(resourceId).listItems();
+  return Array.isArray(items) ? items : [];
+}

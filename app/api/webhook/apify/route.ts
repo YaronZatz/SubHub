@@ -5,7 +5,7 @@ import { adminDb, adminStorage } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType } from '@/types';
-import { fetchDatasetItems, fetchDatasetItemsByDatasetId } from '@/services/apifyService';
+import { fetchDatasetItems, fetchDatasetItemsWithClient } from '@/services/apifyService';
 
 const GEMINI_MODEL = 'gemini-3-pro-preview';
 
@@ -259,9 +259,13 @@ export async function POST(req: NextRequest) {
     const p = parsed as Record<string, unknown> | null;
     const resourceId = p?.resourceId != null ? String(p.resourceId).trim() : p?.resource_id != null ? String(p.resource_id).trim() : null;
 
+    if (resourceId) {
+      console.log(`${logPrefix} Webhook triggered with Resource ID:`, resourceId);
+    }
+
     if (resourceId && !isApifyRunEvent(parsed)) {
       try {
-        const datasetItems = await fetchDatasetItemsByDatasetId(resourceId);
+        const datasetItems = await fetchDatasetItemsWithClient(resourceId);
         items = datasetItems.map(mapDatasetItemToPayload);
         console.log(`${logPrefix} Dataset fetched (${items.length})`);
       } catch (fetchErr: unknown) {
@@ -420,16 +424,8 @@ export async function POST(req: NextRequest) {
     const failCount = results.filter((r) => r.error).length;
     console.log(`${logPrefix} Batch complete | success=${successCount} | failed=${failCount}`);
 
-    return NextResponse.json(
-      {
-        received: true,
-        success: failCount === 0,
-        processed: successCount,
-        failed: failCount,
-        results,
-      },
-      { status: 200 }
-    );
+    // Return plain 200 OK so Apify does not retry the webhook
+    return new NextResponse('OK', { status: 200 });
   } catch (error: unknown) {
     console.error(`${logPrefix} Ingestion Pipeline Error:`, {
       error: error instanceof Error ? error.message : String(error),
