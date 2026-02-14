@@ -2,8 +2,9 @@
   "name": "subhub",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {
-    "@google/genai": "^1.36.0",
+"dependencies": {
+  "apify-client": "^2.22.0",
+  "@google/genai": "^1.36.0",
     "@types/dotenv": "^6.1.1",
     "@types/pg": "^8.16.0",
     "dotenv": "^17.2.3",

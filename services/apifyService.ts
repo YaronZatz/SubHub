@@ -7,8 +7,10 @@
  * @see https://apify.com/curious_coder/facebook-post-scraper (for private groups)
  */
 
+import { ApifyClient } from 'apify-client';
+
 const APIFY_BASE = 'https://api.apify.com/v2';
-const FACEBOOK_GROUPS_ACTOR = 'apify~facebook-groups-scraper';
+const FACEBOOK_GROUPS_ACTOR_ID = 'apify/facebook-groups-scraper';
 
 export type ViewOption = 'CHRONOLOGICAL' | 'RECENT_ACTIVITY' | 'TOP_POSTS' | 'CHRONOLOGICAL_LISTINGS';
 
@@ -53,9 +55,16 @@ export interface ApifyRunStatus {
 function getApiToken(): string {
   const token = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
   if (!token) {
-    throw new Error('APIFY_API_TOKEN or APIFY_TOKEN is not configured. Add it to .env.local');
+    throw new Error('Apify Token is missing');
   }
   return token;
+}
+
+function getApifyClient(): ApifyClient {
+  if (!process.env.APIFY_API_TOKEN) {
+    throw new Error('Apify Token is missing');
+  }
+  return new ApifyClient({ token: process.env.APIFY_API_TOKEN });
 }
 
 /**
@@ -95,35 +104,30 @@ export async function startApifyRun(
   input: ApifyRunInput,
   options?: { webhookUrl?: string }
 ): Promise<ApifyRunResult> {
-  const token = getApiToken();
+  const client = getApifyClient();
   const runInput = buildRunInput(input);
-
-  const body: Record<string, unknown> = runInput;
+  const runOptions: { webhooks?: Array<{ eventTypes: string[]; requestUrl: string }> } = {};
   if (options?.webhookUrl) {
-    body.webhooks = [
+    runOptions.webhooks = [
       {
         eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'],
         requestUrl: options.webhookUrl,
       },
     ];
   }
-
-  const res = await fetch(
-    `${APIFY_BASE}/acts/${FACEBOOK_GROUPS_ACTOR}/runs?token=${token}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    }
-  );
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Apify run failed (${res.status}): ${errText}`);
-  }
-
-  const data = (await res.json()) as { data: ApifyRunResult };
-  return data.data;
+  const run = await client.actor(FACEBOOK_GROUPS_ACTOR_ID).start(runInput, runOptions);
+  return {
+    id: run.id,
+    status: run.status,
+    startedAt:
+      run.startedAt instanceof Date ? run.startedAt.toISOString() : String(run.startedAt),
+    ...(run.finishedAt && {
+      finishedAt:
+        run.finishedAt instanceof Date ? run.finishedAt.toISOString() : String(run.finishedAt),
+    }),
+    buildId: run.buildId ?? '',
+    ...(run.exitCode != null && { exitCode: run.exitCode }),
+  };
 }
 
 /**

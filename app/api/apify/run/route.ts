@@ -75,7 +75,11 @@ export async function POST(req: NextRequest) {
       statusUrl: `/api/apify/status/${run.id}`,
     });
   } catch (error) {
-    console.error('[Apify Run] Error:', error);
+    console.error('[Apify Run] Full error:', error);
+    if (error && typeof error === 'object') {
+      console.error('[Apify Run] Error keys:', Object.keys(error));
+    }
+    console.error('[Apify Run] Stack:', error instanceof Error ? error.stack : 'n/a');
     return NextResponse.json(
       {
         error: 'Failed to start Apify run',
