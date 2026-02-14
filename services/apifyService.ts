@@ -8,6 +8,7 @@
  */
 
 import { ApifyClient } from 'apify-client';
+import type { WebhookEventType, WebhookUpdateData } from 'apify-client';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
 const FACEBOOK_GROUPS_ACTOR_ID = 'apify/facebook-groups-scraper';
@@ -106,13 +107,14 @@ export async function startApifyRun(
 ): Promise<ApifyRunResult> {
   const client = getApifyClient();
   const runInput = buildRunInput(input);
-  const runOptions: { webhooks?: Array<{ eventTypes: string[]; requestUrl: string }> } = {};
+  const runOptions: { webhooks?: readonly WebhookUpdateData[] } = {};
   if (options?.webhookUrl) {
+    const eventTypes: WebhookEventType[] = ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'];
     runOptions.webhooks = [
       {
-        eventTypes: ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'],
+        eventTypes,
         requestUrl: options.webhookUrl,
-      },
+      } satisfies WebhookUpdateData,
     ];
   }
   const run = await client.actor(FACEBOOK_GROUPS_ACTOR_ID).start(runInput, runOptions);
