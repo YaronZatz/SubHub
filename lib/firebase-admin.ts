@@ -19,10 +19,13 @@ function getAdminApp() {
     if (!serviceAccount) {
       throw new Error('ADMIN_SDK_CONFIG must be set with valid service account JSON');
     }
+    const projectId =
+      serviceAccount.projectId ??
+      (serviceAccount as unknown as { project_id?: string }).project_id;
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      projectId: serviceAccount.project_id,
-      storageBucket: `${serviceAccount.project_id}.firebasestorage.app`,
+      projectId,
+      storageBucket: `${projectId}.firebasestorage.app`,
     });
   }
   return admin.app();

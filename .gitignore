@@ -29,3 +29,4 @@ yarn-error.log*
 .next/
 node_modules/
 .env*.local
+gen-lang-client-*.json
