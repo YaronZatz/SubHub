@@ -255,6 +255,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, error: 'Invalid JSON', processed: 0 }, { status: 200 });
     }
 
+    console.log('--- Incoming Webhook Payload ---', JSON.stringify(parsed));
+    console.log('--- API Tokens Check ---', { hasGemini: !!process.env.GEMINI_API_KEY, hasApify: !!process.env.APIFY_API_TOKEN, hasAdmin: !!process.env.ADMIN_SDK_CONFIG });
+
     let items: ApifyPayload[];
     const p = parsed as Record<string, unknown> | null;
     const resourceId = p?.resourceId != null ? String(p.resourceId).trim() : p?.resource_id != null ? String(p.resource_id).trim() : null;
@@ -335,6 +338,7 @@ export async function POST(req: NextRequest) {
         try {
           structuredData = await parseTextWithGemini(payload.text);
         } catch (geminiErr: unknown) {
+          console.error('--- Gemini Error ---', geminiErr);
           console.error(`${logPrefix} Gemini parse failed for item ${i}:`, {
             error: geminiErr instanceof Error ? geminiErr.message : String(geminiErr),
             stack: geminiErr instanceof Error ? geminiErr.stack : undefined,
@@ -374,7 +378,12 @@ export async function POST(req: NextRequest) {
             ai_summary: structuredData.ai_summary || '',
             needs_review: false,
           };
-          await adminDb.collection('sublets').doc(docId).set(finalListing, { merge: true });
+          try {
+            await adminDb.collection('sublets').doc(docId).set(finalListing, { merge: true });
+          } catch (firestoreErr: unknown) {
+            console.error('--- Firestore Error ---', firestoreErr);
+            throw firestoreErr;
+          }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);
           console.log(`${logPrefix} Success | docId=${docId} | imagesProcessed=${persistentImages.length}`);
@@ -402,7 +411,12 @@ export async function POST(req: NextRequest) {
             attachmentUrls: payload.images,
             needs_review: true,
           };
-          await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });
+          try {
+            await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });
+          } catch (firestoreErr: unknown) {
+            console.error('--- Firestore Error ---', firestoreErr);
+            throw firestoreErr;
+          }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);
           console.log(`${logPrefix} Stored with needs_review | docId=${docId} | imagesProcessed=${persistentImages.length}`);
