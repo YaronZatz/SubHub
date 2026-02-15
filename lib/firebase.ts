@@ -1,59 +1,34 @@
-
-// Fix: Consolidate type and value imports for Firebase to resolve "no exported member" errors
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
-// Fix: Split type and value imports for Auth to prevent resolution errors for named exports
 import { getAuth } from "firebase/auth";
 import type { Auth } from "firebase/auth";
 
-// Safe helper to access environment variables in the browser
-const getEnv = (key: string): string => {
-    if (typeof window !== 'undefined') {
-        const winEnv = (window as any).process?.env?.[key];
-        if (winEnv) return winEnv;
-        
-        const winKey = (window as any)[key];
-        if (winKey) return winKey;
-    }
-    try {
-        return process.env[key] || '';
-    } catch (e) {
-        return '';
-    }
-};
-
-const apiKey = getEnv('NEXT_PUBLIC_FIREBASE_API_KEY');
-const projectId = getEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID');
-
+/**
+ * FIREBASE CLIENT CONFIG
+ * ----------------------
+ * These are PUBLIC client-side keys — safe to hardcode per Firebase docs.
+ * They only identify your project; security is enforced by Firestore rules.
+ *
+ * Source: apphosting.yaml environment variables
+ */
 const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: getEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN') || `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebaseapp.com`,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: `${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.firebasestorage.app`,
-    messagingSenderId: getEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-    appId: getEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
+    apiKey: "AIzaSyBO1YsFaPoL30LxrW0nsMYR8h2BKzNKe0s",
+    authDomain: "gen-lang-client-0322888127.firebaseapp.com",
+    projectId: "gen-lang-client-0322888127",
+    storageBucket: "gen-lang-client-0322888127.firebasestorage.app",
 };
 
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let auth: Auth | undefined;
 
-/**
- * FIREBASE INITIALIZATION SAFETY
- * Firestore requires at least a valid 'projectId'.
- * Auth requires at least a valid 'apiKey'.
- */
-if (apiKey && projectId && projectId !== 'undefined') {
-    try {
-        app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        db = getFirestore(app);
-        auth = getAuth(app);
-        console.log("Firebase initialized successfully.");
-    } catch (error) {
-        console.error("Firebase Initialization Failed:", error);
-    }
-} else {
-    // Silent fallback to Local Mode - no console warnings to avoid cluttering UX
+try {
+    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    db = getFirestore(app);
+    auth = getAuth(app);
+    console.log("✅ Firebase initialized successfully for project:", firebaseConfig.projectId);
+} catch (error) {
+    console.error("❌ Firebase Initialization Failed:", error);
     app = undefined;
     db = undefined;
     auth = undefined;

@@ -43,9 +43,14 @@
         }
     </style>
 <script>
-    // Safe shim only; never expose server-side API keys to the browser.
+    // Critical: Expose platform-injected API_KEY to the browser context
     window.process = window.process || {};
     window.process.env = window.process.env || {};
+    
+    // Fallback logic: If NEXT_PUBLIC variables aren't set, use the generic API_KEY
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        window.process.env.API_KEY = process.env.API_KEY;
+    }
 </script>
 <script type="importmap">
 {
@@ -53,24 +58,15 @@
     "react": "https://esm.sh/react@19.0.0",
     "react-dom": "https://esm.sh/react-dom@19.0.0",
     "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react/": "https://esm.sh/react@19.0.0/",
     "@google/genai": "https://esm.sh/@google/genai@1.36.0",
     "firebase/app": "https://esm.sh/firebase@10.8.0/app",
     "firebase/auth": "https://esm.sh/firebase@10.8.0/auth",
     "firebase/firestore": "https://esm.sh/firebase@10.8.0/firestore",
+    "firebase/": "https://esm.sh/firebase@10.8.0/",
     "leaflet": "https://esm.sh/leaflet@1.9.4",
-    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "firebase/": "https://esm.sh/firebase@^12.8.0/",
-    "pg": "https://esm.sh/pg@^8.17.2",
-    "fs": "https://esm.sh/fs@^0.0.1-security",
-    "path": "https://esm.sh/path@^0.12.7",
-    "dotenv": "https://esm.sh/dotenv@^17.2.3",
-    "next": "https://esm.sh/next@^16.1.5",
-    "next/": "https://esm.sh/next@^16.1.5/",
-    "crypto": "https://esm.sh/crypto@^1.0.1",
-    "firebase-admin": "https://esm.sh/firebase-admin@^13.6.0",
-    "buffer": "https://esm.sh/buffer@^6.0.3"
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0"
   }
 }
 </script>
@@ -79,6 +75,5 @@
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
-<script type="module" src="/index.tsx"></script>
 </body>
 </html>
