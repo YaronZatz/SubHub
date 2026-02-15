@@ -40,12 +40,23 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
 }
 
 async function fetchFirestoreSublets(): Promise<Sublet[]> {
-  if (!db) return [];
+  if (!db) {
+    console.warn('⚠️ Firestore db is undefined — skipping Firestore fetch. Check firebase.ts initialization.');
+    return [];
+  }
   try {
+    console.log('🔥 Fetching from Firestore collection: "sublets"...');
     const snapshot = await getDocs(collection(db, 'sublets'));
+    console.log(`🔥 Firestore returned ${snapshot.docs.length} documents from "sublets" collection.`);
+    if (snapshot.docs.length === 0) {
+      console.warn('⚠️ Firestore "sublets" collection is empty. Check that:');
+      console.warn('   1. Apify integration is writing to a collection named exactly "sublets"');
+      console.warn('   2. Firestore security rules allow reads');
+      console.warn('   3. Data exists in Firebase Console → Firestore → sublets');
+    }
     return snapshot.docs.map((d) => firestoreDocToSublet(d.id, d.data() as Record<string, unknown>));
   } catch (e) {
-    console.error('Failed to fetch sublets from Firestore', e);
+    console.error('❌ Failed to fetch sublets from Firestore:', e);
     return [];
   }
 }
