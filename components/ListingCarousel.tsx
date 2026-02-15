@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
@@ -11,6 +10,51 @@ interface ListingCarouselProps {
 
 const SWIPE_THRESHOLD = 50;
 
+/**
+ * Check if a URL is a direct image URL that can be rendered in an <img> tag.
+ * Facebook photo page URLs (facebook.com/photo.php?fbid=...) are NOT direct images.
+ * Direct image URLs from Facebook CDN start with scontent*.fbcdn.net
+ */
+function isDirectImageUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const lower = url.toLowerCase();
+  // Facebook CDN direct images
+  if (lower.includes('scontent') && lower.includes('fbcdn.net')) return true;
+  // Common image extensions
+  if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|$)/i.test(url)) return true;
+  // Known image hosting services
+  if (lower.includes('picsum.photos')) return true;
+  if (lower.includes('unsplash.com')) return true;
+  if (lower.includes('cloudinary.com')) return true;
+  if (lower.includes('imgur.com')) return true;
+  if (lower.includes('firebasestorage.googleapis.com')) return true;
+  // Reject Facebook photo page URLs
+  if (lower.includes('facebook.com/photo')) return false;
+  if (lower.includes('facebook.com/groups')) return false;
+  // Allow other URLs that look like they might be images (external hosting)
+  if (lower.startsWith('https://') || lower.startsWith('http://')) return true;
+  return false;
+}
+
+/** Generate a deterministic color from a string */
+function hashColor(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 45%, 55%)`;
+}
+
+const PLACEHOLDER_ICONS = [
+  // House/Home icon
+  'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+  // Building icon
+  'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+  // Key icon
+  'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
+];
+
 const ListingCarousel: React.FC<ListingCarouselProps> = ({ 
   id, 
   images: customImages,
@@ -19,6 +63,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
 }) => {
   const [index, setIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
@@ -27,24 +72,25 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   
   const images = useMemo(() => {
     if (customImages && customImages.length > 0) {
-      return customImages;
+      // Filter to only direct image URLs
+      const directImages = customImages.filter(isDirectImageUrl);
+      if (directImages.length > 0) return directImages;
     }
-    return [
-      `https://picsum.photos/seed/${id}-1/600/450`,
-      `https://picsum.photos/seed/${id}-2/600/450`,
-      `https://picsum.photos/seed/${id}-3/600/450`,
-      `https://picsum.photos/seed/${id}-4/600/450`,
-      `https://picsum.photos/seed/${id}-5/600/450`,
-    ];
+    // Return empty array — we'll show a placeholder
+    return [];
   }, [id, customImages]);
+
+  const hasImages = images.length > 0;
 
   const next = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!hasImages) return;
     setIndex((prev) => (prev + 1) % images.length);
   };
 
   const prev = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!hasImages) return;
     setIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
@@ -104,7 +150,38 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
     };
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  if (images.length === 0) return null;
+  const handleImageError = useCallback((imgIndex: number) => {
+    setFailedImages(prev => new Set(prev).add(imgIndex));
+  }, []);
+
+  // Placeholder for when no valid images are available
+  if (!hasImages) {
+    const color1 = hashColor(id);
+    const color2 = hashColor(id + '-2');
+    const iconPath = PLACEHOLDER_ICONS[Math.abs(id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % PLACEHOLDER_ICONS.length];
+
+    return (
+      <div
+        ref={containerRef}
+        className={`relative overflow-hidden ${aspectRatio} ${className}`}
+        style={{
+          background: `linear-gradient(135deg, ${color1}, ${color2})`,
+        }}
+      >
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white/80">
+          <svg className="w-12 h-12 mb-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
+          </svg>
+          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No photos</span>
+        </div>
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)',
+          backgroundSize: '20px 20px',
+        }} />
+      </div>
+    );
+  }
 
   const trackStyle = {
     transform: `translateX(calc(-${index * 100}% + ${touchDelta}px))`,
@@ -123,13 +200,26 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
         style={trackStyle}
       >
         {images.map((src, i) => (
-          <img 
-            key={i}
-            src={src}
-            className="w-full h-full object-cover shrink-0 select-none"
-            alt={`Sublet view ${i + 1}`}
-            loading="lazy"
-          />
+          failedImages.has(i) ? (
+            <div
+              key={i}
+              className="w-full h-full shrink-0 flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${hashColor(id)}, ${hashColor(id + '-2')})` }}
+            >
+              <svg className="w-10 h-10 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          ) : (
+            <img 
+              key={i}
+              src={src}
+              className="w-full h-full object-cover shrink-0 select-none"
+              alt={`Sublet view ${i + 1}`}
+              loading="lazy"
+              onError={() => handleImageError(i)}
+            />
+          )
         ))}
       </div>
 
@@ -164,9 +254,11 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       )}
 
       {/* Badge */}
-      <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest z-10">
-        {index + 1} / {images.length}
-      </div>
+      {images.length > 1 && (
+        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest z-10">
+          {index + 1} / {images.length}
+        </div>
+      )}
     </div>
   );
 };
