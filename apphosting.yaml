@@ -5,43 +5,44 @@ runConfig:
   cpu: 1
   memoryMiB: 512
 
-# Force npm run build (next build --webpack) so Tailwind/PostCSS run; Next.js 16 defaults to Turbopack which can skip PostCSS.
-# runCommand ensures next start is used so the default .next output is found.
 scripts:
   buildCommand: npm run build
   runCommand: next start
 
-# Keep all build output (including .next) when using custom buildCommand; otherwise framework adapter optimizations may prune it.
 outputFiles:
   serverApp:
-    include: ["."]
+    include: [ "." ]
 
-# Set env vars and secrets in Firebase App Hosting; do not commit literal keys.
-# See README or deploy doc for required: NEXT_PUBLIC_FIREBASE_*, GEMINI_API_KEY, NEXT_PUBLIC_APP_URL.
 env:
+  # מפתחות ציבוריים (Client Side) - כאן value זה בסדר, רק וודא שהערך הוא המפתח האמיתי ולא המילה NEXT_PUBLIC...
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "NEXT_PUBLIC_FIREBASE_API_KEY"
-    availability:
-      - BUILD
-      - RUNTIME
+    value: "YOUR_ACTUAL_API_KEY_HERE"
+    availability: [BUILD, RUNTIME]
+  
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "NEXT_PUBLIC_FIREBASE_PROJECT_ID"
-    availability:
-      - BUILD
-      - RUNTIME
-  # Set value in Firebase Console to e.g. gen-lang-client-0322888127.firebaseapp.com
+    value: "gen-lang-client-0322888127"
+    availability: [BUILD, RUNTIME]
+
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"
-    availability:
-      - BUILD
-      - RUNTIME
+    value: "gen-lang-client-0322888127.firebaseapp.com"
+    availability: [BUILD, RUNTIME]
+
+  # --- סודות (Secrets) - כאן התיקון הקריטי ---
+  
+  # 1. מפתח Gemini
   - variable: GEMINI_API_KEY
-    value: "GEMINI_API_KEY"
+    secret: GEMINI_API_KEY
     availability:
-      - BUILD
       - RUNTIME
-  # Admin SDK config (service account JSON) – set via: firebase apphosting:secrets:set ADMIN_SDK_CONFIG
+
+  # 2. הגדרות Admin SDK (הסוד שקראנו לו בכספת FIREBASE_SERVICE_ACCOUNT_JSON)
   - variable: ADMIN_SDK_CONFIG
-    value: "ADMIN_SDK_CONFIG"
+    secret: FIREBASE_SERVICE_ACCOUNT_JSON
+    availability:
+      - RUNTIME
+
+  # 3. טוקן של Apify
+  - variable: APIFY_API_TOKEN
+    secret: APIFY_API_TOKEN
     availability:
       - RUNTIME
