@@ -528,7 +528,7 @@ const AppContent: React.FC = () => {
                     `}
                   >
                     {/* Image Carousel at Top of Card */}
-                    <ListingCarousel id={sublet.id} images={sublet.images} className="w-full" />
+                    <ListingCarousel id={sublet.id} images={sublet.images} sourceUrl={sublet.sourceUrl} photoCount={(sublet as any).photoCount || 0} aspectRatio="aspect-square" className="w-full" />
 
                     <div className="p-5">
                       {isNew(sublet.createdAt) && (
@@ -630,12 +630,7 @@ const AppContent: React.FC = () => {
                )}
                
                <div className="w-2/5 shrink-0">
-                 <ListingCarousel 
-                   id={selectedSublet.id} 
-                   images={selectedSublet.images}
-                   aspectRatio="aspect-square" 
-                   className="rounded-2xl" 
-                 />
+               <ListingCarousel id={selectedSublet.id} images={selectedSublet.images} sourceUrl={selectedSublet.sourceUrl} photoCount={(selectedSublet as any).photoCount || 0} aspectRatio="aspect-square" className="rounded-2xl" />
                </div>
                
                <div className="flex-1 px-4 py-1 relative flex flex-col justify-between overflow-hidden">
