@@ -4,6 +4,8 @@ import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 interface ListingCarouselProps {
   id: string;
   images?: string[];
+  sourceUrl?: string;
+  photoCount?: number;
   aspectRatio?: string;
   className?: string;
 }
@@ -58,6 +60,8 @@ const PLACEHOLDER_ICONS = [
 const ListingCarousel: React.FC<ListingCarouselProps> = ({ 
   id, 
   images: customImages,
+  sourceUrl,
+  photoCount = 0,
   aspectRatio = "aspect-[4/3]",
   className = "" 
 }) => {
@@ -72,11 +76,9 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   
   const images = useMemo(() => {
     if (customImages && customImages.length > 0) {
-      // Filter to only direct image URLs
       const directImages = customImages.filter(isDirectImageUrl);
       if (directImages.length > 0) return directImages;
     }
-    // Return empty array — we'll show a placeholder
     return [];
   }, [id, customImages]);
 
@@ -160,6 +162,13 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
     const color2 = hashColor(id + '-2');
     const iconPath = PLACEHOLDER_ICONS[Math.abs(id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % PLACEHOLDER_ICONS.length];
 
+    const handleViewPhotos = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (sourceUrl) {
+        window.open(sourceUrl, '_blank', 'noopener');
+      }
+    };
+
     return (
       <div
         ref={containerRef}
@@ -172,7 +181,29 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
           <svg className="w-12 h-12 mb-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d={iconPath} />
           </svg>
-          <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No photos</span>
+          {photoCount > 0 && sourceUrl ? (
+            <button
+              onClick={handleViewPhotos}
+              className="mt-1 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all active:scale-95"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {photoCount} photo{photoCount !== 1 ? 's' : ''} on Facebook
+            </button>
+          ) : sourceUrl ? (
+            <button
+              onClick={handleViewPhotos}
+              className="mt-1 flex items-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all active:scale-95"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+              View on Facebook
+            </button>
+          ) : (
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No photos</span>
+          )}
         </div>
         {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-10" style={{
