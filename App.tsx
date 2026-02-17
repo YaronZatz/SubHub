@@ -618,9 +618,18 @@ const AppContent: React.FC = () => {
 
         {selectedSublet && (viewMode === ViewMode.BROWSE || viewMode === ViewMode.SAVED) && (
           <div 
-            onClick={() => openFullDetail(selectedSublet.id)}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] md:w-[480px] bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200 z-[50] animate-in slide-in-from-bottom-10 duration-300 ease-out overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[95%] md:w-[480px] z-[50] animate-in slide-in-from-bottom-10 duration-300 ease-out"
           >
+            <button 
+              onClick={() => setSelectedSubletId(undefined)}
+              className="absolute -top-3 -right-3 z-[60] bg-white hover:bg-slate-100 text-slate-500 hover:text-slate-800 w-8 h-8 rounded-full shadow-lg border border-slate-200 flex items-center justify-center transition-all active:scale-90"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div
+              onClick={() => openFullDetail(selectedSublet.id)}
+              className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200 overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
+            >
              <div className="flex p-3 relative">
                {isNew(selectedSublet.createdAt) && (
                   <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} bg-indigo-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 flex items-center gap-1`}>
@@ -634,12 +643,7 @@ const AppContent: React.FC = () => {
                </div>
                
                <div className="flex-1 px-4 py-1 relative flex flex-col justify-between overflow-hidden">
-                 <button 
-                  onClick={(e) => { e.stopPropagation(); setSelectedSubletId(undefined); }} 
-                  className="absolute top-0 right-0 text-slate-300 hover:text-slate-600 p-2 z-10"
-                 >
-                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                 </button>
+                 <div className="h-2" />
 
                  <div className="pt-2">
                    <h4 className="font-bold text-slate-900 text-sm pr-6 line-clamp-1">{selectedSublet.location}</h4>
@@ -666,6 +670,7 @@ const AppContent: React.FC = () => {
                  </div>
                </div>
              </div>
+            </div>
           </div>
         )}
       </main>
