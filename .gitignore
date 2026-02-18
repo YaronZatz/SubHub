@@ -30,3 +30,7 @@ yarn-error.log*
 node_modules/
 .env*.local
 gen-lang-client-*.json
+
+# Claude Code
+.claude/
+*API Key*.txt
