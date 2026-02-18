@@ -3,6 +3,15 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus } from '../types';
 import { INITIAL_SUBLETS } from '../constants';
+import { extractLocation } from './locationExtractor';
+
+const DEFAULT_LAT = 32.0853;
+const DEFAULT_LNG = 34.7818;
+const COORD_TOLERANCE = 0.001;
+
+function isDefaultCoords(lat: number, lng: number): boolean {
+  return Math.abs(lat - DEFAULT_LAT) < COORD_TOLERANCE && Math.abs(lng - DEFAULT_LNG) < COORD_TOLERANCE;
+}
 
 /** Map Firestore sublet doc to Sublet; ensure id and createdAt are set. */
 function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sublet {
@@ -14,27 +23,62 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
     : data.status === 'Taken' || data.status === 'TAKEN'
       ? ListingStatus.TAKEN
       : ListingStatus.AVAILABLE;
+
+  let lat = Number(data.lat) || 0;
+  let lng = Number(data.lng) || 0;
+  let location = (data.location as string) || '';
+  let neighborhood = data.neighborhood as string | undefined;
+  let startDate = (data.startDate as string) || '';
+  let endDate = (data.endDate as string) || '';
+  let price = Number(data.price) || 0;
+  let apartment_details = (data.apartment_details ?? {}) as Sublet['apartment_details'];
+
+  const originalText = (data.originalText as string) || '';
+
+  // Run extractor when coordinates are the hardcoded default or missing
+  if (originalText && (isDefaultCoords(lat, lng) || lat === 0)) {
+    const extracted = extractLocation(originalText);
+
+    if (extracted.confidence !== 'low') {
+      lat = extracted.lat;
+      lng = extracted.lng;
+      if (!location || location === 'Tel Aviv') location = extracted.location;
+      if (!neighborhood && extracted.neighborhood) neighborhood = extracted.neighborhood;
+    }
+
+    // Fill missing structured fields from text
+    if (!startDate && extracted.startDate) startDate = extracted.startDate;
+    if (!endDate && extracted.endDate) endDate = extracted.endDate;
+    if (!price && extracted.price) price = extracted.price;
+    if (extracted.rooms && !apartment_details?.rooms_count) {
+      apartment_details = { ...apartment_details, rooms_count: extracted.rooms };
+    }
+    if (extracted.floor !== undefined && !apartment_details?.floor) {
+      apartment_details = { ...apartment_details, floor: extracted.floor };
+    }
+  }
+
   return {
     id: docId,
     sourceUrl: (data.sourceUrl as string) || '',
-    originalText: (data.originalText as string) || '',
-    price: Number(data.price) ?? 0,
+    originalText,
+    price,
     currency: (data.currency as string) || 'ILS',
-    startDate: (data.startDate as string) || '',
-    endDate: (data.endDate as string) || '',
-    location: (data.location as string) || '',
-    lat: Number(data.lat) ?? 0,
-    lng: Number(data.lng) ?? 0,
+    startDate,
+    endDate,
+    location,
+    lat,
+    lng,
     type: (data.type as Sublet['type']) || ('Entire Place' as Sublet['type']),
     status,
     createdAt,
     authorName: (data.authorName ?? data.posterName) as string | undefined,
-    neighborhood: data.neighborhood as string | undefined,
+    neighborhood,
     city: data.city as string | undefined,
     images: data.images as string[] | undefined,
     photoCount: data.photoCount as number | undefined,
     ai_summary: data.ai_summary as string | undefined,
-    apartment_details: data.apartment_details as Sublet['apartment_details'],
+    apartment_details,
     needs_review: data.needs_review as boolean | undefined,
     is_flexible: data.is_flexible as boolean | undefined,
   };
