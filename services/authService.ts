@@ -59,10 +59,7 @@ export const authService = {
       return { success: true, user: user || undefined };
     } catch (error: any) {
       console.error("Firebase Login Error:", error);
-      let message = "Invalid email or password";
-      if (error.code === 'auth/user-not-found') message = "Account not found";
-      if (error.code === 'auth/wrong-password') message = "Incorrect password";
-      return { success: false, error: message };
+      return { success: false, error: "Invalid email or password" };
     }
   },
 

@@ -16,7 +16,7 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   loginWithApple: () => Promise<{ success: boolean; error?: string }>;
   loginWithFacebook: () => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLocalMode: boolean;
 }
 
@@ -44,10 +44,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (result?.user) {
         setUser(authService.mapFirebaseUser(result.user));
       }
-    }).catch(() => {}).finally(() => {
-      if (cancelled) return;
-      setIsLoading(false);
-    });
+    }).catch(() => {});
 
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {

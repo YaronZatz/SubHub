@@ -44,7 +44,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
       setError(emailError);
       return;
     }
-    const passwordError = validateAuthPassword(password, mode === 'signup');
+    const passwordError = validateAuthPassword(password);
     if (passwordError) {
       setError(passwordError);
       return;
