@@ -248,7 +248,7 @@ export default function Home() {
                 />
              </div>
              {isFilterExpanded && (
-               <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+               <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 max-h-[40vh] md:max-h-[65vh] overflow-y-auto custom-scrollbar">
                  <PriceRangeFilter
                    min={filters.minPrice}
                    max={filters.maxPrice}
@@ -359,7 +359,7 @@ export default function Home() {
                   <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Scanning map...</p>
                </div>
              ) : filteredSublets.length > 0 ? (
-               <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3 md:gap-4">
+               <div className="grid grid-cols-2 gap-3 md:gap-4">
                {filteredSublets.map(sublet => (
                  <div 
                    key={sublet.id} 
