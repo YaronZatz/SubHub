@@ -183,7 +183,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+    <div className="relative w-full h-full overflow-hidden border border-slate-200 bg-slate-50">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
       
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
