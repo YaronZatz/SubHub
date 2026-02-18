@@ -528,7 +528,7 @@ const AppContent: React.FC = () => {
                     `}
                   >
                     {/* Image Carousel at Top of Card */}
-                    <ListingCarousel id={sublet.id} images={sublet.images} sourceUrl={sublet.sourceUrl} photoCount={(sublet as any).photoCount || 0} aspectRatio="aspect-square" className="w-full" />
+                    <ListingCarousel id={sublet.id} images={sublet.images} sourceUrl={sublet.sourceUrl} photoCount={sublet.photoCount} aspectRatio="aspect-square" className="w-full" />
 
                     <div className="p-5">
                       {isNew(sublet.createdAt) && (

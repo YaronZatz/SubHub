@@ -71,6 +71,7 @@ export interface Sublet {
   amenities?: string[];
   ownerId?: string;
   images?: string[];
+  photoCount?: number;
   ai_summary?: string;
   apartment_details?: ApartmentDetails;
   needs_review?: boolean;

@@ -32,6 +32,7 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
     neighborhood: data.neighborhood as string | undefined,
     city: data.city as string | undefined,
     images: data.images as string[] | undefined,
+    photoCount: data.photoCount as number | undefined,
     ai_summary: data.ai_summary as string | undefined,
     apartment_details: data.apartment_details as Sublet['apartment_details'],
     needs_review: data.needs_review as boolean | undefined,

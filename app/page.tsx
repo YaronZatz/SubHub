@@ -367,7 +367,7 @@ export default function Home() {
                    className={`rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-xl bg-white border ${selectedSubletId === sublet.id ? 'border-indigo-600 ring-2 ring-indigo-100 shadow-lg' : 'border-slate-100 shadow-sm'}`}
                  >
                    <div className="relative aspect-[3/2] md:aspect-[4/3] bg-slate-100">
-                     <ListingCarousel id={sublet.id} images={sublet.images} aspectRatio="" className="w-full h-full object-cover" />
+                     <ListingCarousel id={sublet.id} images={sublet.images} sourceUrl={sublet.sourceUrl} photoCount={sublet.photoCount} aspectRatio="" className="w-full h-full object-cover" />
                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-indigo-600/90 text-white text-[10px] font-bold">
                        • Added {addedAgo(sublet.createdAt)} ago
                      </span>
