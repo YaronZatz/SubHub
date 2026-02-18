@@ -404,52 +404,6 @@ export default function Home() {
                   <p className="text-xs text-slate-400 mt-1">{t.noResultsDesc}</p>
                </div>
              )}
-             {selectedSublet && (
-               <div className="sticky bottom-4 left-0 right-0 mt-4 z-20 relative">
-                 <button
-                   onClick={(e) => { e.stopPropagation(); setSelectedSubletId(undefined); }}
-                   className="absolute -top-2.5 -right-1 z-30 bg-slate-800 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg border-2 border-white"
-                 >
-                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                 </button>
-                 <div
-                   onClick={openDetailFromPreview}
-                   className="rounded-2xl overflow-hidden bg-white border-2 border-indigo-300 shadow-xl cursor-pointer hover:shadow-2xl hover:border-indigo-500 transition-all active:scale-[0.98] ring-2 ring-indigo-100"
-                 >
-                   <div className="flex min-h-[88px] sm:min-h-[96px]">
-                     <div className="w-28 sm:w-32 h-full min-h-[88px] sm:min-h-[96px] shrink-0 bg-slate-100 overflow-hidden relative">
-                       <img
-                         src={selectedSublet.images?.[0] || `https://picsum.photos/seed/${selectedSublet.id}/240/160`}
-                         alt=""
-                         className="w-full h-full object-cover"
-                       />
-                       <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-indigo-600/90 text-white text-[9px] sm:text-[10px] font-bold">
-                         • Added {addedAgo(selectedSublet.createdAt)} ago
-                       </span>
-                     </div>
-                     <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-center gap-0.5">
-                       <span className="inline-block w-fit px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-0.5">
-                         {String(selectedSublet.type).toUpperCase()}
-                       </span>
-                       <span className="text-base sm:text-lg font-black text-indigo-600">{formatPrice(selectedSublet.price, currency, language)}</span>
-                       <p className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">{selectedSublet.location}</p>
-                       {selectedSublet.neighborhood && (
-                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedSublet.neighborhood}</p>
-                       )}
-                       <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1" />
-                       <div className="flex items-center gap-1.5 mt-1 text-[10px] sm:text-[11px] text-slate-500">
-                         <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                         <span>{selectedSublet.startDate} – {selectedSublet.endDate}</span>
-                       </div>
-                       <p className="text-[10px] sm:text-xs text-indigo-600 font-bold mt-1.5 flex items-center gap-1">
-                         Tap to view full details
-                         <span className="inline-block">→</span>
-                       </p>
-                     </div>
-                   </div>
-                 </div>
-               </div>
-             )}
            </div>
         </aside>
 
@@ -461,6 +415,52 @@ export default function Home() {
              selectedSubletId={selectedSubletId}
              language={language}
            />
+           {selectedSublet && (
+             <div className="absolute bottom-4 left-4 right-4 z-[1000]">
+               <button
+                 onClick={(e) => { e.stopPropagation(); setSelectedSubletId(undefined); }}
+                 className="absolute -top-2.5 -right-1 z-[1001] bg-slate-800 hover:bg-black text-white w-7 h-7 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg border-2 border-white"
+               >
+                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+               </button>
+               <div
+                 onClick={openDetailFromPreview}
+                 className="rounded-2xl overflow-hidden bg-white border-2 border-indigo-300 shadow-xl cursor-pointer hover:shadow-2xl hover:border-indigo-500 transition-all active:scale-[0.98] ring-2 ring-indigo-100"
+               >
+                 <div className="flex min-h-[88px] sm:min-h-[96px]">
+                   <div className="w-28 sm:w-32 h-full min-h-[88px] sm:min-h-[96px] shrink-0 bg-slate-100 overflow-hidden relative">
+                     <img
+                       src={selectedSublet.images?.[0] || `https://picsum.photos/seed/${selectedSublet.id}/240/160`}
+                       alt=""
+                       className="w-full h-full object-cover"
+                     />
+                     <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-full bg-indigo-600/90 text-white text-[9px] sm:text-[10px] font-bold">
+                       • Added {addedAgo(selectedSublet.createdAt)} ago
+                     </span>
+                   </div>
+                   <div className="flex-1 min-w-0 p-3 sm:p-4 flex flex-col justify-center gap-0.5">
+                     <span className="inline-block w-fit px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] sm:text-[10px] font-black uppercase tracking-wider mb-0.5">
+                       {String(selectedSublet.type).toUpperCase()}
+                     </span>
+                     <span className="text-base sm:text-lg font-black text-indigo-600">{formatPrice(selectedSublet.price, currency, language)}</span>
+                     <p className="text-xs sm:text-sm font-bold text-slate-900 line-clamp-1">{selectedSublet.location}</p>
+                     {selectedSublet.neighborhood && (
+                       <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{selectedSublet.neighborhood}</p>
+                     )}
+                     <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1" />
+                     <div className="flex items-center gap-1.5 mt-1 text-[10px] sm:text-[11px] text-slate-500">
+                       <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
+                       <span>{selectedSublet.startDate} – {selectedSublet.endDate}</span>
+                     </div>
+                     <p className="text-[10px] sm:text-xs text-indigo-600 font-bold mt-1.5 flex items-center gap-1">
+                       Tap to view full details
+                       <span className="inline-block">→</span>
+                     </p>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           )}
         </div>
       )}
       </main>
