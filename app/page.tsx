@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from '../types';
 import { translations } from '../translations';
@@ -48,6 +48,19 @@ export default function Home() {
   
   const { currency } = useCurrency();
   const { user, logout } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isUserMenuOpen]);
   
   const [filters, setFilters] = useState<Filters>({
     minPrice: 0,
@@ -187,11 +200,30 @@ export default function Home() {
           </div>
 
           {user ? (
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              <div className="w-7 h-7 sm:w-9 sm:h-9 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 border-white shadow-sm shrink-0">
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setIsUserMenuOpen(v => !v)}
+                className="w-8 h-8 sm:w-9 sm:h-9 bg-slate-900 text-white rounded-full flex items-center justify-center font-bold text-xs sm:text-sm border-2 border-white shadow-sm shrink-0 hover:bg-slate-700 transition-colors"
+              >
                 {user.name.charAt(0).toUpperCase()}
-              </div>
-              <button onClick={logout} className="text-[10px] sm:text-xs font-bold text-slate-500 hover:text-red-500 transition-colors uppercase tracking-widest hidden sm:inline">Log Out</button>
+              </button>
+              {isUserMenuOpen && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-[200]">
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <p className="text-xs font-black text-slate-900 truncate">{user.name}</p>
+                    <p className="text-[10px] text-slate-400 truncate mt-0.5">{user.email}</p>
+                  </div>
+                  <button
+                    onClick={() => { logout(); setIsUserMenuOpen(false); }}
+                    className="w-full text-left px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Log Out
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <button 
