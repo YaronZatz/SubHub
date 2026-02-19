@@ -46,3 +46,9 @@ env:
     secret: APIFY_API_TOKEN
     availability:
       - RUNTIME
+
+  # 4. Facebook App Secret (for data deletion callback signature verification)
+  - variable: FACEBOOK_APP_SECRET
+    secret: FACEBOOK_APP_SECRET
+    availability:
+      - RUNTIME
