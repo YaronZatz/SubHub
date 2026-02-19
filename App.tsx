@@ -20,7 +20,6 @@ import { translations } from './translations';
 import { formatPrice, formatDate } from './utils/formatters';
 import { 
   FilterIcon, 
-  MapIcon, 
   PlusIcon, 
   ExternalLinkIcon, 
   SearchIcon, 
@@ -311,12 +310,9 @@ const AppContent: React.FC = () => {
         />
       )}
 
-      <header className="bg-white border-b border-slate-200 px-2 sm:px-4 md:px-6 py-2.5 flex items-center justify-between z-[60] shadow-sm gap-1 sm:gap-2">
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <div className="bg-blue-600 p-1.5 md:p-2 rounded-lg">
-            <MapIcon className="w-4 h-4 md:w-5 md:h-5 text-white" />
-          </div>
-          <h1 className="text-base md:text-lg font-bold text-slate-900 leading-none hidden sm:block">{t.appName}</h1>
+      <header className="bg-white border-b border-slate-200 px-2 sm:px-4 md:px-6 py-1 flex items-center justify-between z-[60] shadow-sm gap-1 sm:gap-2">
+        <div className="shrink-0">
+          <img src="/logo.png" alt="SubHub" className="h-12 sm:h-16 w-auto object-contain" />
         </div>
 
         <div className="flex-1 max-md:hidden relative mx-1 md:mx-4 max-w-md">

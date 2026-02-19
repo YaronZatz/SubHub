@@ -12,7 +12,6 @@ import { persistenceService } from '../services/persistenceService';
 import { formatPrice } from '../utils/formatters';
 import { 
   FilterIcon, 
-  MapIcon, 
   ListIcon,
   PlusIcon, 
   SearchIcon, 
@@ -141,13 +140,10 @@ export default function Home() {
 
   return (
     <div data-root className="flex flex-col h-screen overflow-hidden bg-white">
-      <header className="bg-white border-b border-slate-200 px-3 sm:px-4 md:px-6 py-2 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-3 z-[60] shadow-sm">
+      <header className="bg-white border-b border-slate-200 px-3 sm:px-4 md:px-6 py-1 flex flex-wrap items-center justify-between gap-2 sm:gap-3 z-[60] shadow-sm">
         <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg shadow-md">
-              <MapIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-            </div>
-            <h1 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight hidden sm:block">{t.appName}</h1>
+          <div className="shrink-0">
+            <img src="/logo.png" alt="SubHub" className="h-12 sm:h-16 w-auto object-contain" />
           </div>
           <div className="relative max-w-md w-full hidden md:block">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
