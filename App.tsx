@@ -185,23 +185,42 @@ const AppContent: React.FC = () => {
       const matchesCity = !filters.city || s.city?.toLowerCase() === filters.city.toLowerCase();
       const matchesNeighborhood = !filters.neighborhood || s.neighborhood?.toLowerCase() === filters.neighborhood.toLowerCase();
       
-      const matchesPets = !filters.petsAllowed || (s.amenities && s.amenities.includes('petFriendly'));
+      const matchesPets = !filters.petsAllowed || s.parsedAmenities?.petFriendly || (s.amenities && s.amenities.includes('petFriendly'));
+
+      const matchesAmenities = !filters.amenities || Object.entries(filters.amenities).every(
+        ([key, val]) => !val || s.parsedAmenities?.[key as keyof typeof s.parsedAmenities]
+      );
+
+      const matchesRooms =
+        (!filters.minRooms || (s.parsedRooms?.totalRooms ?? 0) >= filters.minRooms) &&
+        (!filters.maxRooms || (s.parsedRooms?.totalRooms ?? Infinity) <= filters.maxRooms);
 
       let matchesDates = true;
       if (filters.startDate || filters.endDate) {
         const filterStart = filters.startDate ? new Date(filters.startDate).getTime() : -Infinity;
         const filterEnd = filters.endDate ? new Date(filters.endDate).getTime() : Infinity;
-        const subletStart = new Date(s.startDate).getTime();
-        const subletEnd = s.endDate ? new Date(s.endDate).getTime() : subletStart + (30 * 24 * 60 * 60 * 1000);
+
+        // Handle missing startDate: use today if immediateAvailability, else treat as always matching
+        let subletStart: number;
+        if (s.startDate) {
+          subletStart = new Date(s.startDate).getTime();
+        } else if (s.parsedDates?.immediateAvailability) {
+          subletStart = Date.now();
+        } else {
+          subletStart = -Infinity;
+        }
+
+        // If endDate is null, treat as open-ended (don't assume 30-day window)
+        const subletEnd = s.endDate ? new Date(s.endDate).getTime() : Infinity;
 
         if (filters.dateMode === DateMode.EXACT) {
           matchesDates = (subletStart <= filterStart) && (subletEnd >= filterEnd);
         } else {
-          matchesDates = (subletStart <= filterEnd) && (subletStart >= filterStart); 
+          matchesDates = (subletStart <= filterEnd) && (subletStart >= filterStart);
         }
       }
-      
-      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets;
+
+      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 

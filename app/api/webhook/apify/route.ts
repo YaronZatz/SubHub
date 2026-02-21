@@ -6,16 +6,21 @@ import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType } from '@/types';
 import { fetchDatasetItems, fetchDatasetItemsWithClient } from '@/services/apifyService';
+import { geocodeAddress } from '@/services/geocodingService';
 
 const GEMINI_MODEL = 'gemini-3-pro-preview';
+const PARSER_VERSION = '2.0.0';
 
 interface ApifyPayload {
   url?: string;
   postUrl?: string;
   text?: string;
   postText?: string;
+  topText?: string;
   message?: string;
   content?: string;
+  body?: string;
+  description?: string;
   images?: string[];
   attachments?: string[];
   scrapedAt?: string;
@@ -32,12 +37,21 @@ interface NormalizedPayload {
   images: string[];
   scrapedAt: string;
   posterName?: string;
+  partialData?: boolean;
 }
 
 /** Normalize Apify payload - Facebook Scraper fields + legacy url/text/images */
 function normalizePayload(raw: ApifyPayload): NormalizedPayload | null {
   const url = (raw.postUrl || raw.url || '').toString().trim();
-  const text = (raw.postText || raw.text || raw.message || raw.content || '').toString().trim();
+
+  // Gather ALL text fields and concatenate, deduplicating identical strings
+  const textParts = [raw.topText, raw.postText, raw.text, raw.message, raw.content, raw.body, raw.description]
+    .filter(Boolean)
+    .map(String)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const text = [...new Set(textParts)].join('\n\n');
+
   const images = Array.isArray(raw.attachments) ? raw.attachments : (Array.isArray(raw.images) ? raw.images : []);
   const scrapedAt = (raw.scrapedAt || raw.time || new Date().toISOString()).toString();
   const posterName = typeof raw.posterName === 'string' ? raw.posterName : undefined;
@@ -46,8 +60,9 @@ function normalizePayload(raw: ApifyPayload): NormalizedPayload | null {
   if (!url && !postID) return null;
   if (text.length < 3) return null;
 
+  const partialData = text.length < 50;
   const docId = postID || crypto.createHash('md5').update(url).digest('hex');
-  return { postID: docId, url: url || `https://facebook.com/post/${docId}`, text, images, scrapedAt, posterName };
+  return { postID: docId, url: url || `https://facebook.com/post/${docId}`, text, images, scrapedAt, posterName, partialData };
 }
 
 async function uploadImagesToStorage(facebookUrls: string[], listingId: string): Promise<string[]> {
@@ -75,16 +90,61 @@ async function uploadImagesToStorage(facebookUrls: string[], listingId: string):
 }
 
 interface GeminiLocation {
+  country?: string;
+  countryCode?: string;
   city?: string;
   neighborhood?: string;
   street?: string;
   displayAddress?: string;
+  confidence?: 'high' | 'medium' | 'low';
 }
 
 interface GeminiDates {
   start_date?: string | null;
   end_date?: string | null;
   is_flexible?: boolean;
+  duration?: string;
+  immediateAvailability?: boolean;
+  rawDateText?: string;
+  confidence?: 'high' | 'medium' | 'low';
+}
+
+interface GeminiAmenities {
+  furnished?: boolean;
+  wifi?: boolean;
+  ac?: boolean;
+  heating?: boolean;
+  washer?: boolean;
+  dryer?: boolean;
+  dishwasher?: boolean;
+  parking?: boolean;
+  balcony?: boolean;
+  rooftop?: boolean;
+  elevator?: boolean;
+  petFriendly?: boolean;
+  smokingAllowed?: boolean;
+  workspace?: boolean;
+  gym?: boolean;
+  pool?: boolean;
+  storage?: boolean;
+  kitchen?: boolean;
+  privateBathroom?: boolean;
+  utilitiesIncluded?: boolean;
+  other?: string[];
+}
+
+interface GeminiRooms {
+  totalRooms?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  isStudio?: boolean;
+  sharedRoom?: boolean;
+  privateRoom?: boolean;
+  floorArea?: number;
+  floorAreaUnit?: string;
+  floor?: number;
+  totalFloors?: number;
+  rawRoomText?: string;
 }
 
 interface GeminiApartmentDetails {
@@ -102,6 +162,8 @@ interface GeminiResponse {
   location?: GeminiLocation;
   dates?: GeminiDates;
   apartment_details?: GeminiApartmentDetails;
+  amenities?: GeminiAmenities;
+  rooms?: GeminiRooms;
   category?: string;
   ai_summary?: string;
 }
@@ -121,13 +183,41 @@ function buildLocationString(loc: GeminiLocation | undefined): string {
   return parts.join(', ') || '';
 }
 
+function buildGeocodingQuery(loc: GeminiLocation): string {
+  if (loc.displayAddress) return loc.displayAddress;
+  const parts = [loc.neighborhood, loc.city, loc.country].filter(Boolean);
+  return parts.join(', ');
+}
+
+function contentFingerprint(text: string): string {
+  const normalized = text.toLowerCase()
+    .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // remove common emoji ranges
+    .replace(/\s+/g, ' ')
+    .trim();
+  return crypto.createHash('md5').update(normalized).digest('hex');
+}
+
 async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY or API_KEY is not configured');
   const ai = new GoogleGenAI({ apiKey });
 
-  const prompt = `Extract structured data from this Facebook sublet post. Return strict JSON only.
-Rules: price as number; currency as ILS or USD (3-letter code); dates as YYYY-MM-DD or null; is_flexible boolean; category exactly one of "Entire Place", "Room in Shared", "Studio"; ai_summary is one short sales-pitch sentence.
+  const prompt = `Extract all structured data from this sublet/rental Facebook post. Be multilingual — handle Hebrew, English, French, Russian, German.
+
+Return strict JSON matching the schema. Rules:
+- price: number only, 0 if unknown
+- currency: 3-letter ISO code (ILS, USD, EUR, GBP, etc.)
+- location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown
+- location.countryCode: ISO 3166-1 alpha-2 (e.g. IL, US, DE, FR)
+- dates: use ISO YYYY-MM-DD; null if not mentioned; immediateAvailability=true for "now/immediate/available now"
+- dates.is_flexible: true for "flexible", "roughly", "approximately"
+- dates.duration: human-readable duration if no exact end date (e.g. "2 months", "3 weeks")
+- dates.rawDateText: copy of original date text from post
+- rooms.totalRooms: use Israeli count (3 rooms = 2 bedrooms + living room)
+- rooms.floorAreaUnit: "sqm" or "sqft"
+- amenities: set each boolean to true only if explicitly mentioned
+- category: exactly "Entire Place", "Room in Shared", or "Studio"
+- ai_summary: one short marketing sentence
 
 POST TEXT:
 "${rawText}"`;
@@ -145,10 +235,13 @@ POST TEXT:
           location: {
             type: Type.OBJECT,
             properties: {
+              country: { type: Type.STRING },
+              countryCode: { type: Type.STRING },
               city: { type: Type.STRING },
               neighborhood: { type: Type.STRING },
               street: { type: Type.STRING },
               displayAddress: { type: Type.STRING },
+              confidence: { type: Type.STRING },
             },
           },
           dates: {
@@ -157,6 +250,10 @@ POST TEXT:
               start_date: { type: Type.STRING },
               end_date: { type: Type.STRING },
               is_flexible: { type: Type.BOOLEAN },
+              duration: { type: Type.STRING },
+              immediateAvailability: { type: Type.BOOLEAN },
+              rawDateText: { type: Type.STRING },
+              confidence: { type: Type.STRING },
             },
           },
           apartment_details: {
@@ -170,6 +267,48 @@ POST TEXT:
               rooms_count: { type: Type.NUMBER },
             },
           },
+          amenities: {
+            type: Type.OBJECT,
+            properties: {
+              furnished: { type: Type.BOOLEAN },
+              wifi: { type: Type.BOOLEAN },
+              ac: { type: Type.BOOLEAN },
+              heating: { type: Type.BOOLEAN },
+              washer: { type: Type.BOOLEAN },
+              dryer: { type: Type.BOOLEAN },
+              dishwasher: { type: Type.BOOLEAN },
+              parking: { type: Type.BOOLEAN },
+              balcony: { type: Type.BOOLEAN },
+              rooftop: { type: Type.BOOLEAN },
+              elevator: { type: Type.BOOLEAN },
+              petFriendly: { type: Type.BOOLEAN },
+              smokingAllowed: { type: Type.BOOLEAN },
+              workspace: { type: Type.BOOLEAN },
+              gym: { type: Type.BOOLEAN },
+              pool: { type: Type.BOOLEAN },
+              storage: { type: Type.BOOLEAN },
+              kitchen: { type: Type.BOOLEAN },
+              privateBathroom: { type: Type.BOOLEAN },
+              utilitiesIncluded: { type: Type.BOOLEAN },
+              other: { type: Type.ARRAY, items: { type: Type.STRING } },
+            },
+          },
+          rooms: {
+            type: Type.OBJECT,
+            properties: {
+              totalRooms: { type: Type.NUMBER },
+              bedrooms: { type: Type.NUMBER },
+              bathrooms: { type: Type.NUMBER },
+              isStudio: { type: Type.BOOLEAN },
+              sharedRoom: { type: Type.BOOLEAN },
+              privateRoom: { type: Type.BOOLEAN },
+              floorArea: { type: Type.NUMBER },
+              floorAreaUnit: { type: Type.STRING },
+              floor: { type: Type.NUMBER },
+              totalFloors: { type: Type.NUMBER },
+              rawRoomText: { type: Type.STRING },
+            },
+          },
           category: { type: Type.STRING },
           ai_summary: { type: Type.STRING },
         },
@@ -181,9 +320,6 @@ POST TEXT:
   const text = response.text || '{}';
   return JSON.parse(text) as GeminiResponse;
 }
-
-const DEFAULT_LAT = 32.0853;
-const DEFAULT_LNG = 34.7818;
 
 /** Apify sends run-completion events with eventType and eventData.actorRunId (not dataset items). */
 function isApifyRunEvent(parsed: unknown): boolean {
@@ -217,10 +353,19 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
   if (item && typeof item === 'object') {
     const r = item as Record<string, unknown>;
     const attachments = ensureStringArray(r.attachments ?? r.images);
+
+    // Gather ALL text fields and concatenate, deduplicating identical strings
+    const textParts = [r.topText, r.postText, r.text, r.message, r.content, r.body, r.description]
+      .filter(Boolean)
+      .map(String)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const combinedText = [...new Set(textParts)].join('\n\n');
+
     return {
       postID: r.postID ?? r.id ?? r.postId,
       postUrl: r.postUrl ?? r.url,
-      postText: r.postText ?? r.text ?? r.message ?? r.content,
+      postText: combinedText,
       posterName: r.posterName ?? r.authorName ?? r.author,
       attachments,
       images: attachments,
@@ -330,7 +475,24 @@ export async function POST(req: NextRequest) {
       }
 
       const docId = payload.postID;
-      console.log(`${logPrefix} Processing item ${i + 1}/${items.length} | postID=${docId} | url=${payload.url.slice(0, 80)}...`);
+      console.log(`${logPrefix} Processing item ${i + 1}/${items.length} | postID=${docId} | url=${payload.url.slice(0, 80)}... | textLen=${payload.text.length} | partial=${payload.partialData}`);
+
+      // --- Deduplication Check ---
+      const contentHash = contentFingerprint(payload.text);
+      try {
+        const dupSnapshot = await adminDb.collection('sublets').where('contentHash', '==', contentHash).limit(1).get();
+        if (!dupSnapshot.empty) {
+          const dupDoc = dupSnapshot.docs[0];
+          if (dupDoc.data().needs_review === false) {
+            console.log(`${logPrefix} Duplicate detected (contentHash=${contentHash}), skipping. Original: ${dupDoc.id}`);
+            results.push({ id: dupDoc.id });
+            continue;
+          }
+        }
+      } catch (dedupErr) {
+        console.warn(`${logPrefix} Deduplication check failed (non-fatal):`, dedupErr);
+      }
+
       console.log(`${logPrefix} Gemini processing started`);
 
       try {
@@ -351,7 +513,41 @@ export async function POST(req: NextRequest) {
         const dates = structuredData?.dates;
         const locationStr = buildLocationString(loc);
 
+        // --- Geocoding ---
+        let lat: number | null = null;
+        let lng: number | null = null;
+        if (loc && (loc.city || loc.displayAddress)) {
+          const geocodeQuery = buildGeocodingQuery(loc);
+          if (geocodeQuery) {
+            try {
+              const coords = await geocodeAddress(geocodeQuery);
+              if (coords) {
+                lat = coords.lat;
+                lng = coords.lng;
+                console.log(`${logPrefix} Geocoded "${geocodeQuery}" → lat=${lat}, lng=${lng}`);
+              } else {
+                console.log(`${logPrefix} Geocoding returned null for "${geocodeQuery}"`);
+              }
+            } catch (geoErr) {
+              console.warn(`${logPrefix} Geocoding error (non-fatal):`, geoErr);
+            }
+          }
+        }
+
         if (structuredData) {
+          // Merge rooms data into apartment_details for backward compatibility
+          const rooms = structuredData.rooms;
+          const apartmentDetails = {
+            ...(structuredData.apartment_details || {}),
+            ...(rooms?.floor !== undefined ? { floor: rooms.floor } : {}),
+            ...(rooms?.totalRooms !== undefined ? { rooms_count: rooms.totalRooms } : {}),
+            // Sync amenity flags from parsedAmenities to apartment_details
+            ...(structuredData.amenities?.elevator !== undefined ? { has_elevator: structuredData.amenities.elevator } : {}),
+            ...(structuredData.amenities?.ac !== undefined ? { has_air_con: structuredData.amenities.ac } : {}),
+            ...(structuredData.amenities?.balcony !== undefined ? { has_balcony: structuredData.amenities.balcony } : {}),
+            ...(structuredData.amenities?.petFriendly !== undefined ? { is_pet_friendly: structuredData.amenities.petFriendly } : {}),
+          };
+
           const finalListing = {
             id: docId,
             sourceUrl: payload.url,
@@ -364,19 +560,39 @@ export async function POST(req: NextRequest) {
             endDate: dates?.end_date || '',
             is_flexible: dates?.is_flexible ?? false,
             location: locationStr,
-            city: loc?.city,
-            neighborhood: loc?.neighborhood,
-            lat: DEFAULT_LAT,
-            lng: DEFAULT_LNG,
+            city: loc?.city ?? null,
+            neighborhood: loc?.neighborhood ?? null,
+            country: loc?.country ?? null,
+            countryCode: loc?.countryCode ?? null,
+            street: loc?.street ?? null,
+            fullAddress: loc?.displayAddress ?? null,
+            locationConfidence: loc?.confidence ?? null,
+            lat,
+            lng,
             type: mapCategoryToType(structuredData.category),
             status: 'active',
             createdAt: now,
             lastScrapedAt: payload.scrapedAt || new Date().toISOString(),
             images: persistentImages,
             attachmentUrls: payload.images,
-            apartment_details: structuredData.apartment_details || {},
+            apartment_details: apartmentDetails,
+            parsedAmenities: structuredData.amenities ?? null,
+            parsedRooms: rooms ?? null,
+            parsedDates: dates ? {
+              startDate: dates.start_date ?? null,
+              endDate: dates.end_date ?? null,
+              isFlexible: dates.is_flexible ?? false,
+              duration: dates.duration ?? null,
+              immediateAvailability: dates.immediateAvailability ?? false,
+              rawDateText: dates.rawDateText ?? null,
+              confidence: dates.confidence ?? null,
+            } : null,
             ai_summary: structuredData.ai_summary || '',
             needs_review: false,
+            contentHash,
+            partialData: payload.partialData ?? false,
+            lastParsedAt: now,
+            parserVersion: PARSER_VERSION,
           };
           try {
             await adminDb.collection('sublets').doc(docId).set(finalListing, { merge: true });
@@ -386,7 +602,7 @@ export async function POST(req: NextRequest) {
           }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);
-          console.log(`${logPrefix} Success | docId=${docId} | imagesProcessed=${persistentImages.length}`);
+          console.log(`${logPrefix} Success | docId=${docId} | lat=${lat} | lng=${lng} | imagesProcessed=${persistentImages.length}`);
         } else {
           const fallbackListing = {
             id: docId,
@@ -399,10 +615,10 @@ export async function POST(req: NextRequest) {
             startDate: '',
             endDate: '',
             location: '',
-            city: undefined,
-            neighborhood: undefined,
-            lat: DEFAULT_LAT,
-            lng: DEFAULT_LNG,
+            city: null,
+            neighborhood: null,
+            lat: null,
+            lng: null,
             type: SubletType.ENTIRE,
             status: 'active',
             createdAt: now,
@@ -410,6 +626,10 @@ export async function POST(req: NextRequest) {
             images: persistentImages,
             attachmentUrls: payload.images,
             needs_review: true,
+            contentHash,
+            partialData: payload.partialData ?? false,
+            lastParsedAt: now,
+            parserVersion: PARSER_VERSION,
           };
           try {
             await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Sublet, ListingStatus, Language } from '../types';
-import { MAP_CENTER } from '../constants';
+import { MAP_CENTER, MAP_ZOOM } from '../constants';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
@@ -50,7 +50,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
 
     mapRef.current = L.map(mapContainerRef.current, {
       center: [MAP_CENTER.lat, MAP_CENTER.lng],
-      zoom: 14,
+      zoom: MAP_ZOOM,
       zoomControl: false,
       attributionControl: false
     });
@@ -84,6 +84,9 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
     });
 
     sublets.forEach(sublet => {
+      // Skip listings with unknown coordinates (lat=0, lng=0 means geocoding failed)
+      if (!sublet.lat && !sublet.lng) return;
+
       const isSelected = selectedSubletId === sublet.id;
       const symbol = getCurrencySymbol(currency);
 
@@ -123,9 +126,12 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
       }
     });
 
-    if (!selectedSubletId && sublets.length > 0 && mapRef.current) {
-      const group = L.featureGroup(Object.values(markersRef.current));
-      mapRef.current.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 15 });
+    if (!selectedSubletId && mapRef.current) {
+      const validMarkers = Object.values(markersRef.current);
+      if (validMarkers.length > 0) {
+        const group = L.featureGroup(validMarkers);
+        mapRef.current.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 15 });
+      }
     }
   }, [sublets, selectedSubletId, onMarkerClick, currency]);
 

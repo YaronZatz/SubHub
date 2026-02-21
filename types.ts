@@ -51,6 +51,54 @@ export interface ApartmentDetails {
   rooms_count?: number;
 }
 
+export interface ParsedAmenities {
+  furnished?: boolean;
+  wifi?: boolean;
+  ac?: boolean;
+  heating?: boolean;
+  washer?: boolean;
+  dryer?: boolean;
+  dishwasher?: boolean;
+  parking?: boolean;
+  balcony?: boolean;
+  rooftop?: boolean;
+  elevator?: boolean;
+  petFriendly?: boolean;
+  smokingAllowed?: boolean;
+  workspace?: boolean;
+  gym?: boolean;
+  pool?: boolean;
+  storage?: boolean;
+  kitchen?: boolean;
+  privateBathroom?: boolean;
+  utilitiesIncluded?: boolean;
+  other?: string[];
+}
+
+export interface ParsedRooms {
+  totalRooms?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  isStudio?: boolean;
+  sharedRoom?: boolean;
+  privateRoom?: boolean;
+  floorArea?: number;
+  floorAreaUnit?: 'sqm' | 'sqft';
+  floor?: number;
+  totalFloors?: number;
+  rawRoomText?: string;
+}
+
+export interface ParsedDates {
+  startDate?: string | null;
+  endDate?: string | null;
+  isFlexible?: boolean;
+  duration?: string;
+  immediateAvailability?: boolean;
+  rawDateText?: string;
+  confidence?: 'high' | 'medium' | 'low';
+}
+
 export interface Sublet {
   id: string;
   sourceUrl: string;
@@ -76,6 +124,20 @@ export interface Sublet {
   apartment_details?: ApartmentDetails;
   needs_review?: boolean;
   is_flexible?: boolean;
+  // New structured fields
+  parsedAmenities?: ParsedAmenities;
+  parsedRooms?: ParsedRooms;
+  parsedDates?: ParsedDates;
+  country?: string;
+  countryCode?: string;
+  street?: string;
+  fullAddress?: string;
+  locationConfidence?: 'high' | 'medium' | 'low';
+  contentHash?: string;
+  duplicateOf?: string;
+  partialData?: boolean;
+  lastParsedAt?: number;
+  parserVersion?: string;
 }
 
 export interface Filters {
@@ -89,4 +151,8 @@ export interface Filters {
   city: string;
   neighborhood: string;
   petsAllowed: boolean;
+  minRooms?: number;
+  maxRooms?: number;
+  amenities?: Partial<Record<keyof ParsedAmenities, boolean>>;
+  country?: string;
 }

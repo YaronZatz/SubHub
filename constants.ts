@@ -172,4 +172,6 @@ export const INITIAL_SUBLETS: Sublet[] = [
   }
 ];
 
-export const MAP_CENTER = CITY_CENTERS['Tel Aviv'];
+// World center — map fits to listing bounds instead of defaulting to a single city
+export const MAP_CENTER = { lat: 20, lng: 10 };
+export const MAP_ZOOM = 2;

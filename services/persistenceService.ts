@@ -1,7 +1,7 @@
 
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Sublet, ListingStatus } from '../types';
+import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates } from '../types';
 import { INITIAL_SUBLETS } from '../constants';
 import { extractLocation } from './locationExtractor';
 
@@ -81,6 +81,18 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
     apartment_details,
     needs_review: data.needs_review as boolean | undefined,
     is_flexible: data.is_flexible as boolean | undefined,
+    parsedAmenities: data.parsedAmenities as ParsedAmenities | undefined,
+    parsedRooms: data.parsedRooms as ParsedRooms | undefined,
+    parsedDates: data.parsedDates as ParsedDates | undefined,
+    country: data.country as string | undefined,
+    countryCode: data.countryCode as string | undefined,
+    street: data.street as string | undefined,
+    fullAddress: data.fullAddress as string | undefined,
+    locationConfidence: data.locationConfidence as 'high' | 'medium' | 'low' | undefined,
+    contentHash: data.contentHash as string | undefined,
+    partialData: data.partialData as boolean | undefined,
+    lastParsedAt: data.lastParsedAt as number | undefined,
+    parserVersion: data.parserVersion as string | undefined,
   };
 }
 
