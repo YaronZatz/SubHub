@@ -480,7 +480,7 @@ export async function POST(req: NextRequest) {
       // --- Deduplication Check ---
       const contentHash = contentFingerprint(payload.text);
       try {
-        const dupSnapshot = await adminDb.collection('sublets').where('contentHash', '==', contentHash).limit(1).get();
+        const dupSnapshot = await adminDb.collection('listings').where('contentHash', '==', contentHash).limit(1).get();
         if (!dupSnapshot.empty) {
           const dupDoc = dupSnapshot.docs[0];
           if (dupDoc.data().needs_review === false) {
@@ -595,7 +595,7 @@ export async function POST(req: NextRequest) {
             parserVersion: PARSER_VERSION,
           };
           try {
-            await adminDb.collection('sublets').doc(docId).set(finalListing, { merge: true });
+            await adminDb.collection('listings').doc(docId).set(finalListing, { merge: true });
           } catch (firestoreErr: unknown) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
@@ -632,7 +632,7 @@ export async function POST(req: NextRequest) {
             parserVersion: PARSER_VERSION,
           };
           try {
-            await adminDb.collection('sublets').doc(docId).set(fallbackListing, { merge: true });
+            await adminDb.collection('listings').doc(docId).set(fallbackListing, { merge: true });
           } catch (firestoreErr: unknown) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
