@@ -1,196 +1,218 @@
 
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates } from '../types';
 import { INITIAL_SUBLETS } from '../constants';
-import { extractLocation } from './locationExtractor';
 
-const DEFAULT_LAT = 32.0853;
-const DEFAULT_LNG = 34.7818;
-const COORD_TOLERANCE = 0.001;
+const COLLECTION = 'listings';
 
-function isDefaultCoords(lat: number, lng: number): boolean {
-  return Math.abs(lat - DEFAULT_LAT) < COORD_TOLERANCE && Math.abs(lng - DEFAULT_LNG) < COORD_TOLERANCE;
-}
-
-/** Map Firestore sublet doc to Sublet; ensure id and createdAt are set. */
+/** Map a Firestore document from the listings collection to a Sublet. */
 function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sublet {
-  const createdAt = typeof data.createdAt === 'number'
-    ? data.createdAt
-    : (data.createdAt as { toMillis?: () => number })?.toMillis?.() ?? Date.now();
-  const status = data.status === 'active' || data.status === 'AVAILABLE'
-    ? ListingStatus.AVAILABLE
-    : data.status === 'Taken' || data.status === 'TAKEN'
+  const createdAt =
+    typeof data.createdAt === 'number'
+      ? data.createdAt
+      : (data.createdAt as { toMillis?: () => number })?.toMillis?.() ?? Date.now();
+
+  const status =
+    data.status === 'active' ||
+    data.status === 'Available' ||
+    data.status === 'AVAILABLE'
+      ? ListingStatus.AVAILABLE
+      : data.status === 'Taken' || data.status === 'TAKEN'
       ? ListingStatus.TAKEN
       : ListingStatus.AVAILABLE;
 
-  let lat = Number(data.lat) || 0;
-  let lng = Number(data.lng) || 0;
-  let location = (data.location as string) || '';
-  let neighborhood = data.neighborhood as string | undefined;
-  let startDate = (data.startDate as string) || '';
-  let endDate = (data.endDate as string) || '';
-  let price = Number(data.price) || 0;
-  let apartment_details = (data.apartment_details ?? {}) as Sublet['apartment_details'];
+  // Coordinates: treat null / missing as 0 (filtered out upstream)
+  const lat = data.lat != null ? Number(data.lat) : 0;
+  const lng = data.lng != null ? Number(data.lng) : 0;
 
-  const originalText = (data.originalText as string) || '';
+  // Amenities: Cloud Function writes an object; legacy data may have string[]; parsedAmenities is our own format
+  const rawAmenities = data.amenities as Record<string, unknown> | string[] | null | undefined;
+  const parsedAmenities: ParsedAmenities | undefined =
+    rawAmenities && !Array.isArray(rawAmenities)
+      ? (rawAmenities as ParsedAmenities)
+      : (data.parsedAmenities as ParsedAmenities | undefined);
 
-  // Run extractor when coordinates are the hardcoded default or missing
-  if (originalText && (isDefaultCoords(lat, lng) || lat === 0)) {
-    const extracted = extractLocation(originalText);
+  // Rooms: Cloud Function writes data.rooms; our webhook writes data.parsedRooms
+  const rawRooms = (data.rooms ?? data.parsedRooms) as ParsedRooms | null | undefined;
 
-    if (extracted.confidence !== 'low') {
-      lat = extracted.lat;
-      lng = extracted.lng;
-      if (!location || location === 'Tel Aviv') location = extracted.location;
-      if (!neighborhood && extracted.neighborhood) neighborhood = extracted.neighborhood;
-    }
+  // Flexibility / immediate availability — handle both field name conventions
+  const isFlexible =
+    (data.datesFlexible as boolean | undefined) ??
+    (data.is_flexible as boolean | undefined) ??
+    false;
 
-    // Fill missing structured fields from text
-    if (!startDate && extracted.startDate) startDate = extracted.startDate;
-    if (!endDate && extracted.endDate) endDate = extracted.endDate;
-    if (!price && extracted.price) price = extracted.price;
-    if (extracted.rooms && !apartment_details?.rooms_count) {
-      apartment_details = { ...apartment_details, rooms_count: extracted.rooms };
-    }
-    if (extracted.floor !== undefined && !apartment_details?.floor) {
-      apartment_details = { ...apartment_details, floor: extracted.floor };
-    }
-  }
+  const immediateAvailability =
+    (data.immediateAvailability as boolean | undefined) ??
+    (data.parsedDates as ParsedDates | undefined)?.immediateAvailability ??
+    false;
+
+  // Build a unified parsedDates, merging stored parsedDates with top-level fields
+  const storedParsedDates = data.parsedDates as ParsedDates | undefined;
+  const parsedDates: ParsedDates = {
+    startDate: (data.startDate as string) || null,
+    endDate: (data.endDate as string) || null,
+    isFlexible,
+    immediateAvailability,
+    ...storedParsedDates,
+  };
 
   return {
     id: docId,
     sourceUrl: (data.sourceUrl as string) || '',
-    originalText,
-    price,
+    originalText: (data.originalText as string) || '',
+    price: Number(data.price) || 0,
     currency: (data.currency as string) || 'ILS',
-    startDate,
-    endDate,
-    location,
+    startDate: (data.startDate as string) || '',
+    endDate: (data.endDate as string) || '',
+    location: (data.location as string) || '',
     lat,
     lng,
     type: (data.type as Sublet['type']) || ('Entire Place' as Sublet['type']),
     status,
     createdAt,
     authorName: (data.authorName ?? data.posterName) as string | undefined,
-    neighborhood,
+    neighborhood: data.neighborhood as string | undefined,
     city: data.city as string | undefined,
+    amenities: rawAmenities as Sublet['amenities'],
+    ownerId: data.ownerId as string | undefined,
     images: data.images as string[] | undefined,
     photoCount: data.photoCount as number | undefined,
     ai_summary: data.ai_summary as string | undefined,
-    apartment_details,
+    apartment_details: data.apartment_details as Sublet['apartment_details'] | undefined,
     needs_review: data.needs_review as boolean | undefined,
-    is_flexible: data.is_flexible as boolean | undefined,
-    parsedAmenities: data.parsedAmenities as ParsedAmenities | undefined,
-    parsedRooms: data.parsedRooms as ParsedRooms | undefined,
-    parsedDates: data.parsedDates as ParsedDates | undefined,
+    is_flexible: isFlexible,
+    parsedAmenities,
+    parsedRooms: rawRooms ?? undefined,
+    parsedDates,
+    rooms: rawRooms ?? undefined,
     country: data.country as string | undefined,
     countryCode: data.countryCode as string | undefined,
     street: data.street as string | undefined,
-    fullAddress: data.fullAddress as string | undefined,
-    locationConfidence: data.locationConfidence as 'high' | 'medium' | 'low' | undefined,
+    fullAddress: (data.fullAddress ?? data.displayAddress) as string | undefined,
+    locationConfidence: data.locationConfidence as string | undefined,
     contentHash: data.contentHash as string | undefined,
     partialData: data.partialData as boolean | undefined,
     lastParsedAt: data.lastParsedAt as number | undefined,
     parserVersion: data.parserVersion as string | undefined,
+    sourceGroupName: data.sourceGroupName as string | undefined,
+    datesFlexible: isFlexible,
+    immediateAvailability,
   };
 }
 
-async function fetchFirestoreSublets(): Promise<Sublet[]> {
-  if (!db) {
-    console.warn('⚠️ Firestore db is undefined — skipping Firestore fetch. Check firebase.ts initialization.');
-    return [];
-  }
-  try {
-    console.log('🔥 Fetching from Firestore collection: "sublets"...');
-    const snapshot = await getDocs(collection(db, 'sublets'));
-    console.log(`🔥 Firestore returned ${snapshot.docs.length} documents from "sublets" collection.`);
-    if (snapshot.docs.length === 0) {
-      console.warn('⚠️ Firestore "sublets" collection is empty. Check that:');
-      console.warn('   1. Apify integration is writing to a collection named exactly "sublets"');
-      console.warn('   2. Firestore security rules allow reads');
-      console.warn('   3. Data exists in Firebase Console → Firestore → sublets');
-    }
-    return snapshot.docs.map((d) => firestoreDocToSublet(d.id, d.data() as Record<string, unknown>));
-  } catch (e) {
-    console.error('❌ Failed to fetch sublets from Firestore:', e);
-    return [];
-  }
+function buildQuery() {
+  return query(collection(db!, COLLECTION), orderBy('createdAt', 'desc'), limit(500));
 }
 
-const DB_NAME = 'SubHubDB';
-const DB_VERSION = 1;
-const STORE_NAME = 'listings';
-
-// Helper to open DB
-const openDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
-    if (typeof window === 'undefined' || !window.indexedDB) {
-        reject("IndexedDB not supported");
-        return;
-    }
-    const request = window.indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      }
-    };
-  });
-};
+/** Filter out listings with no geocoded location — they can't be shown on the map. */
+function hasValidCoords(s: Sublet): boolean {
+  return s.lat !== 0 || s.lng !== 0;
+}
 
 export const persistenceService = {
   /**
-   * Fetches all listings from IndexedDB and Firestore sublets.
-   * Merges: IDB + seed, then Firestore by id (Firestore wins when same id). Sorts by createdAt desc.
+   * One-time fetch from Firestore listings collection.
+   * Falls back to INITIAL_SUBLETS if Firestore is unavailable or empty.
    */
   async fetchListings(): Promise<Sublet[]> {
+    if (!db) {
+      console.warn('⚠️ Firestore db undefined — returning sample data');
+      return INITIAL_SUBLETS;
+    }
     try {
-      const idb = await openDB();
-      const fromIdb = await new Promise<Sublet[]>((resolve, reject) => {
-        const transaction = idb.transaction(STORE_NAME, 'readonly');
-        const store = transaction.objectStore(STORE_NAME);
-        const request = store.getAll();
-        request.onsuccess = () => resolve((request.result as Sublet[]) || []);
-        request.onerror = () => reject(request.error);
-      });
-
-      const combined = [...fromIdb];
-      INITIAL_SUBLETS.forEach((seed) => {
-        if (!combined.find((c) => c.id === seed.id)) combined.push(seed);
-      });
-
-      const fromFirestore = await fetchFirestoreSublets();
-      const byId = new Map(combined.map((s) => [s.id, s]));
-      fromFirestore.forEach((s) => byId.set(s.id, s));
-      const merged = Array.from(byId.values());
-      return merged.sort((a, b) => b.createdAt - a.createdAt);
+      console.log(`🔥 Fetching from Firestore collection: "${COLLECTION}"…`);
+      const snapshot = await getDocs(buildQuery());
+      console.log(`🔥 Firestore returned ${snapshot.docs.length} documents`);
+      const docs = snapshot.docs.map((d) =>
+        firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
+      );
+      const valid = docs.filter(hasValidCoords);
+      return valid.length > 0 ? valid : INITIAL_SUBLETS;
     } catch (e) {
-      console.error('Failed to fetch listings', e);
+      console.error('❌ Failed to fetch listings from Firestore:', e);
       return INITIAL_SUBLETS;
     }
   },
 
   /**
-   * Saves or updates a listing in IndexedDB.
+   * Real-time listener — calls callback whenever listings change in Firestore.
+   * Returns an unsubscribe function.
    */
-  async saveListing(listing: Sublet): Promise<Sublet> {
-    const db = await openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(STORE_NAME, 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
-      const request = store.put(listing); // .put() handles both insert and update
-
-      request.onsuccess = () => resolve(listing);
-      request.onerror = () => reject(request.error);
-    });
+  onListingsChanged(callback: (listings: Sublet[]) => void): () => void {
+    if (!db) {
+      console.warn('⚠️ Firestore db undefined — streaming sample data');
+      callback(INITIAL_SUBLETS);
+      return () => {};
+    }
+    return onSnapshot(
+      buildQuery(),
+      (snapshot) => {
+        const docs = snapshot.docs.map((d) =>
+          firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
+        );
+        const valid = docs.filter(hasValidCoords);
+        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs, ${valid.length} with coords`);
+        callback(valid.length > 0 ? valid : INITIAL_SUBLETS);
+      },
+      (error) => {
+        console.error('❌ Firestore listener error:', error);
+        callback(INITIAL_SUBLETS);
+      }
+    );
   },
 
-  async updateListing(updated: Sublet): Promise<void> {
-    await this.saveListing(updated);
-  }
+  /**
+   * Save a listing to Firestore.
+   * If the listing already has an id, updates it; otherwise creates a new document.
+   * Used by AddListingModal.
+   */
+  async saveListing(listing: Sublet): Promise<Sublet> {
+    if (!db) {
+      console.warn('⚠️ Firestore unavailable — listing not persisted');
+      return listing;
+    }
+    try {
+      const { id, ...data } = listing;
+      if (id && id !== 'new') {
+        await updateDoc(doc(db, COLLECTION, id), data as Record<string, unknown>);
+        return listing;
+      } else {
+        const docRef = await addDoc(collection(db, COLLECTION), {
+          ...data,
+          createdAt: Date.now(),
+        });
+        return { ...listing, id: docRef.id };
+      }
+    } catch (e) {
+      console.error('❌ Failed to save listing:', e);
+      return listing;
+    }
+  },
+
+  /**
+   * Update an existing listing in Firestore.
+   */
+  async updateListing(listing: Sublet): Promise<void> {
+    if (!db) return;
+    try {
+      const { id, ...data } = listing;
+      await updateDoc(doc(db, COLLECTION, id), data as Record<string, unknown>);
+    } catch (e) {
+      console.error('❌ Failed to update listing:', e);
+    }
+  },
+
+  /**
+   * Add a new listing document to Firestore and return it with the generated id.
+   */
+  async addListing(listing: Sublet): Promise<Sublet> {
+    if (!db) return listing;
+    const { id, ...data } = listing;
+    const docRef = await addDoc(collection(db, COLLECTION), {
+      ...data,
+      createdAt: Date.now(),
+    });
+    return { ...listing, id: docRef.id };
+  },
 };

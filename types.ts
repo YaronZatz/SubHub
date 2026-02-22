@@ -116,7 +116,9 @@ export interface Sublet {
   authorName?: string;
   neighborhood?: string;
   city?: string;
-  amenities?: string[];
+  // amenities can be a structured object (from Gemini/Cloud Function) or legacy string[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  amenities?: any;
   ownerId?: string;
   images?: string[];
   photoCount?: number;
@@ -124,20 +126,25 @@ export interface Sublet {
   apartment_details?: ApartmentDetails;
   needs_review?: boolean;
   is_flexible?: boolean;
-  // New structured fields
+  // Structured fields from Gemini / ingestion pipeline
   parsedAmenities?: ParsedAmenities;
   parsedRooms?: ParsedRooms;
   parsedDates?: ParsedDates;
+  // Rooms — top-level field written by Cloud Function (mirrors parsedRooms)
+  rooms?: ParsedRooms | null;
   country?: string;
   countryCode?: string;
   street?: string;
   fullAddress?: string;
-  locationConfidence?: 'high' | 'medium' | 'low';
+  locationConfidence?: 'high' | 'medium' | 'low' | string;
   contentHash?: string;
   duplicateOf?: string;
   partialData?: boolean;
   lastParsedAt?: number;
   parserVersion?: string;
+  sourceGroupName?: string;
+  datesFlexible?: boolean;
+  immediateAvailability?: boolean;
 }
 
 export interface Filters {

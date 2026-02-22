@@ -103,18 +103,12 @@ const AppContent: React.FC = () => {
   }, [savedListingIds]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setIsLoading(true);
-        const data = await persistenceService.fetchListings();
-        setSublets(data);
-      } catch (err) {
-        console.error("Data loading failed", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadData();
+    setIsLoading(true);
+    const unsubscribe = persistenceService.onListingsChanged((data) => {
+      setSublets(data);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   // Handle URL Deep Linking
@@ -185,15 +179,24 @@ const AppContent: React.FC = () => {
       const matchesCity = !filters.city || s.city?.toLowerCase() === filters.city.toLowerCase();
       const matchesNeighborhood = !filters.neighborhood || s.neighborhood?.toLowerCase() === filters.neighborhood.toLowerCase();
       
-      const matchesPets = !filters.petsAllowed || s.parsedAmenities?.petFriendly || (s.amenities && s.amenities.includes('petFriendly'));
+      // amenities can be an object (Cloud Function format) or a legacy string[]
+      const amenitiesIsObj = s.amenities && !Array.isArray(s.amenities);
+      const matchesPets = !filters.petsAllowed ||
+        s.parsedAmenities?.petFriendly === true ||
+        (amenitiesIsObj ? s.amenities?.petFriendly === true : Array.isArray(s.amenities) && s.amenities.includes('petFriendly'));
 
-      const matchesAmenities = !filters.amenities || Object.entries(filters.amenities).every(
-        ([key, val]) => !val || s.parsedAmenities?.[key as keyof typeof s.parsedAmenities]
-      );
+      const matchesAmenities = !filters.amenities || Object.entries(filters.amenities).every(([key, val]) => {
+        if (!val) return true;
+        if (s.parsedAmenities?.[key as keyof typeof s.parsedAmenities]) return true;
+        if (amenitiesIsObj && s.amenities?.[key] === true) return true;
+        return false;
+      });
 
+      // rooms data may be in parsedRooms (webhook format) or rooms (Cloud Function format)
+      const effectiveRooms = s.parsedRooms ?? s.rooms ?? null;
       const matchesRooms =
-        (!filters.minRooms || (s.parsedRooms?.totalRooms ?? 0) >= filters.minRooms) &&
-        (!filters.maxRooms || (s.parsedRooms?.totalRooms ?? Infinity) <= filters.maxRooms);
+        (!filters.minRooms || (effectiveRooms?.totalRooms ?? 0) >= filters.minRooms) &&
+        (!filters.maxRooms || (effectiveRooms?.totalRooms ?? Infinity) <= filters.maxRooms);
 
       let matchesDates = true;
       if (filters.startDate || filters.endDate) {
@@ -204,7 +207,7 @@ const AppContent: React.FC = () => {
         let subletStart: number;
         if (s.startDate) {
           subletStart = new Date(s.startDate).getTime();
-        } else if (s.parsedDates?.immediateAvailability) {
+        } else if (s.parsedDates?.immediateAvailability || s.immediateAvailability) {
           subletStart = Date.now();
         } else {
           subletStart = -Infinity;
