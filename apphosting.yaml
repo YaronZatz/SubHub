@@ -16,7 +16,7 @@ outputFiles:
 env:
   # מפתחות ציבוריים (Client Side) - כאן value זה בסדר, רק וודא שהערך הוא המפתח האמיתי ולא המילה NEXT_PUBLIC...
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "YOUR_ACTUAL_API_KEY_HERE"
+    value: "AIzaSyBO1YsFaPoL30LxrW0nsMYR8h2BKzNKe0s"
     availability: [BUILD, RUNTIME]
   
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
