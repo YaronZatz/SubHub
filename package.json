@@ -2,17 +2,18 @@
   "name": "subhub",
   "version": "1.0.0",
   "private": true,
-"dependencies": {
-  "apify-client": "^2.22.0",
-  "@google/genai": "^1.36.0",
+  "dependencies": {
+    "@google/genai": "^1.42.0",
     "@types/dotenv": "^6.1.1",
     "@types/pg": "^8.16.0",
+    "apify-client": "^2.22.0",
     "dotenv": "^17.2.3",
     "firebase": "^10.14.1",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^13.6.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.563.0",
     "next": "^16.1.6",
+    "node-fetch": "^2.7.0",
     "pg": "^8.17.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@types/leaflet": "^1.9.8",
     "@types/node": "^20.11.24",
+    "@types/node-fetch": "^2.6.13",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.18",

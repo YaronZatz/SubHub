@@ -1,8 +1,8 @@
-{
+﻿{
   "functions": [
     {
-      "source": "functions",
-      "codebase": "default",
+      "source": "webhook",
+      "codebase": "webhook",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
