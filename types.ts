@@ -29,6 +29,13 @@ export enum DateMode {
   FLEXIBLE = 'Flexible'
 }
 
+/** Filter by listing duration: sublet/short-term vs long-term rent */
+export enum RentTerm {
+  ALL = 'all',
+  SHORT_TERM = 'short_term',
+  LONG_TERM = 'long_term'
+}
+
 export enum ViewMode {
   BROWSE = 'browse',
   DETAIL = 'detail',
@@ -145,6 +152,7 @@ export interface Sublet {
   sourceGroupName?: string;
   datesFlexible?: boolean;
   immediateAvailability?: boolean;
+  rentTerm?: RentTerm;
 }
 
 export interface Filters {
@@ -158,6 +166,7 @@ export interface Filters {
   city: string;
   neighborhood: string;
   petsAllowed: boolean;
+  rentTerm?: RentTerm;
   minRooms?: number;
   maxRooms?: number;
   amenities?: Partial<Record<keyof ParsedAmenities, boolean>>;

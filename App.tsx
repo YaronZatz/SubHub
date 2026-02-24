@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from './types';
+import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode, RentTerm } from './types';
+import { hasAmenity } from './utils/amenityHelpers';
 import { CITY_CENTERS, GLOBAL_CITIES } from './constants';
 import MapVisualizer from './components/MapVisualizer';
 import AddListingModal from './components/AddListingModal';
@@ -72,7 +73,8 @@ const AppContent: React.FC = () => {
     startDate: '',
     endDate: '',
     dateMode: DateMode.FLEXIBLE,
-    petsAllowed: false
+    petsAllowed: false,
+    rentTerm: RentTerm.ALL,
   });
 
   const t = translations[language] || translations[Language.EN];
@@ -202,6 +204,10 @@ const AppContent: React.FC = () => {
         return false;
       });
 
+      // rent term filter: ALL means no filter; SHORT_TERM/LONG_TERM require a match
+      const matchesRentTerm = !filters.rentTerm || filters.rentTerm === RentTerm.ALL ||
+        s.rentTerm === filters.rentTerm;
+
       // rooms data may be in parsedRooms (webhook format) or rooms (Cloud Function format)
       const effectiveRooms = s.parsedRooms ?? s.rooms ?? null;
       const matchesRooms =
@@ -233,7 +239,7 @@ const AppContent: React.FC = () => {
         }
       }
 
-      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms;
+      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms && matchesRentTerm;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -520,7 +526,7 @@ const AppContent: React.FC = () => {
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.petsAllowed}</label>
-                   <button 
+                   <button
                      onClick={() => setFilters({ ...filters, petsAllowed: !filters.petsAllowed })}
                      className={`w-full p-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2
                        ${filters.petsAllowed ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}
@@ -529,6 +535,22 @@ const AppContent: React.FC = () => {
                      <span>{filters.petsAllowed ? '🐾' : '🐕'}</span>
                      {t.petsAllowed}
                    </button>
+                 </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.rentTermLabel}</label>
+                   <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm h-[44px]">
+                     {[RentTerm.ALL, RentTerm.SHORT_TERM, RentTerm.LONG_TERM].map((term) => (
+                       <button
+                         key={term}
+                         onClick={() => setFilters({ ...filters, rentTerm: term })}
+                         className={`flex-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-wider leading-tight px-1
+                           ${(filters.rentTerm ?? RentTerm.ALL) === term ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}
+                         `}
+                       >
+                         {t.rentTerms[term]}
+                       </button>
+                     ))}
+                   </div>
                  </div>
                </div>
             </div>
@@ -582,7 +604,7 @@ const AppContent: React.FC = () => {
                           `}>
                             {t.subletTypes[sublet.type]}
                           </span>
-                          {sublet.amenities?.includes('petFriendly') && (
+                          {hasAmenity(sublet, 'petFriendly') && (
                             <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-700 uppercase tracking-widest">
                               🐾 Pets
                             </span>

@@ -5,6 +5,7 @@ import { Sublet, Language, ListingStatus } from '../types';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { formatPrice, formatDate } from '../utils/formatters';
+import { getActiveAmenities } from '../utils/amenityHelpers';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 const SWIPE_THRESHOLD = 50;
@@ -70,13 +71,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
     ];
   }, [sublet.id, sublet.images]);
 
-  const amenities = [
-    { icon: '📶', label: t.features.wifi },
-    { icon: '❄️', label: t.features.ac },
-    { icon: '🍳', label: t.features.kitchen },
-    { icon: '💼', label: t.features.workspace },
-    { icon: '🐾', label: t.features.petFriendly },
-  ];
+  const amenities = getActiveAmenities(sublet);
 
   const nextImage = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -395,17 +390,19 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
               </div>
             )}
 
-            <div className="space-y-6 pt-8 border-t border-slate-100">
-              <h3 className="text-lg font-bold text-slate-900">{t.amenities}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {amenities.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4 text-slate-700 p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
-                    <span className="text-2xl">{item.icon}</span>
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </div>
-                ))}
+            {amenities.length > 0 && (
+              <div className="space-y-6 pt-8 border-t border-slate-100">
+                <h3 className="text-lg font-bold text-slate-900">{t.amenities}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {amenities.map((item) => (
+                    <div key={item.key} className="flex items-center gap-3 text-slate-700 p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:border-slate-200 transition-colors">
+                      <span className="text-xl">{item.icon}</span>
+                      <span className="text-sm font-medium">{item.labelEn}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Sticky Booking Widget */}

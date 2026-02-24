@@ -1,10 +1,32 @@
 
 import { collection, getDocs, doc, updateDoc, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates } from '../types';
+import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
 import { INITIAL_SUBLETS } from '../constants';
 
 const COLLECTION = 'listings';
+
+/**
+ * Infer rent term from listing dates.
+ * < 90 days between start and end → short-term sublet.
+ * >= 90 days (or no end date) → long-term rent.
+ * If neither date is known, return undefined (shown under all terms).
+ */
+function computeRentTerm(startDate: string, endDate: string, immediateAvail: boolean): RentTerm | undefined {
+  if (endDate && startDate) {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    if (!isNaN(start) && !isNaN(end) && end > start) {
+      const days = (end - start) / (1000 * 60 * 60 * 24);
+      return days < 90 ? RentTerm.SHORT_TERM : RentTerm.LONG_TERM;
+    }
+  }
+  // Has end date but no start (or vice versa) — treat as short if end date exists without start
+  if (endDate && !startDate && !immediateAvail) return RentTerm.SHORT_TERM;
+  // Immediate availability with no end date → likely long-term
+  if (immediateAvail && !endDate) return RentTerm.LONG_TERM;
+  return undefined;
+}
 
 /** Map a Firestore document from the listings collection to a Sublet. */
 function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sublet {
@@ -98,6 +120,11 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
     sourceGroupName: data.sourceGroupName as string | undefined,
     datesFlexible: isFlexible,
     immediateAvailability,
+    rentTerm: computeRentTerm(
+      (data.startDate as string) || '',
+      (data.endDate as string) || '',
+      immediateAvailability
+    ),
   };
 }
 
