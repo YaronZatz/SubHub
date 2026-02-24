@@ -298,15 +298,22 @@ function extractImages(item: any): string[] {
     }
   };
 
-  // Primary: attachments array
+  // Thumbnails collected separately so they land at the end (lowest priority)
+  const thumbnails: string[] = [];
+
+  // Primary: attachments array — prefer full-size sources over thumbnails
   if (item.attachments && Array.isArray(item.attachments)) {
     item.attachments.forEach((att: any) => {
+      // Highest quality: original media URI
+      if (att.media?.image?.uri) images.push(att.media.image.uri);
+      // Source URL (often full-size)
+      if (att.source) images.push(att.source);
+      // photo field (good quality)
+      if (att.photo) images.push(att.photo);
       // att.url is usually a Facebook photo page URL — skip unless it's a CDN URL
       if (att.url && isCdnUrl(att.url)) images.push(att.url);
-      if (att.photo) images.push(att.photo);
-      if (att.media?.image?.uri) images.push(att.media.image.uri);
-      if (att.source) images.push(att.source);
-      if (att.thumbnail) images.push(att.thumbnail);
+      // Thumbnail last — typically 150×150 or smaller
+      if (att.thumbnail) thumbnails.push(att.thumbnail);
     });
   }
 
@@ -318,8 +325,11 @@ function extractImages(item: any): string[] {
   }
 
   // Direct image fields (some actor versions)
-  if (item.imageUrl) images.push(item.imageUrl);
   if (item.fullPicture) images.push(item.fullPicture);
+  if (item.imageUrl) images.push(item.imageUrl);
+
+  // Add thumbnails last so deduplication keeps the higher-quality version first
+  thumbnails.forEach((url) => images.push(url));
 
   // Deduplicate and keep only HTTP(S) URLs
   return [...new Set(images)].filter(
