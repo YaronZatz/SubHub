@@ -24,26 +24,37 @@ function enhanceImageUrl(url: string): string {
 
 /**
  * Check if a URL is a direct image URL that can be rendered in an <img> tag.
- * Facebook photo page URLs (facebook.com/photo.php?fbid=...) are NOT direct images.
- * Direct image URLs from Facebook CDN start with scontent*.fbcdn.net
+ *
+ * Key distinction:
+ *   - Facebook CDN URLs (fbcdn.net, fbsbx.com) → direct images, allowed
+ *   - facebook.com/* URLs → HTML pages, never direct images, rejected
+ *
+ * The old check required BOTH "scontent" AND "fbcdn.net", which silently
+ * dropped valid CDN URLs like external-*.fbcdn.net and lookaside.fbsbx.com.
  */
 function isDirectImageUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
   const lower = url.toLowerCase();
-  // Facebook CDN direct images
-  if (lower.includes('scontent') && lower.includes('fbcdn.net')) return true;
-  // Common image extensions
+
+  // Facebook CDN domains — these serve direct images
+  if (lower.includes('fbcdn.net')) return true;   // scontent-*, external-*, video-*, etc.
+  if (lower.includes('fbsbx.com')) return true;   // lookaside.fbsbx.com
+
+  // Reject any facebook.com/* URL — these are page URLs, not images
+  if (lower.includes('facebook.com')) return false;
+  if (lower.includes('fb.com/')) return false;
+
+  // Common image file extensions
   if (/\.(jpg|jpeg|png|gif|webp|avif|svg)(\?|$)/i.test(url)) return true;
-  // Known image hosting services
+
+  // Known image hosting / storage services
   if (lower.includes('picsum.photos')) return true;
   if (lower.includes('unsplash.com')) return true;
   if (lower.includes('cloudinary.com')) return true;
   if (lower.includes('imgur.com')) return true;
-  if (lower.includes('firebasestorage.googleapis.com')) return true;
-  // Reject Facebook photo page URLs
-  if (lower.includes('facebook.com/photo')) return false;
-  if (lower.includes('facebook.com/groups')) return false;
-  // Allow other URLs that look like they might be images (external hosting)
+  if (lower.includes('storage.googleapis.com')) return true;
+
+  // Allow any other HTTPS URL and rely on onError for failures
   if (lower.startsWith('https://') || lower.startsWith('http://')) return true;
   return false;
 }

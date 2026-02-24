@@ -276,34 +276,54 @@ function generateContentHash(text: string): string {
 }
 
 /**
- * Extract image URLs from the Apify `attachments` field.
+ * Extract direct image CDN URLs from an Apify dataset item.
  *
- * Apify field mapping:
- *   attachments → array of media objects (photos, videos, links)
- *   Each attachment can have: url, photo, media.image.uri, etc.
+ * Key fix: att.url is almost always a Facebook *page* URL
+ * (e.g. facebook.com/photo?fbid=...), not a CDN image. Only the
+ * nested fields (photo, media.image.uri, source, thumbnail) and the
+ * top-level item.images array contain real CDN URLs.
  */
 function extractImages(item: any): string[] {
   const images: string[] = [];
 
-  // Primary: attachments array (main Apify output for media)
+  // Returns true for CDN URLs (fbcdn.net, storage.googleapis.com, etc.)
+  // Returns false for Facebook page URLs (facebook.com/...)
+  const isCdnUrl = (url: string): boolean => {
+    if (!url || typeof url !== "string") return false;
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return !host.endsWith("facebook.com") && !host.endsWith("fb.com");
+    } catch {
+      return false;
+    }
+  };
+
+  // Primary: attachments array
   if (item.attachments && Array.isArray(item.attachments)) {
     item.attachments.forEach((att: any) => {
-      if (att.url) images.push(att.url);
+      // att.url is usually a Facebook photo page URL — skip unless it's a CDN URL
+      if (att.url && isCdnUrl(att.url)) images.push(att.url);
       if (att.photo) images.push(att.photo);
       if (att.media?.image?.uri) images.push(att.media.image.uri);
-      // Some attachments have nested image URLs
       if (att.source) images.push(att.source);
       if (att.thumbnail) images.push(att.thumbnail);
     });
   }
 
-  // Fallback: direct image fields (some actor versions)
+  // Some Apify actor versions expose a top-level images array of CDN URLs
+  if (Array.isArray(item.images)) {
+    item.images.forEach((url: unknown) => {
+      if (typeof url === "string") images.push(url);
+    });
+  }
+
+  // Direct image fields (some actor versions)
   if (item.imageUrl) images.push(item.imageUrl);
   if (item.fullPicture) images.push(item.fullPicture);
 
-  // Filter out non-image URLs and deduplicate
+  // Deduplicate and keep only HTTP(S) URLs
   return [...new Set(images)].filter(
-    (url) => url && url.startsWith("http")
+    (url) => url && typeof url === "string" && url.startsWith("http")
   );
 }
 
