@@ -1,5 +1,5 @@
 
-import { Language, SubletType, DateMode } from './types';
+import { Language, SubletType, DateMode, RentTerm } from './types';
 
 export const translations = {
   [Language.EN]: {
@@ -8,6 +8,7 @@ export const translations = {
     searchPlaceholder: "Search neighborhood, street...",
     addPost: "Add Post",
     filters: "Filters",
+    clearFilters: "Clear filters & search",
     results: "Results",
     maxPrice: "Max Price",
     minPrice: "Min Price",
@@ -91,6 +92,12 @@ export const translations = {
     dateModes: {
       [DateMode.EXACT]: "Exact",
       [DateMode.FLEXIBLE]: "Flexible"
+    },
+    rentTermLabel: "Rent type",
+    rentTerms: {
+      [RentTerm.ALL]: "All",
+      [RentTerm.SHORT_TERM]: "Sublet / Short-term",
+      [RentTerm.LONG_TERM]: "Long-term"
     }
   },
   [Language.HE]: {
@@ -99,6 +106,7 @@ export const translations = {
     searchPlaceholder: "חיפוש שכונה, רחוב...",
     addPost: "הוסף פוסט",
     filters: "מסננים",
+    clearFilters: "נקה מסננים וחיפוש",
     results: "תוצאות",
     maxPrice: "מחיר מקסימלי",
     minPrice: "מחיר מינימלי",
@@ -182,6 +190,12 @@ export const translations = {
     dateModes: {
       [DateMode.EXACT]: "מדויק",
       [DateMode.FLEXIBLE]: "גמיש"
+    },
+    rentTermLabel: "סוג השכרה",
+    rentTerms: {
+      [RentTerm.ALL]: "הכל",
+      [RentTerm.SHORT_TERM]: "סאבלט / קצר מועד",
+      [RentTerm.LONG_TERM]: "ארוך טווח"
     }
   },
   [Language.FR]: {
@@ -190,6 +204,7 @@ export const translations = {
     searchPlaceholder: "Chercher quartier, rue...",
     addPost: "Ajouter",
     filters: "Filtres",
+    clearFilters: "Réinitialiser filtres et recherche",
     results: "Résultats",
     maxPrice: "Prix Max",
     minPrice: "Prix Min",
@@ -273,6 +288,12 @@ export const translations = {
     dateModes: {
       [DateMode.EXACT]: "Exact",
       [DateMode.FLEXIBLE]: "Flexible"
+    },
+    rentTermLabel: "Type de location",
+    rentTerms: {
+      [RentTerm.ALL]: "Tout",
+      [RentTerm.SHORT_TERM]: "Sous-location / Court terme",
+      [RentTerm.LONG_TERM]: "Long terme"
     }
   },
   [Language.RU]: {
@@ -281,6 +302,7 @@ export const translations = {
     searchPlaceholder: "Поиск района, улицы...",
     addPost: "Добавить",
     filters: "Фильтры",
+    clearFilters: "Сбросить фильтры и поиск",
     results: "Результаты",
     maxPrice: "Макс. цена",
     minPrice: "Мин. цена",
@@ -364,6 +386,12 @@ export const translations = {
     dateModes: {
       [DateMode.EXACT]: "Точно",
       [DateMode.FLEXIBLE]: "Гибко"
+    },
+    rentTermLabel: "Тип аренды",
+    rentTerms: {
+      [RentTerm.ALL]: "Все",
+      [RentTerm.SHORT_TERM]: "Субаренда / Краткосрочная",
+      [RentTerm.LONG_TERM]: "Долгосрочная"
     }
   }
 };
