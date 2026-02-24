@@ -31,6 +31,9 @@ node_modules/
 .env*.local
 gen-lang-client-*.json
 
+# TypeScript incremental build info
+*.tsbuildinfo
+
 # Claude Code
 .claude/
 *API Key*.txt
