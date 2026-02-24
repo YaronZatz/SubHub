@@ -12,6 +12,16 @@ interface ListingCarouselProps {
 
 const SWIPE_THRESHOLD = 50;
 
+/** Attempt to get a higher-resolution version of a Facebook CDN image URL. */
+function enhanceImageUrl(url: string): string {
+  if (!url) return url;
+  let u = url;
+  u = u.replace(/\/s\d+x\d+\//, '/s1080x1080/');
+  u = u.replace(/\/p\d+x\d+\//, '/p1080x1080/');
+  u = u.replace(/\/c\d+\.\d+\.\d+\.\d+\//, '/');
+  return u;
+}
+
 /**
  * Check if a URL is a direct image URL that can be rendered in an <img> tag.
  * Facebook photo page URLs (facebook.com/photo.php?fbid=...) are NOT direct images.
@@ -76,7 +86,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   
   const images = useMemo(() => {
     if (customImages && customImages.length > 0) {
-      const directImages = customImages.filter(isDirectImageUrl);
+      const directImages = customImages.filter(isDirectImageUrl).map(enhanceImageUrl);
       if (directImages.length > 0) return directImages;
     }
     return [];
@@ -242,12 +252,13 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
               </svg>
             </div>
           ) : (
-            <img 
+            <img
               key={i}
               src={src}
               className="w-full h-full object-cover shrink-0 select-none"
               alt={`Sublet view ${i + 1}`}
               loading="lazy"
+              referrerPolicy="no-referrer"
               onError={() => handleImageError(i)}
             />
           )

@@ -105,7 +105,17 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = persistenceService.onListingsChanged((data) => {
-      setSublets(data);
+      // Deduplicate by contentHash first, then by sourceUrl
+      const seen = new Set<string>();
+      const deduped = data.filter(listing => {
+        const hash = listing.contentHash;
+        if (hash && seen.has(`hash:${hash}`)) return false;
+        if (hash) seen.add(`hash:${hash}`);
+        if (listing.sourceUrl && seen.has(`url:${listing.sourceUrl}`)) return false;
+        if (listing.sourceUrl) seen.add(`url:${listing.sourceUrl}`);
+        return true;
+      });
+      setSublets(deduped);
       setIsLoading(false);
     });
     return () => unsubscribe();
@@ -580,7 +590,7 @@ const AppContent: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-lg font-black text-slate-900 leading-none dir-ltr">
-                            {formatPrice(sublet.price, currency, language)}
+                            {formatPrice(sublet.price, currency, language, sublet.currency)}
                           </div>
                         </div>
                       </div>
@@ -665,7 +675,7 @@ const AppContent: React.FC = () => {
                  <div className="pt-2">
                    <h4 className="font-bold text-slate-900 text-sm pr-8 line-clamp-1">{selectedSublet.location}</h4>
                    <div className="text-indigo-600 font-black text-lg mt-0.5 dir-ltr">
-                     {formatPrice(selectedSublet.price, currency, language)}
+                     {formatPrice(selectedSublet.price, currency, language, selectedSublet.currency)}
                    </div>
                    <div className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">{selectedSublet.neighborhood || selectedSublet.city}</div>
                    <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1.5" />

@@ -1,4 +1,6 @@
 
+declare const L: any; // Leaflet loaded via CDN
+
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Sublet, Language, ListingStatus } from '../types';
 import { translations } from '../translations';
@@ -7,6 +9,16 @@ import { formatPrice, formatDate } from '../utils/formatters';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 
 const SWIPE_THRESHOLD = 50;
+
+/** Attempt to get a higher-resolution version of a Facebook CDN image URL. */
+function enhanceImageUrl(url: string): string {
+  if (!url) return url;
+  let u = url;
+  u = u.replace(/\/s\d+x\d+\//, '/s1080x1080/');
+  u = u.replace(/\/p\d+x\d+\//, '/p1080x1080/');
+  u = u.replace(/\/c\d+\.\d+\.\d+\.\d+\//, '/');
+  return u;
+}
 
 interface SubletDetailPageProps {
   sublet: Sublet;
@@ -33,11 +45,14 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   const { currency } = useCurrency();
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
   const touchDeltaRef = useRef(0);
   const galleryRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -45,7 +60,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
   const images = useMemo(() => {
     if (sublet.images && sublet.images.length > 0) {
-      return sublet.images;
+      return sublet.images.map(enhanceImageUrl);
     }
     return [
       `https://picsum.photos/seed/${sublet.id}-1/1200/800`,
@@ -129,6 +144,36 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
       el.removeEventListener('touchcancel', handleGalleryTouchEnd);
     };
   }, [handleGalleryTouchStart, handleGalleryTouchMove, handleGalleryTouchEnd]);
+
+  const handleImageError = useCallback((idx: number) => {
+    setFailedImages(prev => new Set(prev).add(idx));
+  }, []);
+
+  // Map initialisation (runs when the listing has coordinates)
+  useEffect(() => {
+    if (!sublet.lat || !sublet.lng || !mapRef.current) return;
+    if (typeof L === 'undefined') return;
+    // Remove any previously-mounted map
+    if (mapInstanceRef.current) {
+      try { mapInstanceRef.current.remove(); } catch (_) {}
+      mapInstanceRef.current = null;
+    }
+    const map = L.map(mapRef.current).setView([sublet.lat, sublet.lng], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map);
+    L.marker([sublet.lat, sublet.lng]).addTo(map)
+      .bindPopup(`<strong>${sublet.location || sublet.city || ''}</strong>`)
+      .openPopup();
+    mapInstanceRef.current = map;
+    return () => {
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove(); } catch (_) {}
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [sublet.id, sublet.lat, sublet.lng, sublet.location]);
 
   const isNew = (createdAt: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
@@ -229,13 +274,23 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
             >
               {images.map((src, i) => (
                 <div key={i} className="shrink-0 w-full h-full" style={{ flex: `0 0 ${100 / images.length}%` }}>
-                  <img
-                    src={src}
-                    className="w-full h-full object-cover select-none"
-                    alt={`View ${i + 1}`}
-                    loading={i === 0 ? 'eager' : 'lazy'}
-                    draggable={false}
-                  />
+                  {failedImages.has(i) ? (
+                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                      <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <img
+                      src={src}
+                      className="w-full h-full object-cover select-none"
+                      alt={`View ${i + 1}`}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      draggable={false}
+                      referrerPolicy="no-referrer"
+                      onError={() => handleImageError(i)}
+                    />
+                  )}
                 </div>
               ))}
             </div>
@@ -274,7 +329,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                   ${activeImgIndex === i ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
                 `}
               >
-                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt={`Thumb ${i + 1}`} />
+                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt={`Thumb ${i + 1}`} referrerPolicy="no-referrer" />
               </button>
             ))}
           </div>
@@ -311,6 +366,18 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
               </p>
             </div>
 
+            {/* Location Map */}
+            {sublet.lat && sublet.lng && (
+              <div className="space-y-3 pt-8 border-t border-slate-100">
+                <h3 className="text-lg font-bold text-slate-900">📍 Location</h3>
+                <div ref={mapRef} className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 shadow-sm" />
+                {sublet.location && <p className="text-sm text-slate-500">{sublet.location}</p>}
+                {(sublet.neighborhood || sublet.city) && (
+                  <p className="text-xs text-slate-400">{[sublet.neighborhood, sublet.city].filter(Boolean).join(', ')}</p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-6 pt-8 border-t border-slate-100">
               <h3 className="text-lg font-bold text-slate-900">{t.amenities}</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
@@ -331,7 +398,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.totalPrice}</div>
                 <div className="flex items-baseline gap-1 dir-ltr">
                   <span className="text-3xl font-black text-slate-900">
-                    {formatPrice(sublet.price, currency, language)}
+                    {formatPrice(sublet.price, currency, language, sublet.currency)}
                   </span>
                 </div>
                 <div className="pt-1">

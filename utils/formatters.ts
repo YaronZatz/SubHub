@@ -17,17 +17,27 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
 
 /**
  * Formats a price according to the selected currency and locale.
- * @param amountInBase The amount in the base currency (ILS).
+ * @param amountInBase The amount in the listing's original currency (or ILS if unknown).
  * @param targetCurrency The currency to display.
  * @param locale The language locale for formatting.
+ * @param listingCurrency The original currency code from the Firestore listing (e.g. "USD", "EUR").
  */
 export const formatPrice = (
   amountInBase: number,
   targetCurrency: CurrencyCode,
-  locale: string = 'en-US'
+  locale: string = 'en-US',
+  listingCurrency?: string
 ): string => {
-  const convertedAmount = amountInBase * EXCHANGE_RATES[targetCurrency];
-  
+  // Normalize to ILS first if the listing is priced in a known non-ILS currency
+  let priceInILS = amountInBase;
+  if (listingCurrency && listingCurrency !== 'ILS') {
+    const rate = EXCHANGE_RATES[listingCurrency as CurrencyCode];
+    if (rate && rate > 0) priceInILS = amountInBase / rate;
+    // Unknown currencies (GBP etc.) fall through and are treated as ILS
+  }
+
+  const convertedAmount = priceInILS * EXCHANGE_RATES[targetCurrency];
+
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: targetCurrency,
