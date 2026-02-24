@@ -42,13 +42,15 @@ export const apifyWebhook = onRequest(
 
     console.log(`Processing Apify run ${actorRunId}, dataset ${datasetId}`);
 
-    // Respond immediately to avoid Apify's 30-sec timeout
-    res.status(200).send("OK — processing started");
+ 
 
     // ── 3. Fetch all items from the dataset ──
     try {
       const items = await fetchApifyDataset(datasetId, APIFY_TOKEN.value());
       console.log(`Fetched ${items.length} items from Apify`);
+      console.log("Starting to process items...");
+      console.log("First item keys:", Object.keys(items[0] || {}).join(", "));
+      console.log("First item text preview:", (items[0]?.text || "NO TEXT FIELD").substring(0, 200));
 
       // ── 4. Process each post ──
       let newCount = 0;
@@ -56,8 +58,13 @@ export const apifyWebhook = onRequest(
 
       for (const item of items) {
         try {
+          const itemIndex = newCount + skipCount + 1;
+          console.log(`--- Processing item ${itemIndex} of ${items.length} ---`);
+
           // 4a. Build the full text from all available fields
+          console.log(`[${itemIndex}] Building full text...`);
           const fullText = buildFullText(item);
+          console.log(`[${itemIndex}] Full text length: ${fullText?.length || 0}, preview: ${(fullText || "").substring(0, 80)}`);
           if (!fullText || fullText.length < 10) {
             skipCount++;
             continue;
@@ -95,11 +102,13 @@ export const apifyWebhook = onRequest(
           // Rate limiting: 4.5s delay = ~13 requests/min (under Gemini free tier 15 RPM limit)
           await new Promise(resolve => setTimeout(resolve, 4500));
 
+          console.log(`[${itemIndex}] Calling Gemini API...`);
           const parsed = await parseWithGemini(
             fullText,
             item.groupTitle || "",
             GEMINI_API_KEY.value()
           );
+          console.log(`[${itemIndex}] Gemini result:`, parsed ? "SUCCESS" : "FAILED");
 
           if (!parsed) {
             console.warn("Gemini failed to parse post, skipping. Text preview:", fullText.substring(0, 100));
@@ -108,6 +117,7 @@ export const apifyWebhook = onRequest(
           }
 
           // 4e. Geocode the location (Nominatim)
+          console.log(`[${itemIndex}] Geocoding address:`, parsed.location?.fullAddress || parsed.location?.city || "NO ADDRESS");
           let lat = null;
           let lng = null;
           if (parsed.location?.fullAddress || parsed.location?.city) {
@@ -175,18 +185,25 @@ export const apifyWebhook = onRequest(
             lastParsedAt: Date.now(),
           };
 
+          console.log(`[${itemIndex}] Writing to Firestore...`);
           await db.collection("listings").add(listing);
+          console.log(`[${itemIndex}] Successfully written to Firestore!`);
           newCount++;
-        } catch (itemError) {
-          console.error("Error processing item:", itemError);
+        } catch (itemError: any) {
+          console.error(`Error processing item ${newCount + skipCount + 1}:`, itemError?.message || itemError);
+          console.error("Item error stack:", itemError?.stack || "no stack");
+          skipCount++;
         }
       }
 
       console.log(
         `Done! ${newCount} new listings, ${skipCount} skipped (duplicates/empty)`
       );
-    } catch (error) {
-      console.error("Fatal error processing webhook:", error);
+      res.status(200).send(`Done! ${newCount} new, ${skipCount} skipped`);
+    } catch (error: any) {
+      console.error("Fatal error processing webhook:", error?.message || error);
+      console.error("Error stack:", error?.stack || "no stack");
+      res.status(500).send("Fatal processing error");
     }
   }
 );
