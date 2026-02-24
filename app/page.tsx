@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode } from '../types';
+import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode, RentTerm } from '../types';
 import { translations } from '../translations';
 import { GLOBAL_CITIES } from '../constants';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -31,6 +31,37 @@ import FeatureIcons from '../components/FeatureIcons';
 import CurrencySwitcher from '../components/CurrencySwitcher';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AuthModal from '../components/AuthModal';
+
+/** ~6 months in days; used to classify short-term vs long-term */
+const SHORT_TERM_DAYS = 183;
+
+function getListingDurationDays(s: Sublet): number | null {
+  const start = s.startDate && /^\d{4}-\d{2}-\d{2}$/.test(s.startDate) ? new Date(s.startDate).getTime() : null;
+  const end = s.endDate && /^\d{4}-\d{2}-\d{2}$/.test(s.endDate) ? new Date(s.endDate).getTime() : null;
+  if (start != null && end != null && end >= start) return Math.round((end - start) / (24 * 60 * 60 * 1000));
+  const duration = s.parsedDates?.duration?.toLowerCase() ?? '';
+  const monthMatch = duration.match(/(\d+)\s*month/);
+  if (monthMatch) return parseInt(monthMatch[1], 10) * 30;
+  const weekMatch = duration.match(/(\d+)\s*week/);
+  if (weekMatch) return parseInt(weekMatch[1], 10) * 7;
+  const yearMatch = duration.match(/(\d+)\s*year/);
+  if (yearMatch) return parseInt(yearMatch[1], 10) * 365;
+  return null;
+}
+
+const INITIAL_FILTERS: Filters = {
+  minPrice: 0,
+  maxPrice: 20000,
+  showTaken: false,
+  type: undefined,
+  city: '',
+  neighborhood: '',
+  startDate: '',
+  endDate: '',
+  dateMode: DateMode.FLEXIBLE,
+  petsAllowed: false,
+  rentTerm: RentTerm.ALL
+};
 
 export default function Home() {
   const [sublets, setSublets] = useState<Sublet[]>([]);
@@ -62,18 +93,12 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handler);
   }, [isUserMenuOpen]);
   
-  const [filters, setFilters] = useState<Filters>({
-    minPrice: 0,
-    maxPrice: 20000,
-    showTaken: false,
-    type: undefined,
-    city: '',
-    neighborhood: '',
-    startDate: '',
-    endDate: '',
-    dateMode: DateMode.FLEXIBLE,
-    petsAllowed: false
-  });
+  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
+
+  const handleClearFilters = () => {
+    setFilters(INITIAL_FILTERS);
+    setSearchQuery('');
+  };
 
   const t = translations[language] || translations[Language.EN];
 
@@ -109,7 +134,14 @@ export default function Home() {
       const matchesNeighborhood = !filters.neighborhood.trim() || (s.neighborhood?.toLowerCase().includes(filters.neighborhood.toLowerCase()));
       const matchesDates = !filters.startDate || !filters.endDate || (s.startDate <= filters.endDate && s.endDate >= filters.startDate);
       const matchesPets = !filters.petsAllowed || (s.amenities?.some(a => /pet|dog|cat|friendly|חיית|כלב|חתול/i.test(a)) ?? true);
-      return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets;
+      const rentTerm = filters.rentTerm ?? RentTerm.ALL;
+      const matchesRentTerm = rentTerm === RentTerm.ALL || (() => {
+        const days = getListingDurationDays(s);
+        if (days == null) return true;
+        if (rentTerm === RentTerm.SHORT_TERM) return days <= SHORT_TERM_DAYS;
+        return days > SHORT_TERM_DAYS;
+      })();
+      return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesRentTerm;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -301,6 +333,23 @@ export default function Home() {
                  </div>
 
                  <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.rentTermLabel}</label>
+                   <div className="flex flex-wrap gap-2">
+                     {([RentTerm.ALL, RentTerm.SHORT_TERM, RentTerm.LONG_TERM] as const).map((term) => (
+                       <button
+                         key={term}
+                         type="button"
+                         onClick={() => setFilters(f => ({ ...f, rentTerm: term }))}
+                         className={`flex-1 min-w-0 px-3 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap
+                           ${(filters.rentTerm ?? RentTerm.ALL) === term ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:border-slate-300'}`}
+                       >
+                         {(t as { rentTerms: Record<RentTerm, string> }).rentTerms[term]}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+
+                 <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.city}</label>
                    <CityAutocomplete
                      value={filters.city}
@@ -375,6 +424,17 @@ export default function Home() {
                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                    />
                    <label htmlFor="show-taken" className="text-xs font-bold text-slate-600">{t.showTaken}</label>
+                 </div>
+
+                 <div className="pt-3 border-t border-slate-200">
+                   <button
+                     type="button"
+                     onClick={handleClearFilters}
+                     className="w-full py-2.5 px-4 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                     aria-label={t.clearFilters}
+                   >
+                     {t.clearFilters}
+                   </button>
                  </div>
                </div>
              )}

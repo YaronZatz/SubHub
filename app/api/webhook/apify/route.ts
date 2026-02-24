@@ -4,7 +4,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { adminDb, adminStorage } from '@/lib/firebase-admin';
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
-import { SubletType } from '@/types';
+import { SubletType, RentTerm } from '@/types';
 import { fetchDatasetItems, fetchDatasetItemsWithClient } from '@/services/apifyService';
 import { geocodeAddress } from '@/services/geocodingService';
 
@@ -166,6 +166,30 @@ interface GeminiResponse {
   rooms?: GeminiRooms;
   category?: string;
   ai_summary?: string;
+}
+
+const SHORT_TERM_DAYS = 183;
+
+function getDurationDays(startDate: string | null | undefined, endDate: string | null | undefined, durationStr: string | null | undefined): number | null {
+  if (startDate && endDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate) && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    const start = new Date(startDate).getTime();
+    const end = new Date(endDate).getTime();
+    if (end >= start) return Math.round((end - start) / (24 * 60 * 60 * 1000));
+  }
+  const duration = (durationStr ?? '').toLowerCase();
+  const monthMatch = duration.match(/(\d+)\s*month/);
+  if (monthMatch) return parseInt(monthMatch[1], 10) * 30;
+  const weekMatch = duration.match(/(\d+)\s*week/);
+  if (weekMatch) return parseInt(weekMatch[1], 10) * 7;
+  const yearMatch = duration.match(/(\d+)\s*year/);
+  if (yearMatch) return parseInt(yearMatch[1], 10) * 365;
+  return null;
+}
+
+function computeRentTerm(startDate: string | null | undefined, endDate: string | null | undefined, durationStr: string | null | undefined): RentTerm | undefined {
+  const days = getDurationDays(startDate, endDate, durationStr);
+  if (days == null) return undefined;
+  return days <= SHORT_TERM_DAYS ? RentTerm.SHORT_TERM : RentTerm.LONG_TERM;
 }
 
 function mapCategoryToType(category: string | undefined): string {
@@ -570,6 +594,7 @@ export async function POST(req: NextRequest) {
             lat,
             lng,
             type: mapCategoryToType(structuredData.category),
+            rentTerm: computeRentTerm(dates?.start_date, dates?.end_date, dates?.duration) ?? null,
             status: 'active',
             createdAt: now,
             lastScrapedAt: payload.scrapedAt || new Date().toISOString(),
