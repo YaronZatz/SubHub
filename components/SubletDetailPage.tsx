@@ -1,7 +1,6 @@
 
-declare const L: any; // Leaflet loaded via CDN
-
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import L from 'leaflet';
 import { Sublet, Language, ListingStatus } from '../types';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -152,7 +151,6 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   // Map initialisation (runs when the listing has coordinates)
   useEffect(() => {
     if (!sublet.lat || !sublet.lng || !mapRef.current) return;
-    if (typeof L === 'undefined') return;
     // Remove any previously-mounted map
     if (mapInstanceRef.current) {
       try { mapInstanceRef.current.remove(); } catch (_) {}
@@ -367,14 +365,33 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
             </div>
 
             {/* Location Map */}
-            {sublet.lat && sublet.lng && (
+            {(sublet.location || sublet.city || sublet.neighborhood) && (
               <div className="space-y-3 pt-8 border-t border-slate-100">
                 <h3 className="text-lg font-bold text-slate-900">📍 Location</h3>
-                <div ref={mapRef} className="w-full h-64 rounded-2xl overflow-hidden border border-slate-200 shadow-sm" />
-                {sublet.location && <p className="text-sm text-slate-500">{sublet.location}</p>}
-                {(sublet.neighborhood || sublet.city) && (
-                  <p className="text-xs text-slate-400">{[sublet.neighborhood, sublet.city].filter(Boolean).join(', ')}</p>
+
+                {sublet.lat && sublet.lng ? (
+                  /* Interactive map when geocoded coordinates are available */
+                  <div ref={mapRef} className="w-full h-72 rounded-2xl overflow-hidden border border-slate-200 shadow-sm" />
+                ) : (
+                  /* Text-only fallback when coordinates are not available */
+                  <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <svg className="w-5 h-5 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                    </svg>
+                    <span className="text-sm text-slate-600">
+                      {sublet.location || [sublet.neighborhood, sublet.city].filter(Boolean).join(', ')}
+                    </span>
+                  </div>
                 )}
+
+                <div className="flex flex-col gap-0.5">
+                  {sublet.location && <p className="text-sm font-medium text-slate-700">{sublet.location}</p>}
+                  {(sublet.neighborhood || sublet.city) && (
+                    <p className="text-xs text-slate-400">{[sublet.neighborhood, sublet.city].filter(Boolean).join(', ')}</p>
+                  )}
+                  {sublet.country && <p className="text-xs text-slate-400">{sublet.country}</p>}
+                </div>
               </div>
             )}
 
