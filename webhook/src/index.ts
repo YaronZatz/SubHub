@@ -85,11 +85,11 @@ export const apifyWebhook = onRequest(
             }
           }
 
-          // 4c. Content-hash deduplication
-          const contentHash = generateContentHash(fullText);
+          // 4c. Content-hash deduplication (same algorithm as app utils/contentHash.ts)
+          const hashValue = generateContentHash(fullText);
           const hashCheck = await db
             .collection("listings")
-            .where("contentHash", "==", contentHash)
+            .where("contentHash", "==", hashValue)
             .limit(1)
             .get();
 
@@ -129,12 +129,18 @@ export const apifyWebhook = onRequest(
             lng = geocoded?.lng || null;
           }
 
-          // 4f. Build the Firestore document
+          // 4f. Stable doc id (postID or md5(url) or content hash) so re-runs update same doc
+          const postID = (item.postID ?? item.id ?? "").toString().trim();
+          const stableId =
+            postID ||
+            (sourceUrl ? crypto.createHash("md5").update(sourceUrl).digest("hex") : hashValue);
+
+          // 4g. Build the Firestore document
           const listing = {
             // Core fields
             sourceUrl: sourceUrl,
             originalText: fullText,
-            contentHash: contentHash,
+            contentHash: hashValue,
 
             // Parsed by Gemini
             price: parsed.price?.amount || 0,
@@ -185,8 +191,8 @@ export const apifyWebhook = onRequest(
             lastParsedAt: Date.now(),
           };
 
-          console.log(`[${itemIndex}] Writing to Firestore...`);
-          await db.collection("listings").add(listing);
+          console.log(`[${itemIndex}] Writing to Firestore (doc id: ${stableId})...`);
+          await db.collection("listings").doc(stableId).set(listing, { merge: true });
           console.log(`[${itemIndex}] Successfully written to Firestore!`);
           newCount++;
         } catch (itemError: any) {
@@ -258,16 +264,16 @@ function buildFullText(item: any): string {
 }
 
 /**
- * Generate a content hash for deduplication.
- * Normalizes text before hashing to catch near-duplicates.
+ * Generate content hash for deduplication.
+ * Must match utils/contentHash.ts in the app so both pipelines produce the same hash.
  */
 function generateContentHash(text: string): string {
   const normalized = text
     .toLowerCase()
+    .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, "")
     .replace(/\s+/g, " ")
     .replace(/[^\w\s]/g, "")
     .trim();
-
   return crypto
     .createHash("sha256")
     .update(normalized)

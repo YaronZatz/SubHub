@@ -7,6 +7,7 @@ import { Buffer } from 'buffer';
 import { SubletType, RentTerm } from '@/types';
 import { fetchDatasetItems, fetchDatasetItemsWithClient } from '@/services/apifyService';
 import { geocodeAddress } from '@/services/geocodingService';
+import { contentHash } from '@/utils/contentHash';
 
 const GEMINI_MODEL = 'gemini-3-pro-preview';
 const PARSER_VERSION = '2.0.0';
@@ -211,14 +212,6 @@ function buildGeocodingQuery(loc: GeminiLocation): string {
   if (loc.displayAddress) return loc.displayAddress;
   const parts = [loc.neighborhood, loc.city, loc.country].filter(Boolean);
   return parts.join(', ');
-}
-
-function contentFingerprint(text: string): string {
-  const normalized = text.toLowerCase()
-    .replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '') // remove common emoji ranges
-    .replace(/\s+/g, ' ')
-    .trim();
-  return crypto.createHash('md5').update(normalized).digest('hex');
 }
 
 async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
@@ -501,17 +494,30 @@ export async function POST(req: NextRequest) {
       const docId = payload.postID;
       console.log(`${logPrefix} Processing item ${i + 1}/${items.length} | postID=${docId} | url=${payload.url.slice(0, 80)}... | textLen=${payload.text.length} | partial=${payload.partialData}`);
 
-      // --- Deduplication Check ---
-      const contentHash = contentFingerprint(payload.text);
-      try {
-        const dupSnapshot = await adminDb.collection('listings').where('contentHash', '==', contentHash).limit(1).get();
-        if (!dupSnapshot.empty) {
-          const dupDoc = dupSnapshot.docs[0];
-          if (dupDoc.data().needs_review === false) {
-            console.log(`${logPrefix} Duplicate detected (contentHash=${contentHash}), skipping. Original: ${dupDoc.id}`);
-            results.push({ id: dupDoc.id });
+      // --- Deduplication: sourceUrl (when present) ---
+      const canonicalUrl = payload.url && !payload.url.startsWith('https://facebook.com/post/') ? payload.url.trim() : '';
+      if (canonicalUrl) {
+        try {
+          const urlSnapshot = await adminDb.collection('listings').where('sourceUrl', '==', canonicalUrl).limit(1).get();
+          if (!urlSnapshot.empty) {
+            console.log(`${logPrefix} Duplicate detected (sourceUrl), skipping. Existing doc: ${urlSnapshot.docs[0].id}`);
+            results.push({ id: urlSnapshot.docs[0].id });
             continue;
           }
+        } catch (urlDedupErr) {
+          console.warn(`${logPrefix} sourceUrl dedup check failed (non-fatal):`, urlDedupErr);
+        }
+      }
+
+      // --- Deduplication: contentHash (skip on any match, regardless of needs_review) ---
+      const hashValue = contentHash(payload.text);
+      try {
+        const dupSnapshot = await adminDb.collection('listings').where('contentHash', '==', hashValue).limit(1).get();
+        if (!dupSnapshot.empty) {
+          const dupDoc = dupSnapshot.docs[0];
+          console.log(`${logPrefix} Duplicate detected (contentHash=${hashValue}), skipping. Original: ${dupDoc.id}`);
+          results.push({ id: dupDoc.id });
+          continue;
         }
       } catch (dedupErr) {
         console.warn(`${logPrefix} Deduplication check failed (non-fatal):`, dedupErr);
@@ -614,7 +620,7 @@ export async function POST(req: NextRequest) {
             } : null,
             ai_summary: structuredData.ai_summary || '',
             needs_review: false,
-            contentHash,
+            contentHash: hashValue,
             partialData: payload.partialData ?? false,
             lastParsedAt: now,
             parserVersion: PARSER_VERSION,
@@ -651,7 +657,7 @@ export async function POST(req: NextRequest) {
             images: persistentImages,
             attachmentUrls: payload.images,
             needs_review: true,
-            contentHash,
+            contentHash: hashValue,
             partialData: payload.partialData ?? false,
             lastParsedAt: now,
             parserVersion: PARSER_VERSION,
