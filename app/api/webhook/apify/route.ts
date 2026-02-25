@@ -43,7 +43,7 @@ interface NormalizedPayload {
 
 /** Normalize Apify payload - Facebook Scraper fields + legacy url/text/images */
 function normalizePayload(raw: ApifyPayload): NormalizedPayload | null {
-  const url = (raw.postUrl || raw.url || '').toString().trim();
+  const url = normalizeFbUrl((raw.postUrl || raw.url || '').toString().trim());
 
   // Gather ALL text fields and concatenate, deduplicating identical strings
   const textParts = [raw.topText, raw.postText, raw.text, raw.message, raw.content, raw.body, raw.description]
@@ -365,6 +365,24 @@ function ensureStringArray(arr: unknown): string[] {
   return arr.map((x) => (typeof x === 'string' ? x : (x && typeof x === 'object' && 'url' in x ? (x as { url: string }).url : null))).filter((s): s is string => typeof s === 'string');
 }
 
+/**
+ * Strip tracking query parameters from Facebook post URLs so the same post
+ * always produces the same sourceUrl/docId regardless of CDN token or tracking params.
+ * Non-Facebook URLs are returned unchanged.
+ */
+function normalizeFbUrl(url: string): string {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (u.hostname.endsWith('facebook.com') || u.hostname.endsWith('fb.com')) {
+      return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/+$/, '');
+    }
+  } catch {
+    // unparseable URL — return as-is
+  }
+  return url;
+}
+
 /** Map Facebook Groups Scraper (and similar) dataset output to our ApifyPayload shape. */
 function mapDatasetItemToPayload(item: unknown): ApifyPayload {
   if (item && typeof item === 'object') {
@@ -379,7 +397,11 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
       .filter((s) => s.length > 0);
     const combinedText = [...new Set(textParts)].join('\n\n');
 
+    // IMPORTANT: ...r must come FIRST so computed fallback fields below take priority.
+    // The Facebook Groups Scraper uses `postId` (lowercase d), not `postID`, so the
+    // fallback chain (postID ?? id ?? postId) would be lost if ...r came last.
     return {
+      ...r,
       postID: r.postID ?? r.id ?? r.postId,
       postUrl: r.postUrl ?? r.url,
       postText: combinedText,
@@ -387,7 +409,6 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
       attachments,
       images: attachments,
       scrapedAt: r.scrapedAt ?? r.time ?? r.createdAt,
-      ...r,
     } as ApifyPayload;
   }
   return {} as ApifyPayload;

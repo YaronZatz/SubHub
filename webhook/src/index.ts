@@ -71,7 +71,9 @@ export const apifyWebhook = onRequest(
           }
 
           // 4b. Check for duplicates (URL-based). Use same URL fields as Next.js: postUrl || url
-          const sourceUrl = (item.postUrl || item.url || item.facebookUrl || "").toString().trim();
+          // Normalize to strip tracking query params so the same post always produces the same key.
+          const rawUrl = (item.postUrl || item.url || item.facebookUrl || "").toString().trim();
+          const sourceUrl = normalizeFbUrl(rawUrl);
           if (sourceUrl) {
             const existing = await db
               .collection("listings")
@@ -215,6 +217,24 @@ export const apifyWebhook = onRequest(
 );
 
 // ─── HELPER FUNCTIONS ─────────────────────────────────────────────────
+
+/**
+ * Strip tracking query parameters from Facebook post URLs so the same post
+ * always produces the same sourceUrl regardless of CDN token or tracking params.
+ * Non-Facebook URLs are returned unchanged.
+ */
+function normalizeFbUrl(url: string): string {
+  if (!url) return url;
+  try {
+    const u = new URL(url);
+    if (u.hostname.endsWith("facebook.com") || u.hostname.endsWith("fb.com")) {
+      return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/+$/, "");
+    }
+  } catch {
+    // unparseable URL — return as-is
+  }
+  return url;
+}
 
 /**
  * Fetch all items from an Apify dataset
