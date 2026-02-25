@@ -20,6 +20,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
   const userMarkerRef = useRef<L.Marker | null>(null);
+  const initialFitDoneRef = useRef(false);
   const [isLocating, setIsLocating] = useState(false);
   
   const t = translations[language];
@@ -102,11 +103,12 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
       }
     });
 
-    if (!selectedSubletId && mapRef.current) {
+    if (!initialFitDoneRef.current && mapRef.current) {
       const validMarkers = Object.values(markersRef.current);
       if (validMarkers.length > 0) {
         const group = L.featureGroup(validMarkers);
         mapRef.current.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 15 });
+        initialFitDoneRef.current = true;
       }
     }
   }, [sublets, selectedSubletId, onMarkerClick, currency]);

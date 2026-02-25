@@ -449,7 +449,7 @@ export default function Home() {
                {filteredSublets.map(sublet => (
                  <div 
                    key={sublet.id} 
-                   onClick={() => { setSelectedSubletId(sublet.id); setMapSelectedSubletId(undefined); }}
+                   onClick={() => { setSelectedSubletId(sublet.id); setMapSelectedSubletId(sublet.lat || sublet.lng ? sublet.id : undefined); }}
                    className={`rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-xl bg-white border ${selectedSubletId === sublet.id ? 'border-indigo-600 ring-2 ring-indigo-100 shadow-lg' : 'border-slate-100 shadow-sm'}`}
                  >
                    <div className="relative aspect-[3/2] md:aspect-[4/3] bg-slate-100">

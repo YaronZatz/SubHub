@@ -25,11 +25,11 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
 
   return (
-    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-[320px] animate-in slide-in-from-bottom duration-300">
+    <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] md:w-[320px] animate-in slide-in-from-bottom duration-300">
       {/* Close button — sibling of card so clicks don't bubble to onOpenDetail */}
       <button
         onClick={onClose}
-        className="absolute -top-3 -right-3 z-[1001] bg-white hover:bg-slate-100 text-slate-700 w-8 h-8 rounded-full flex items-center justify-center shadow-lg border border-slate-200 transition-colors active:scale-90"
+        className="absolute -top-4 -right-4 z-[1001] bg-white hover:bg-slate-100 text-slate-700 w-11 h-11 rounded-full flex items-center justify-center shadow-lg border border-slate-200 transition-colors active:scale-90"
         aria-label="Close"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -43,7 +43,7 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
         className="relative bg-white rounded-2xl shadow-xl overflow-hidden cursor-pointer hover:shadow-2xl transition-shadow active:scale-[0.98]"
       >
         {/* Image area */}
-        <div className="relative h-[180px] bg-slate-100">
+        <div className="relative h-[140px] md:h-[180px] bg-slate-100">
           <img
             src={sublet.images?.[0] || `https://picsum.photos/seed/${sublet.id}/320/180`}
             alt=""
