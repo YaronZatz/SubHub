@@ -137,6 +137,30 @@ function hasValidCoords(s: Sublet): boolean {
   return s.lat !== 0 || s.lng !== 0;
 }
 
+/**
+ * Remove duplicate listings that represent the same Facebook post.
+ * Uses sourceUrl as the primary dedup key, contentHash as secondary.
+ * The input list is assumed to be sorted newest-first (createdAt desc),
+ * so the first occurrence in each duplicate group is kept.
+ */
+function deduplicateListings(listings: Sublet[]): Sublet[] {
+  const seenUrls = new Set<string>();
+  const seenHashes = new Set<string>();
+  return listings.filter((listing) => {
+    const url = listing.sourceUrl?.trim();
+    if (url) {
+      if (seenUrls.has(url)) return false;
+      seenUrls.add(url);
+    }
+    const hash = listing.contentHash;
+    if (hash) {
+      if (seenHashes.has(hash)) return false;
+      seenHashes.add(hash);
+    }
+    return true;
+  });
+}
+
 export const persistenceService = {
   /**
    * One-time fetch from Firestore listings collection.
@@ -154,7 +178,9 @@ export const persistenceService = {
       const docs = snapshot.docs.map((d) =>
         firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
       );
-      const valid = docs.filter(hasValidCoords);
+      const deduped = deduplicateListings(docs);
+      const valid = deduped.filter(hasValidCoords);
+      console.log(`🔥 After dedup: ${deduped.length} unique, ${valid.length} with coords`);
       return valid.length > 0 ? valid : INITIAL_SUBLETS;
     } catch (e) {
       console.error('❌ Failed to fetch listings from Firestore:', e);
@@ -178,8 +204,9 @@ export const persistenceService = {
         const docs = snapshot.docs.map((d) =>
           firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
         );
-        const valid = docs.filter(hasValidCoords);
-        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs, ${valid.length} with coords`);
+        const deduped = deduplicateListings(docs);
+        const valid = deduped.filter(hasValidCoords);
+        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${valid.length} with coords`);
         callback(valid.length > 0 ? valid : INITIAL_SUBLETS);
       },
       (error) => {
