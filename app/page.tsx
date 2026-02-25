@@ -31,6 +31,7 @@ import FeatureIcons from '../components/FeatureIcons';
 import CurrencySwitcher from '../components/CurrencySwitcher';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AuthModal from '../components/AuthModal';
+import MapPreviewCard from '../components/MapPreviewCard';
 
 /** ~6 months in days; used to classify short-term vs long-term */
 const SHORT_TERM_DAYS = 183;
@@ -67,6 +68,7 @@ export default function Home() {
   const [sublets, setSublets] = useState<Sublet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>();
+  const [mapSelectedSubletId, setMapSelectedSubletId] = useState<string | undefined>();
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BROWSE);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -177,11 +179,7 @@ export default function Home() {
     });
   };
 
-  const selectedSublet = selectedSubletId ? filteredSublets.find(s => s.id === selectedSubletId) : undefined;
-
-  const openDetailFromPreview = () => {
-    if (selectedSublet) setDetailSublet(selectedSublet);
-  };
+  const mapSelectedSublet = mapSelectedSubletId ? filteredSublets.find(s => s.id === mapSelectedSubletId) : undefined;
 
   return (
     <div data-root className="flex flex-col h-screen overflow-hidden bg-white">
@@ -451,7 +449,7 @@ export default function Home() {
                {filteredSublets.map(sublet => (
                  <div 
                    key={sublet.id} 
-                   onClick={() => setSelectedSubletId(sublet.id)}
+                   onClick={() => { setSelectedSubletId(sublet.id); setMapSelectedSubletId(undefined); }}
                    className={`rounded-2xl overflow-hidden cursor-pointer transition-all hover:shadow-xl bg-white border ${selectedSubletId === sublet.id ? 'border-indigo-600 ring-2 ring-indigo-100 shadow-lg' : 'border-slate-100 shadow-sm'}`}
                  >
                    <div className="relative aspect-[3/2] md:aspect-[4/3] bg-slate-100">
@@ -497,45 +495,22 @@ export default function Home() {
 
         {showMapView && (
         <div className="map-area h-[26vh] sm:h-[28vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2">
-           <MapVisualizer 
-             sublets={filteredSublets} 
-             onMarkerClick={(s) => setSelectedSubletId(s.id)}
+           <MapVisualizer
+             sublets={filteredSublets}
+             onMarkerClick={(s) => { setSelectedSubletId(s.id); setMapSelectedSubletId(s.id); }}
              selectedSubletId={selectedSubletId}
              language={language}
            />
-           {selectedSublet && (
-             <div className="absolute bottom-3 left-3 right-3 z-[1000]">
-               <button
-                 onClick={(e) => { e.stopPropagation(); setSelectedSubletId(undefined); }}
-                 className="absolute -top-2 -right-2 z-[1001] bg-slate-800 hover:bg-black text-white w-6 h-6 rounded-full flex items-center justify-center transition-all active:scale-90 shadow-lg border-2 border-white"
-               >
-                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-               </button>
-               <div
-                 onClick={openDetailFromPreview}
-                 className="overflow-hidden bg-white border border-slate-200 shadow-xl cursor-pointer hover:shadow-2xl transition-all active:scale-[0.98]"
-               >
-                 <div className="flex h-16">
-                   <div className="w-16 h-16 shrink-0 bg-slate-100 overflow-hidden">
-                     <img
-                       src={selectedSublet.images?.[0] || `https://picsum.photos/seed/${selectedSublet.id}/128/128`}
-                       alt=""
-                       className="w-full h-full object-cover"
-                     />
-                   </div>
-                   <div className="flex-1 min-w-0 px-3 flex flex-col justify-center gap-0.5">
-                     <div className="flex items-center gap-1.5">
-                       <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-wider">
-                         {String(selectedSublet.type).toUpperCase()}
-                       </span>
-                       <span className="text-sm font-black text-indigo-600">{formatPrice(selectedSublet.price, currency, language)}</span>
-                     </div>
-                     <p className="text-xs font-semibold text-slate-800 line-clamp-1">{selectedSublet.location}</p>
-                     <p className="text-[10px] text-indigo-500 font-semibold">Tap for details →</p>
-                   </div>
-                 </div>
-               </div>
-             </div>
+           {mapSelectedSublet && (
+             <MapPreviewCard
+               sublet={mapSelectedSublet}
+               onClose={() => { setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
+               onOpenDetail={() => setDetailSublet(mapSelectedSublet)}
+               isSaved={savedListingIds.has(mapSelectedSublet.id)}
+               onToggleSave={(e) => toggleSaved(e, mapSelectedSublet.id)}
+               currency={currency}
+               language={language}
+             />
            )}
         </div>
       )}
