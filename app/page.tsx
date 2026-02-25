@@ -505,7 +505,7 @@ export default function Home() {
              <MapPreviewCard
                sublet={mapSelectedSublet}
                onClose={() => { setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
-               onOpenDetail={() => setDetailSublet(mapSelectedSublet)}
+               onOpenDetail={() => { setDetailSublet(mapSelectedSublet); setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
                isSaved={savedListingIds.has(mapSelectedSublet.id)}
                onToggleSave={(e) => toggleSaved(e, mapSelectedSublet.id)}
                currency={currency}
