@@ -70,8 +70,8 @@ export const apifyWebhook = onRequest(
             continue;
           }
 
-          // 4b. Check for duplicates (URL-based)
-          const sourceUrl = item.url || item.facebookUrl || "";
+          // 4b. Check for duplicates (URL-based). Use same URL fields as Next.js: postUrl || url
+          const sourceUrl = (item.postUrl || item.url || item.facebookUrl || "").toString().trim();
           if (sourceUrl) {
             const existing = await db
               .collection("listings")
@@ -129,8 +129,8 @@ export const apifyWebhook = onRequest(
             lng = geocoded?.lng || null;
           }
 
-          // 4f. Stable doc id (postID or md5(url) or content hash) so re-runs update same doc
-          const postID = (item.postID ?? item.id ?? "").toString().trim();
+          // 4f. Stable doc id: same formula as Next.js (postID || md5(url)) so both pipelines use same doc
+          const postID = (item.postID ?? item.id ?? item.postId ?? "").toString().trim();
           const stableId =
             postID ||
             (sourceUrl ? crypto.createHash("md5").update(sourceUrl).digest("hex") : hashValue);
@@ -236,31 +236,25 @@ async function fetchApifyDataset(
 }
 
 /**
- * Concatenate all available text fields from an Apify item.
- *
- * Apify field mapping (from actual column names):
- *   text            → full post body (PRIMARY — this is what was missing)
- *   title           → post title (often empty or just a preview snippet)
- *   previewDescription → link preview description
- *   previewTitle    → link preview title
- *   previewSource   → link preview source
+ * Build full text from an Apify item using the SAME fields and order as the Next.js
+ * webhook (normalizePayload / mapDatasetItemToPayload) so content hashes match across pipelines.
+ * Fields: topText, postText, text, message, content, body, description → dedup → join \n\n
  */
 function buildFullText(item: any): string {
-  const parts: string[] = [];
-
-  // Primary: full post body — this is the key field
-  if (item.text) parts.push(item.text);
-
-  // Secondary: title (only if it adds new info beyond text)
-  if (item.title && item.title !== item.text) parts.push(item.title);
-
-  // Tertiary: link preview text (can contain extra details)
-  if (item.previewDescription) parts.push(item.previewDescription);
-  if (item.previewTitle && !parts.includes(item.previewTitle)) {
-    parts.push(item.previewTitle);
-  }
-
-  return parts.join("\n\n").trim();
+  const textParts = [
+    item.topText,
+    item.postText,
+    item.text,
+    item.message,
+    item.content,
+    item.body,
+    item.description,
+  ]
+    .filter(Boolean)
+    .map(String)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return [...new Set(textParts)].join("\n\n").trim();
 }
 
 /**
