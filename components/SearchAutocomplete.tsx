@@ -12,6 +12,8 @@ interface SearchAutocompleteProps {
   className?: string;
   /** Classes for the <input> element itself (excluding pl-* and pr-* — managed internally) */
   inputClassName?: string;
+  /** Called when a Cities suggestion is selected — use to trigger map fly-to */
+  onCitySelect?: (city: string) => void;
 }
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -28,7 +30,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-type SectionItem = { label: string; flatIdx: number };
+type SectionItem = { label: string; flatIdx: number; sectionLabel: string };
 type Section = { label: string; icon: string; items: SectionItem[] };
 
 const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
@@ -38,6 +40,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   placeholder = 'Search...',
   className = '',
   inputClassName = 'w-full py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white',
+  onCitySelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -72,13 +75,13 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     let idx = 0;
 
     const mn = neighborhoods.filter(n => n.toLowerCase().includes(q)).slice(0, 4);
-    if (mn.length) result.push({ label: 'Neighborhoods', icon: '🏘', items: mn.map(label => ({ label, flatIdx: idx++ })) });
+    if (mn.length) result.push({ label: 'Neighborhoods', icon: '🏘', items: mn.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Neighborhoods' })) });
 
     const ms = streets.filter(s => s.toLowerCase().includes(q)).slice(0, 4);
-    if (ms.length) result.push({ label: 'Streets', icon: '📍', items: ms.map(label => ({ label, flatIdx: idx++ })) });
+    if (ms.length) result.push({ label: 'Streets', icon: '📍', items: ms.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Streets' })) });
 
     const mc = cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4);
-    if (mc.length) result.push({ label: 'Cities', icon: '🏙', items: mc.map(label => ({ label, flatIdx: idx++ })) });
+    if (mc.length) result.push({ label: 'Cities', icon: '🏙', items: mc.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Cities' })) });
 
     return result;
   }, [value, neighborhoods, streets, cities]);
@@ -98,8 +101,9 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = (label: string) => {
+  const select = (label: string, sectionLabel?: string) => {
     onChange(label);
+    if (sectionLabel === 'Cities') onCitySelect?.(label);
     setIsOpen(false);
     setHighlightedIndex(-1);
     inputRef.current?.blur();
@@ -121,7 +125,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         if (highlightedIndex >= 0) {
           const flat = sections.flatMap(s => s.items);
           const item = flat[highlightedIndex];
-          if (item) select(item.label);
+          if (item) select(item.label, item.sectionLabel);
         } else {
           setIsOpen(false);
         }
@@ -183,7 +187,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
                     highlightedIndex === flatIdx ? 'bg-slate-50' : 'hover:bg-slate-50'
                   }`}
                   onMouseEnter={() => setHighlightedIndex(flatIdx)}
-                  onClick={() => select(label)}
+                  onClick={() => select(label, section.label)}
                 >
                   <span className="text-base leading-none shrink-0">{section.icon}</span>
                   <HighlightMatch text={label} query={value} />

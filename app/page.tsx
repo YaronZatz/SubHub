@@ -184,6 +184,11 @@ export default function Home() {
     });
   };
 
+  const handleCityFlyTo = (city: string) => {
+    const center = CITY_CENTERS[city];
+    setCityFlyTo(center ? { ...center } : null);
+  };
+
   const mapSelectedSublet = mapSelectedSubletId ? filteredSublets.find(s => s.id === mapSelectedSubletId) : undefined;
 
   return (
@@ -199,6 +204,7 @@ export default function Home() {
             sublets={sublets}
             placeholder={t.searchPlaceholder}
             className="max-w-md w-full hidden md:block"
+            onCitySelect={handleCityFlyTo}
           />
           <nav className="flex items-center gap-0.5 sm:gap-1 shrink-0 ml-0 sm:ml-2">
             <button
@@ -304,6 +310,7 @@ export default function Home() {
                placeholder={t.searchPlaceholder}
                className="md:hidden"
                inputClassName="w-full py-2.5 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white"
+               onCitySelect={handleCityFlyTo}
              />
              {isFilterExpanded && (
                <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 max-h-[40vh] md:max-h-[65vh] overflow-y-auto custom-scrollbar">
@@ -356,8 +363,7 @@ export default function Home() {
                      onChange={(city) => setFilters(f => ({ ...f, city }))}
                      onCitySelect={(city) => {
                        setFilters(f => ({ ...f, city, neighborhood: '' }));
-                       const center = CITY_CENTERS[city];
-                       setCityFlyTo(center ? { ...center } : null);
+                       handleCityFlyTo(city);
                      }}
                    />
                  </div>
