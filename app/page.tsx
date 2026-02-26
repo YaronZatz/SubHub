@@ -5,19 +5,19 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode, RentTerm } from '../types';
 import { translations } from '../translations';
-import { GLOBAL_CITIES, CITY_CENTERS } from '../constants';
+import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '../constants';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { persistenceService } from '../services/persistenceService';
 import { formatPrice } from '../utils/formatters';
-import { 
-  FilterIcon, 
+import {
+  FilterIcon,
   ListIcon,
-  PlusIcon, 
-  SearchIcon, 
+  PlusIcon,
   HeartIcon,
   CalendarIcon
 } from '../components/Icons';
+import SearchAutocomplete from '../components/SearchAutocomplete';
 
 // Leaflet uses `window` at load time; load map only on client to avoid prerender error
 const MapVisualizer = dynamic(() => import('../components/MapVisualizer'), { ssr: false });
@@ -100,6 +100,9 @@ export default function Home() {
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
 
   const handleClearFilters = () => {
+    if (filters.city !== '') {
+      setCityFlyTo({ lat: MAP_CENTER.lat, lng: MAP_CENTER.lng, zoom: MAP_ZOOM });
+    }
     setFilters(INITIAL_FILTERS);
     setSearchQuery('');
   };
@@ -190,16 +193,13 @@ export default function Home() {
           <div className="shrink-0">
             <img src="/logo.png" alt="SubHub" className="h-12 sm:h-16 w-auto object-contain" />
           </div>
-          <div className="relative max-w-md w-full hidden md:block">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder={t.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white"
-            />
-          </div>
+          <SearchAutocomplete
+            value={searchQuery}
+            onChange={setSearchQuery}
+            sublets={sublets}
+            placeholder={t.searchPlaceholder}
+            className="max-w-md w-full hidden md:block"
+          />
           <nav className="flex items-center gap-0.5 sm:gap-1 shrink-0 ml-0 sm:ml-2">
             <button
               onClick={() => setViewMode(ViewMode.BROWSE)}
@@ -297,16 +297,14 @@ export default function Home() {
                </div>
              </div>
              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mb-2 md:mb-3">{filteredSublets.length} {t.results}</p>
-             <div className="relative md:hidden">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <input 
-                  type="text" 
-                  placeholder={t.searchPlaceholder}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white"
-                />
-             </div>
+             <SearchAutocomplete
+               value={searchQuery}
+               onChange={setSearchQuery}
+               sublets={sublets}
+               placeholder={t.searchPlaceholder}
+               className="md:hidden"
+               inputClassName="w-full py-2.5 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white"
+             />
              {isFilterExpanded && (
                <div className="filter-panel mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-4 max-h-[40vh] md:max-h-[65vh] overflow-y-auto custom-scrollbar">
                  <PriceRangeFilter
