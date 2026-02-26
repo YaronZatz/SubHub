@@ -48,7 +48,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
 
   const filteredOptions = useMemo(() => {
     const q = value.trim().toLowerCase();
-    if (!q) return options.slice(0, 8);
+    if (!q) return options;
     return options.filter((c) => c.toLowerCase().includes(q)).slice(0, 8);
   }, [options, value]);
 
