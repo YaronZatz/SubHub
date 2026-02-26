@@ -32,6 +32,7 @@ import CurrencySwitcher from '../components/CurrencySwitcher';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import AuthModal from '../components/AuthModal';
 import MapPreviewCard from '../components/MapPreviewCard';
+import MobileMapCard from '../components/MobileMapCard';
 
 /** ~6 months in days; used to classify short-term vs long-term */
 const SHORT_TERM_DAYS = 183;
@@ -271,7 +272,7 @@ export default function Home() {
       </div>
 
       <main className="flex flex-col md:flex-row flex-1 overflow-hidden min-h-0">
-        <aside className="listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 flex flex-col shadow-xl relative z-10 overflow-hidden order-2 md:order-1">
+        <aside className={`listings-panel flex-1 min-h-0 min-w-0 bg-white md:border-r border-slate-200 ${mapSelectedSublet && showMapView ? 'hidden md:flex' : 'flex'} flex-col shadow-xl relative z-10 overflow-hidden order-2 md:order-1`}>
            <div className="p-3 md:p-4 border-b border-slate-100 bg-white">
              <div className="flex items-center justify-between mb-2 md:mb-3">
                <h2 className="text-base md:text-lg font-black text-slate-900 uppercase tracking-tight">{t.results}</h2>
@@ -494,25 +495,44 @@ export default function Home() {
         </aside>
 
         {showMapView && (
-        <div className="map-area h-[26vh] sm:h-[28vh] md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2">
+        <>
+        <div className={`map-area ${mapSelectedSublet ? 'flex-1' : 'h-[26vh] sm:h-[28vh]'} transition-all duration-300 md:h-full md:flex-[0_0_45%] md:min-w-[280px] relative bg-slate-50 shrink-0 order-1 md:order-2`}>
            <MapVisualizer
              sublets={filteredSublets}
              onMarkerClick={(s) => { setSelectedSubletId(s.id); setMapSelectedSubletId(s.id); }}
              selectedSubletId={selectedSubletId}
              language={language}
            />
+           {/* Desktop-only floating overlay card */}
            {mapSelectedSublet && (
-             <MapPreviewCard
-               sublet={mapSelectedSublet}
-               onClose={() => { setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
-               onOpenDetail={() => { setDetailSublet(mapSelectedSublet); setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
-               isSaved={savedListingIds.has(mapSelectedSublet.id)}
-               onToggleSave={(e) => toggleSaved(e, mapSelectedSublet.id)}
-               currency={currency}
-               language={language}
-             />
+             <div className="hidden md:block">
+               <MapPreviewCard
+                 sublet={mapSelectedSublet}
+                 onClose={() => { setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
+                 onOpenDetail={() => { setDetailSublet(mapSelectedSublet); setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
+                 isSaved={savedListingIds.has(mapSelectedSublet.id)}
+                 onToggleSave={(e) => toggleSaved(e, mapSelectedSublet.id)}
+                 currency={currency}
+                 language={language}
+               />
+             </div>
            )}
         </div>
+        {/* Mobile-only bottom sheet card */}
+        {mapSelectedSublet && (
+          <div className="md:hidden shrink-0 order-last">
+            <MobileMapCard
+              sublet={mapSelectedSublet}
+              onClose={() => { setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
+              onOpenDetail={() => { setDetailSublet(mapSelectedSublet); setMapSelectedSubletId(undefined); setSelectedSubletId(undefined); }}
+              isSaved={savedListingIds.has(mapSelectedSublet.id)}
+              onToggleSave={(e) => toggleSaved(e, mapSelectedSublet.id)}
+              currency={currency}
+              language={language}
+            />
+          </div>
+        )}
+        </>
       )}
       </main>
 
