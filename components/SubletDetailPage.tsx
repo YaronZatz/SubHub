@@ -155,19 +155,35 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   // Map initialisation (runs when the listing has coordinates)
   useEffect(() => {
     if (!sublet.lat || !sublet.lng || !mapRef.current) return;
-    // Remove any previously-mounted map
     if (mapInstanceRef.current) {
       try { mapInstanceRef.current.remove(); } catch (_) {}
       mapInstanceRef.current = null;
     }
-    const map = L.map(mapRef.current).setView([sublet.lat, sublet.lng], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 19,
+    const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+    const map = L.map(mapRef.current, {
+      zoomControl: false,
+      scrollWheelZoom: false,
+      dragging: !isTouchDevice,
+      tap: false,
+    }).setView([sublet.lat, sublet.lng], 15);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 20,
     }).addTo(map);
-    L.marker([sublet.lat, sublet.lng]).addTo(map)
-      .bindPopup(`<strong>${sublet.location || sublet.city || ''}</strong>`)
-      .openPopup();
+
+    // Price-pill marker (same style as MapVisualizer)
+    const RATES: Record<string, number> = { ILS: 1, USD: 0.27, EUR: 0.25 };
+    const SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
+    const converted = Math.round(sublet.price * (RATES[currency] || 1));
+    const priceStr = `${SYMBOLS[currency] || '₪'}${converted >= 1000 ? (converted / 1000).toFixed(1) + 'k' : converted}`;
+    const pin = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#4f46e5;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`,
+      iconSize: [72, 28],
+      iconAnchor: [36, 14],
+    });
+    L.marker([sublet.lat, sublet.lng], { icon: pin, interactive: false }).addTo(map);
+
     mapInstanceRef.current = map;
     return () => {
       if (mapInstanceRef.current) {
@@ -175,7 +191,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [sublet.id, sublet.lat, sublet.lng, sublet.location]);
+  }, [sublet.id, sublet.lat, sublet.lng, currency]);
 
   const isNew = (createdAt: number) => {
     const oneDay = 24 * 60 * 60 * 1000;
@@ -374,8 +390,22 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 <h3 className="text-lg font-bold text-slate-900">📍 Location</h3>
 
                 {sublet.lat && sublet.lng ? (
-                  /* Interactive map when geocoded coordinates are available */
-                  <div ref={mapRef} className="w-full h-72 rounded-2xl overflow-hidden border border-slate-200 shadow-sm" />
+                  <div className="relative w-full h-[200px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                    <div ref={mapRef} className="w-full h-full" />
+                    {/* Transparent click overlay — opens Google Maps */}
+                    <a
+                      href={`https://www.google.com/maps?q=${sublet.lat},${sublet.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 z-[1000]"
+                      aria-label="Open in Google Maps"
+                    >
+                      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-2 bg-white/75 backdrop-blur-sm">
+                        <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                        <span className="text-xs text-slate-500 font-medium">Open in Google Maps</span>
+                      </div>
+                    </a>
+                  </div>
                 ) : (
                   /* Text-only fallback when coordinates are not available */
                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
