@@ -159,12 +159,19 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
       try { mapInstanceRef.current.remove(); } catch (_) {}
       mapInstanceRef.current = null;
     }
-    const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     const map = L.map(mapRef.current, {
       zoomControl: false,
       scrollWheelZoom: false,
-      dragging: !isTouchDevice,
+      dragging: true,
+      touchZoom: true,
+      doubleClickZoom: true,
     }).setView([sublet.lat, sublet.lng], 15);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Enable scroll zoom on click, disable again on mouseout (prevents hijacking page scroll)
+    map.on('click', () => map.scrollWheelZoom.enable());
+    map.on('mouseout', () => map.scrollWheelZoom.disable());
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 20,
@@ -389,22 +396,24 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 <h3 className="text-lg font-bold text-slate-900">📍 Location</h3>
 
                 {sublet.lat && sublet.lng ? (
-                  <div className="relative w-full h-[200px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                    <div ref={mapRef} className="w-full h-full" />
-                    {/* Transparent click overlay — opens Google Maps */}
+                  <>
+                    <style>{`
+                      .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important; border-radius: 10px !important; overflow: hidden; }
+                      .leaflet-control-zoom a { border-radius: 0 !important; border: none !important; color: #1e293b !important; font-weight: bold !important; }
+                    `}</style>
+                    <div className="w-full h-[240px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                      <div ref={mapRef} className="w-full h-full" />
+                    </div>
                     <a
                       href={`https://www.google.com/maps?q=${sublet.lat},${sublet.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="absolute inset-0 z-[1000]"
-                      aria-label="Open in Google Maps"
+                      className="text-xs text-slate-400 hover:text-blue-600 underline cursor-pointer flex items-center gap-1 justify-end mt-1 transition-colors"
                     >
-                      <div className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-1 py-2 bg-white/75 backdrop-blur-sm">
-                        <svg className="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                        <span className="text-xs text-slate-500 font-medium">Open in Google Maps</span>
-                      </div>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      Open in Google Maps
                     </a>
-                  </div>
+                  </>
                 ) : (
                   /* Text-only fallback when coordinates are not available */
                   <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
