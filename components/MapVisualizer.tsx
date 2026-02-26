@@ -13,9 +13,10 @@ interface MapVisualizerProps {
   onMarkerClick: (sublet: Sublet) => void;
   selectedSubletId?: string;
   language: Language;
+  flyToCity?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, selectedSubletId, language }) => {
+const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, selectedSubletId, language, flyToCity }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
@@ -116,7 +117,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
   // Pan to selected sublet
   useEffect(() => {
     if (!mapRef.current || !selectedSubletId) return;
-    
+
     const selected = sublets.find(s => s.id === selectedSubletId);
     if (selected) {
       mapRef.current.setView([selected.lat, selected.lng], 16, {
@@ -125,6 +126,15 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
       });
     }
   }, [selectedSubletId, sublets]);
+
+  // Fly to city when city filter is selected
+  useEffect(() => {
+    if (!mapRef.current || !flyToCity) return;
+    mapRef.current.flyTo([flyToCity.lat, flyToCity.lng], flyToCity.zoom ?? 12, {
+      animate: true,
+      duration: 1.2,
+    });
+  }, [flyToCity]);
 
   const handleLocate = () => {
     if (!navigator.geolocation || !mapRef.current) return;

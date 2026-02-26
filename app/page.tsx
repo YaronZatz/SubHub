@@ -5,7 +5,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMode, CurrencyCode, RentTerm } from '../types';
 import { translations } from '../translations';
-import { GLOBAL_CITIES } from '../constants';
+import { GLOBAL_CITIES, CITY_CENTERS } from '../constants';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { persistenceService } from '../services/persistenceService';
@@ -70,6 +70,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>();
   const [mapSelectedSubletId, setMapSelectedSubletId] = useState<string | undefined>();
+  const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BROWSE);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -355,7 +356,11 @@ export default function Home() {
                      options={cityOptions}
                      placeholder={t.allCities}
                      onChange={(city) => setFilters(f => ({ ...f, city }))}
-                     onCitySelect={(city) => setFilters(f => ({ ...f, city, neighborhood: '' }))}
+                     onCitySelect={(city) => {
+                       setFilters(f => ({ ...f, city, neighborhood: '' }));
+                       const center = CITY_CENTERS[city];
+                       setCityFlyTo(center ? { ...center } : null);
+                     }}
                    />
                  </div>
 
@@ -502,6 +507,7 @@ export default function Home() {
              onMarkerClick={(s) => { setSelectedSubletId(s.id); setMapSelectedSubletId(s.id); }}
              selectedSubletId={selectedSubletId}
              language={language}
+             flyToCity={cityFlyTo}
            />
            {/* Desktop-only floating overlay card */}
            {mapSelectedSublet && (
