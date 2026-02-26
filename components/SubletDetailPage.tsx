@@ -164,7 +164,6 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
       zoomControl: false,
       scrollWheelZoom: false,
       dragging: !isTouchDevice,
-      tap: false,
     }).setView([sublet.lat, sublet.lng], 15);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
