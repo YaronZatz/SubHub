@@ -367,13 +367,15 @@ async function parseWithGemini(
   groupTitle: string,
   apiKey: string
 ): Promise<any | null> {
+  const today = new Date().toISOString().slice(0, 10);
   const prompt = `You are an expert at extracting structured data from rental/sublet posts on Facebook.
 The post is from Facebook group: "${groupTitle}"
+TODAY'S DATE: ${today}
 
 IMPORTANT RULES:
 - Extract ALL available information from the text
 - For location: analyze the ACTUAL text, do NOT default to any city. Use the group name as context only if the post itself doesn't mention a location.
-- For dates: handle all formats (DD/MM, MM/DD, Hebrew dates, relative dates like "next week", "immediately", "החל מ...")
+- For dates: handle all formats (DD/MM, MM/DD, Hebrew dates, relative dates like "next week", "immediately", "החל מ..."). When only day/month is given (e.g. "7/3", "March 7", "ב-7 למרץ"), use TODAY'S DATE to infer the year — pick the nearest upcoming occurrence (same year if not yet passed, next year if already passed). NEVER default to 2024.
 - For currency: detect from symbols (₪/NIS=ILS, $/USD, €/EUR, £/GBP) or context
 - For rooms: handle Israeli convention (3 rooms = 2 bedrooms + salon) and international convention
 - Support Hebrew, English, French, Russian, German, Arabic text

@@ -219,7 +219,10 @@ async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
   if (!apiKey) throw new Error('GEMINI_API_KEY or API_KEY is not configured');
   const ai = new GoogleGenAI({ apiKey });
 
+  const today = new Date().toISOString().slice(0, 10);
   const prompt = `Extract all structured data from this sublet/rental Facebook post. Be multilingual — handle Hebrew, English, French, Russian, German.
+
+TODAY'S DATE: ${today}
 
 Return strict JSON matching the schema. Rules:
 - price: number only, 0 if unknown
@@ -227,6 +230,7 @@ Return strict JSON matching the schema. Rules:
 - location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown
 - location.countryCode: ISO 3166-1 alpha-2 (e.g. IL, US, DE, FR)
 - dates: use ISO YYYY-MM-DD; null if not mentioned; immediateAvailability=true for "now/immediate/available now"
+- dates YEAR RULE: when only day/month is given (e.g. "7/3", "March 7", "ב-7 למרץ"), use today's date to infer the year — pick the nearest upcoming occurrence (same year if the date hasn't passed yet, next year if it has already passed)
 - dates.is_flexible: true for "flexible", "roughly", "approximately"
 - dates.duration: human-readable duration if no exact end date (e.g. "2 months", "3 weeks")
 - dates.rawDateText: copy of original date text from post
