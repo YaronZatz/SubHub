@@ -74,14 +74,14 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     const result: Section[] = [];
     let idx = 0;
 
+    const mc = cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4);
+    if (mc.length) result.push({ label: 'Cities', icon: '🏙', items: mc.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Cities' })) });
+
     const mn = neighborhoods.filter(n => n.toLowerCase().includes(q)).slice(0, 4);
     if (mn.length) result.push({ label: 'Neighborhoods', icon: '🏘', items: mn.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Neighborhoods' })) });
 
     const ms = streets.filter(s => s.toLowerCase().includes(q)).slice(0, 4);
     if (ms.length) result.push({ label: 'Streets', icon: '📍', items: ms.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Streets' })) });
-
-    const mc = cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4);
-    if (mc.length) result.push({ label: 'Cities', icon: '🏙', items: mc.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Cities' })) });
 
     return result;
   }, [value, neighborhoods, streets, cities]);
