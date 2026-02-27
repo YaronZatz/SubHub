@@ -187,7 +187,7 @@ function getDurationDays(startDate: string | null | undefined, endDate: string |
   return null;
 }
 
-function computeRentTerm(startDate: string | null | undefined, endDate: string | null | undefined, durationStr: string | null | undefined): RentTerm | undefined {
+export function computeRentTerm(startDate: string | null | undefined, endDate: string | null | undefined, durationStr: string | null | undefined): RentTerm | undefined {
   const days = getDurationDays(startDate, endDate, durationStr);
   if (days == null) return undefined;
   return days <= SHORT_TERM_DAYS ? RentTerm.SHORT_TERM : RentTerm.LONG_TERM;
@@ -214,7 +214,7 @@ function buildGeocodingQuery(loc: GeminiLocation): string {
   return parts.join(', ');
 }
 
-async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
+export async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY or API_KEY is not configured');
   const ai = new GoogleGenAI({ apiKey });
