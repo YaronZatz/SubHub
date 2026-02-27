@@ -2,6 +2,7 @@ import React from 'react';
 import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
+import { isDirectImageUrl } from '../utils/imageUtils';
 
 interface MapPreviewCardProps {
   sublet: Sublet;
@@ -23,6 +24,8 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
   language,
 }) => {
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
+  const fallbackImg = `https://picsum.photos/seed/${sublet.id}/320/180`;
+  const imgSrc = sublet.images?.find(isDirectImageUrl) ?? fallbackImg;
 
   return (
     <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] md:w-[320px] animate-in slide-in-from-bottom duration-300">
@@ -45,9 +48,10 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
         {/* Image area */}
         <div className="relative h-[140px] md:h-[180px] bg-slate-100">
           <img
-            src={sublet.images?.[0] || `https://picsum.photos/seed/${sublet.id}/320/180`}
+            src={imgSrc}
             alt=""
             className="w-full h-full object-cover"
+            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImg; }}
           />
           <button
             onClick={onToggleSave}

@@ -2,6 +2,7 @@ import React from 'react';
 import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
+import { isDirectImageUrl } from '../utils/imageUtils';
 
 interface MobileMapCardProps {
   sublet: Sublet;
@@ -23,6 +24,8 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
   language,
 }) => {
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
+  const fallbackImg = `https://picsum.photos/seed/${sublet.id}/110/152`;
+  const imgSrc = sublet.images?.find(isDirectImageUrl) ?? fallbackImg;
 
   return (
     <div
@@ -32,9 +35,10 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
       {/* Image */}
       <div className="w-[110px] shrink-0 bg-slate-100">
         <img
-          src={sublet.images?.[0] || `https://picsum.photos/seed/${sublet.id}/110/152`}
+          src={imgSrc}
           alt=""
           className="w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImg; }}
         />
       </div>
 

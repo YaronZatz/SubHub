@@ -7,27 +7,9 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { formatPrice, formatDate } from '../utils/formatters';
 import { getActiveAmenities } from '../utils/amenityHelpers';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 
 const SWIPE_THRESHOLD = 50;
-
-/** Attempt to get a higher-resolution version of a Facebook CDN image URL. */
-function enhanceImageUrl(url: string): string {
-  if (!url) return url;
-  try {
-    let u = url;
-    // /s720x720/ → /s2048x2048/  (path-based scaled size)
-    u = u.replace(/\/s\d+x\d+\//, '/s2048x2048/');
-    // /p720x720/ → /p2048x2048/  (path-based proportional size)
-    u = u.replace(/\/p\d+x\d+\//, '/p2048x2048/');
-    // /cp0_720x720/ → /cp0_2048x2048/  (Facebook crop+pad prefix format)
-    u = u.replace(/\/cp0_\d+x\d+\//, '/cp0_2048x2048/');
-    // /c0.123.456.789/ → /  (remove absolute crop rectangle)
-    u = u.replace(/\/c\d+\.\d+\.\d+\.\d+\//, '/');
-    return u;
-  } catch {
-    return url;
-  }
-}
 
 interface SubletDetailPageProps {
   sublet: Sublet;
@@ -69,7 +51,8 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
   const images = useMemo(() => {
     if (sublet.images && sublet.images.length > 0) {
-      return sublet.images.map(enhanceImageUrl);
+      const valid = sublet.images.filter(isDirectImageUrl).map(enhanceImageUrl);
+      if (valid.length > 0) return valid;
     }
     return [
       `https://picsum.photos/seed/${sublet.id}-1/1200/800`,
@@ -353,7 +336,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                   ${activeImgIndex === i ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
                 `}
               >
-                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt={`Thumb ${i + 1}`} referrerPolicy="no-referrer" />
+                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.closest('button')?.classList.add('hidden'); }} />
               </button>
             ))}
           </div>
