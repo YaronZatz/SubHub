@@ -2,7 +2,6 @@
 import { collection, getDocs, doc, updateDoc, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
-import { INITIAL_SUBLETS } from '../constants';
 
 const COLLECTION = 'listings';
 
@@ -168,8 +167,8 @@ export const persistenceService = {
    */
   async fetchListings(): Promise<Sublet[]> {
     if (!db) {
-      console.warn('⚠️ Firestore db undefined — returning sample data');
-      return INITIAL_SUBLETS;
+      console.warn('⚠️ Firestore db undefined — returning empty list');
+      return [];
     }
     try {
       console.log(`🔥 Fetching from Firestore collection: "${COLLECTION}"…`);
@@ -181,10 +180,10 @@ export const persistenceService = {
       const deduped = deduplicateListings(docs);
       const valid = deduped.filter(hasValidCoords);
       console.log(`🔥 After dedup: ${deduped.length} unique, ${valid.length} with coords`);
-      return valid.length > 0 ? valid : INITIAL_SUBLETS;
+      return valid;
     } catch (e) {
       console.error('❌ Failed to fetch listings from Firestore:', e);
-      return INITIAL_SUBLETS;
+      return [];
     }
   },
 
@@ -194,8 +193,8 @@ export const persistenceService = {
    */
   onListingsChanged(callback: (listings: Sublet[]) => void): () => void {
     if (!db) {
-      console.warn('⚠️ Firestore db undefined — streaming sample data');
-      callback(INITIAL_SUBLETS);
+      console.warn('⚠️ Firestore db undefined — returning empty list');
+      callback([]);
       return () => {};
     }
     return onSnapshot(
@@ -207,11 +206,11 @@ export const persistenceService = {
         const deduped = deduplicateListings(docs);
         const valid = deduped.filter(hasValidCoords);
         console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${valid.length} with coords`);
-        callback(valid.length > 0 ? valid : INITIAL_SUBLETS);
+        callback(valid);
       },
       (error) => {
         console.error('❌ Firestore listener error:', error);
-        callback(INITIAL_SUBLETS);
+        callback([]);
       }
     );
   },

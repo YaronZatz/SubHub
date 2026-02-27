@@ -51,16 +51,9 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
   const images = useMemo(() => {
     if (sublet.images && sublet.images.length > 0) {
-      const valid = sublet.images.filter(isDirectImageUrl).map(enhanceImageUrl);
-      if (valid.length > 0) return valid;
+      return sublet.images.filter(isDirectImageUrl).map(enhanceImageUrl);
     }
-    return [
-      `https://picsum.photos/seed/${sublet.id}-1/1200/800`,
-      `https://picsum.photos/seed/${sublet.id}-2/1200/800`,
-      `https://picsum.photos/seed/${sublet.id}-3/1200/800`,
-      `https://picsum.photos/seed/${sublet.id}-4/1200/800`,
-      `https://picsum.photos/seed/${sublet.id}-5/1200/800`,
-    ];
+    return [];
   }, [sublet.id, sublet.images]);
 
   const amenities = getActiveAmenities(sublet);
@@ -265,7 +258,16 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
         {/* Responsive Image Gallery */}
         <div className="mb-8 space-y-3">
-          {/* Main Viewer - sliding track with touch support */}
+          {images.length === 0 && (
+            <div className="aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-400">
+              <svg className="w-12 h-12 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-widest opacity-50">No photos</span>
+            </div>
+          )}
+          {/* Main Viewer + Thumbnail Strip — hidden when no images */}
+          {images.length > 0 && <>
           <div
             ref={galleryRef}
             className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg select-none touch-pan-y"
@@ -340,6 +342,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
               </button>
             ))}
           </div>
+          </>}
         </div>
 
         {/* Content Layout */}
