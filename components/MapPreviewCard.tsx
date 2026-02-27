@@ -2,7 +2,7 @@ import React from 'react';
 import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
-import { isDirectImageUrl } from '../utils/imageUtils';
+import ListingCarousel from './ListingCarousel';
 
 interface MapPreviewCardProps {
   sublet: Sublet;
@@ -24,8 +24,6 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
   language,
 }) => {
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
-  const fallbackImg = `https://picsum.photos/seed/${sublet.id}/320/180`;
-  const imgSrc = sublet.images?.find(isDirectImageUrl) ?? fallbackImg;
 
   return (
     <div className="absolute bottom-2 md:bottom-4 left-1/2 -translate-x-1/2 z-[1000] w-[calc(100%-2rem)] md:w-[320px] animate-in slide-in-from-bottom duration-300">
@@ -45,17 +43,19 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
         onClick={onOpenDetail}
         className="relative bg-white rounded-2xl shadow-xl overflow-hidden cursor-pointer hover:shadow-2xl transition-shadow active:scale-[0.98]"
       >
-        {/* Image area */}
-        <div className="relative h-[140px] md:h-[180px] bg-slate-100">
-          <img
-            src={imgSrc}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImg; }}
+        {/* Image carousel */}
+        <div className="relative h-[140px] md:h-[180px]">
+          <ListingCarousel
+            id={sublet.id}
+            images={sublet.images}
+            sourceUrl={sublet.sourceUrl}
+            photoCount={sublet.photoCount}
+            aspectRatio=""
+            className="h-full"
           />
           <button
             onClick={onToggleSave}
-            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm"
+            className="absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm"
             aria-label={isSaved ? 'Unsave' : 'Save'}
           >
             <HeartIcon className="w-4 h-4" filled={isSaved} />

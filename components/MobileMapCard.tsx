@@ -2,7 +2,7 @@ import React from 'react';
 import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
-import { isDirectImageUrl } from '../utils/imageUtils';
+import ListingCarousel from './ListingCarousel';
 
 interface MobileMapCardProps {
   sublet: Sublet;
@@ -24,21 +24,21 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
   language,
 }) => {
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
-  const fallbackImg = `https://picsum.photos/seed/${sublet.id}/110/152`;
-  const imgSrc = sublet.images?.find(isDirectImageUrl) ?? fallbackImg;
 
   return (
     <div
       onClick={onOpenDetail}
       className="relative flex bg-white rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)] cursor-pointer h-[152px] overflow-hidden animate-in slide-in-from-bottom duration-300"
     >
-      {/* Image */}
-      <div className="w-[110px] shrink-0 bg-slate-100">
-        <img
-          src={imgSrc}
-          alt=""
-          className="w-full h-full object-cover"
-          onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = fallbackImg; }}
+      {/* Image carousel */}
+      <div className="w-[110px] shrink-0">
+        <ListingCarousel
+          id={sublet.id}
+          images={sublet.images}
+          sourceUrl={sublet.sourceUrl}
+          photoCount={sublet.photoCount}
+          aspectRatio=""
+          className="h-[152px]"
         />
       </div>
 
