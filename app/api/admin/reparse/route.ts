@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
-import { parseTextWithGemini, computeRentTerm } from '@/app/api/webhook/apify/route';
+import { parseTextWithGemini, computeRentTerm } from '@/lib/geminiParser';
 import { geocodeAddress } from '@/services/geocodingService';
 
 function buildLocationString(loc: { street?: string; neighborhood?: string; city?: string; displayAddress?: string } | undefined): string {
