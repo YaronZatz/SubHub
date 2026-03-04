@@ -62,10 +62,11 @@ function getApiToken(): string {
 }
 
 function getApifyClient(): ApifyClient {
-  if (!process.env.APIFY_API_TOKEN) {
+  const token = process.env.APIFY_API_TOKEN || process.env.APIFY_TOKEN;
+  if (!token) {
     throw new Error('Apify Token is missing');
   }
-  return new ApifyClient({ token: process.env.APIFY_API_TOKEN });
+  return new ApifyClient({ token });
 }
 
 /**
@@ -114,6 +115,13 @@ export async function startApifyRun(
       {
         eventTypes,
         requestUrl: options.webhookUrl,
+        // Explicit payload so the webhook route always gets datasetId directly
+        payloadTemplate: JSON.stringify({
+          eventType: '{{eventType}}',
+          datasetId: '{{resource.defaultDatasetId}}',
+          runId: '{{resource.id}}',
+          status: '{{resource.status}}',
+        }),
       } satisfies WebhookUpdateData,
     ];
   }

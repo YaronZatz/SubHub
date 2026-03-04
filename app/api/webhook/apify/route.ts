@@ -5,7 +5,7 @@ import { parseTextWithGemini, computeRentTerm, type GeminiResponse, type GeminiL
 import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType, RentTerm } from '@/types';
-import { fetchDatasetItems, fetchDatasetItemsWithClient } from '@/services/apifyService';
+import { fetchDatasetItems, fetchDatasetItemsWithClient, fetchDatasetItemsByDatasetId } from '@/services/apifyService';
 import { geocodeAddress } from '@/services/geocodingService';
 import { contentHash } from '@/utils/contentHash';
 
@@ -216,13 +216,41 @@ export async function POST(req: NextRequest) {
 
     let items: ApifyPayload[];
     const p = parsed as Record<string, unknown> | null;
-    const resourceId = p?.resourceId != null ? String(p.resourceId).trim() : p?.resource_id != null ? String(p.resource_id).trim() : null;
 
-    if (resourceId) {
-      console.log(`${logPrefix} Webhook triggered with Resource ID:`, resourceId);
-    }
+    // Priority 1: explicit payloadTemplate format → { eventType, datasetId, runId }
+    // This is what the updated startApifyRun sends via payloadTemplate.
+    const explicitDatasetId = typeof p?.datasetId === 'string' ? p.datasetId.trim() : null;
+    const explicitEventType = typeof p?.eventType === 'string' ? p.eventType : null;
 
-    if (resourceId && !isApifyRunEvent(parsed)) {
+    // Priority 2: legacy/default Apify webhook format → resourceId at top level
+    const resourceId = p?.resourceId != null ? String(p.resourceId).trim()
+      : p?.resource_id != null ? String(p.resource_id).trim()
+      : null;
+
+    console.log(`${logPrefix} Payload keys: ${Object.keys(p || {}).join(', ')}`);
+    console.log(`${logPrefix} explicitDatasetId=${explicitDatasetId} | explicitEventType=${explicitEventType} | resourceId=${resourceId}`);
+
+    if (explicitDatasetId) {
+      // ── NEW FORMAT: payloadTemplate gives us datasetId directly ──────────────
+      if (explicitEventType && explicitEventType !== 'ACTOR.RUN.SUCCEEDED') {
+        console.log(`${logPrefix} Ignoring non-success event: ${explicitEventType}`);
+        return NextResponse.json({ received: true, processed: 0, reason: 'event_not_succeeded' }, { status: 200 });
+      }
+      console.log(`${logPrefix} Fetching dataset directly: ${explicitDatasetId}`);
+      try {
+        const datasetItems = await fetchDatasetItemsByDatasetId(explicitDatasetId);
+        items = datasetItems.map(mapDatasetItemToPayload);
+        console.log(`${logPrefix} Dataset fetched (${items.length})`);
+      } catch (fetchErr: unknown) {
+        console.error(`${logPrefix} Failed to fetch dataset ${explicitDatasetId}:`, fetchErr);
+        return NextResponse.json(
+          { received: true, error: 'Failed to fetch Apify dataset', details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr), processed: 0 },
+          { status: 200 }
+        );
+      }
+    } else if (resourceId && !isApifyRunEvent(parsed)) {
+      // ── LEGACY FORMAT: resourceId is a dataset ID ────────────────────────────
+      console.log(`${logPrefix} Fetching by resourceId (dataset): ${resourceId}`);
       try {
         const datasetItems = await fetchDatasetItemsWithClient(resourceId);
         items = datasetItems.map(mapDatasetItemToPayload);
@@ -230,26 +258,23 @@ export async function POST(req: NextRequest) {
       } catch (fetchErr: unknown) {
         console.error(`${logPrefix} Failed to fetch dataset by resourceId ${resourceId}:`, fetchErr);
         return NextResponse.json(
-          {
-            received: true,
-            error: 'Failed to fetch Apify dataset',
-            details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
-            processed: 0,
-          },
+          { received: true, error: 'Failed to fetch Apify dataset', details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr), processed: 0 },
           { status: 200 }
         );
       }
     } else if (isApifyRunEvent(parsed)) {
+      // ── DEFAULT APIFY FORMAT: eventType + eventData.actorRunId ───────────────
       const actorRunId = getActorRunIdFromEvent(parsed);
       if (!actorRunId) {
-        console.warn(`${logPrefix} Apify run event received but no actorRunId/resourceId found. Keys: ${Object.keys((parsed as object) || {}).join(', ')}`);
-        return NextResponse.json({ received: true, error: 'Missing actorRunId/resourceId in Apify event', processed: 0 }, { status: 200 });
+        console.warn(`${logPrefix} Run event received but no actorRunId found. Keys: ${Object.keys((parsed as object) || {}).join(', ')}`);
+        return NextResponse.json({ received: true, error: 'Missing actorRunId in Apify event', processed: 0 }, { status: 200 });
       }
       const eventType = (parsed as Record<string, unknown>).eventType ?? (parsed as Record<string, unknown>).event_type;
       if (eventType !== 'ACTOR.RUN.SUCCEEDED') {
         console.log(`${logPrefix} Ignoring non-success event: ${eventType}`);
         return NextResponse.json({ received: true, processed: 0, reason: 'event_not_succeeded' }, { status: 200 });
       }
+      console.log(`${logPrefix} Fetching dataset via run ID: ${actorRunId}`);
       try {
         const datasetItems = await fetchDatasetItems(actorRunId);
         items = datasetItems.map(mapDatasetItemToPayload);
@@ -257,18 +282,14 @@ export async function POST(req: NextRequest) {
       } catch (fetchErr: unknown) {
         console.error(`${logPrefix} Failed to fetch dataset for run ${actorRunId}:`, fetchErr);
         return NextResponse.json(
-          {
-            received: true,
-            error: 'Failed to fetch Apify dataset',
-            details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
-            processed: 0,
-          },
+          { received: true, error: 'Failed to fetch Apify dataset', details: fetchErr instanceof Error ? fetchErr.message : String(fetchErr), processed: 0 },
           { status: 200 }
         );
       }
     } else {
+      // ── FALLBACK: body is raw items array (manual testing / direct POST) ─────
       items = Array.isArray(parsed) ? (parsed as ApifyPayload[]) : [parsed as ApifyPayload];
-      if (items.length > 0) console.log(`${logPrefix} Dataset fetched (${items.length})`);
+      if (items.length > 0) console.log(`${logPrefix} Using raw body as items (${items.length})`);
     }
 
     const results: { id?: string; error?: string }[] = [];
