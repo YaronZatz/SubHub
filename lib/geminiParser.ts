@@ -149,7 +149,7 @@ Return strict JSON matching the schema. Rules:
 POST TEXT:
 "${rawText}"`;
 
-  const response = await ai.models.generateContent({
+  const generateArgs = {
     model: GEMINI_MODEL,
     contents: prompt,
     config: {
@@ -242,8 +242,27 @@ POST TEXT:
         required: ['price', 'currency', 'category', 'ai_summary'],
       },
     },
-  });
+  };
 
-  const text = response.text || '{}';
-  return JSON.parse(text) as GeminiResponse;
+  const MAX_RETRIES = 3;
+  let waitMs = 2000;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await ai.models.generateContent(generateArgs);
+      const text = response.text || '{}';
+      return JSON.parse(text) as GeminiResponse;
+    } catch (err: unknown) {
+      const isRateLimit =
+        err instanceof Error &&
+        (err.message.includes('429') ||
+          err.message.toLowerCase().includes('quota') ||
+          (err as { status?: number }).status === 429);
+      if (!isRateLimit || attempt === MAX_RETRIES) throw err;
+      console.warn(`[Gemini] Rate limited (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${waitMs}ms…`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      waitMs *= 2;
+    }
+  }
+  // unreachable, but satisfies TypeScript
+  throw new Error('Gemini retry loop exhausted');
 }

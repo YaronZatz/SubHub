@@ -295,6 +295,7 @@ export async function POST(req: NextRequest) {
     const results: { id?: string; error?: string }[] = [];
 
     for (let i = 0; i < items.length; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 500));
       const item = items[i];
       const payload = normalizePayload(item as ApifyPayload);
 
