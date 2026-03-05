@@ -1,24 +1,40 @@
 import admin from 'firebase-admin';
 
 function parseAdminSdkConfig(jsonString: string | undefined): admin.ServiceAccount | null {
-  if (!jsonString || typeof jsonString !== 'string') return null;
-  try {
-    const parsed = JSON.parse(jsonString) as unknown;
-    if (parsed && typeof parsed === 'object' && 'client_email' in parsed && 'private_key' in parsed) {
-      return parsed as admin.ServiceAccount;
-    }
-  } catch {
-    // Invalid JSON – ignore
+  if (!jsonString) {
+    console.log('[firebase-admin] ADMIN_SDK_CONFIG is not set');
+    return null;
   }
-  return null;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonString);
+  } catch (err) {
+    console.error('[firebase-admin] ADMIN_SDK_CONFIG is set but contains invalid JSON:', err instanceof Error ? err.message : String(err));
+    console.error('[firebase-admin] Value preview:', jsonString.slice(0, 80));
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object') {
+    console.error('[firebase-admin] ADMIN_SDK_CONFIG parsed to a non-object:', typeof parsed);
+    return null;
+  }
+  if (!('client_email' in parsed)) {
+    console.error('[firebase-admin] ADMIN_SDK_CONFIG JSON is missing "client_email" field');
+    return null;
+  }
+  if (!('private_key' in parsed)) {
+    console.error('[firebase-admin] ADMIN_SDK_CONFIG JSON is missing "private_key" field');
+    return null;
+  }
+  return parsed as admin.ServiceAccount;
 }
 
 function getAdminApp() {
-  if (admin.apps.length === 0) {
-    const serviceAccount = parseAdminSdkConfig(process.env.ADMIN_SDK_CONFIG);
-    if (!serviceAccount) {
-      throw new Error('ADMIN_SDK_CONFIG must be set with valid service account JSON');
-    }
+  if (admin.apps.length > 0) return admin.app();
+
+  const serviceAccount = parseAdminSdkConfig(process.env.ADMIN_SDK_CONFIG);
+
+  if (serviceAccount) {
+    // Explicit service account — used in local dev via .env.local
     const projectId =
       serviceAccount.projectId ??
       (serviceAccount as unknown as { project_id?: string }).project_id;
@@ -27,7 +43,26 @@ function getAdminApp() {
       projectId,
       storageBucket: `${projectId}.firebasestorage.app`,
     });
+    console.log('[firebase-admin] Initialized with ADMIN_SDK_CONFIG service account');
+  } else {
+    // Application Default Credentials — automatic on Cloud Run / Firebase App Hosting.
+    // The runtime service account already has Firestore + Storage access; no secret needed.
+    const projectId =
+      process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ??
+      process.env.GCLOUD_PROJECT ??
+      process.env.GOOGLE_CLOUD_PROJECT;
+    if (!projectId) {
+      throw new Error(
+        '[firebase-admin] Cannot determine project ID. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID or ADMIN_SDK_CONFIG.'
+      );
+    }
+    admin.initializeApp({
+      projectId,
+      storageBucket: `${projectId}.firebasestorage.app`,
+    });
+    console.log(`[firebase-admin] Initialized with Application Default Credentials (project=${projectId})`);
   }
+
   return admin.app();
 }
 
