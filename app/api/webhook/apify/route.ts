@@ -141,7 +141,22 @@ function getActorRunIdFromEvent(parsed: unknown): string | null {
 
 function ensureStringArray(arr: unknown): string[] {
   if (!Array.isArray(arr)) return [];
-  return arr.map((x) => (typeof x === 'string' ? x : (x && typeof x === 'object' && 'url' in x ? (x as { url: string }).url : null))).filter((s): s is string => typeof s === 'string');
+  return arr
+    .map((x) => {
+      if (typeof x === 'string') return x;
+      if (x && typeof x === 'object') {
+        const obj = x as Record<string, unknown>;
+        // Facebook Groups Scraper nests image URL inside image.uri
+        const image = obj.image as Record<string, unknown> | undefined;
+        if (image?.uri && typeof image.uri === 'string') return image.uri;
+        // fallback to thumbnail
+        if (obj.thumbnail && typeof obj.thumbnail === 'string') return obj.thumbnail;
+        // fallback to plain url field
+        if (obj.url && typeof obj.url === 'string') return obj.url;
+      }
+      return null;
+    })
+    .filter((s): s is string => typeof s === 'string' && s.startsWith('http'));
 }
 
 /**
