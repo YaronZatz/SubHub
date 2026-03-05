@@ -11,6 +11,12 @@ import { contentHash } from '@/utils/contentHash';
 
 const PARSER_VERSION = '2.0.0';
 
+function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, v]) => v !== undefined)
+  ) as T;
+}
+
 interface ApifyPayload {
   url?: string;
   postUrl?: string;
@@ -447,7 +453,7 @@ export async function POST(req: NextRequest) {
             parserVersion: PARSER_VERSION,
           };
           try {
-            await adminDb.collection('listings').doc(docId).set(finalListing, { merge: true });
+            await adminDb.collection('listings').doc(docId).set(stripUndefined(finalListing), { merge: true });
           } catch (firestoreErr: unknown) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
@@ -484,7 +490,7 @@ export async function POST(req: NextRequest) {
             parserVersion: PARSER_VERSION,
           };
           try {
-            await adminDb.collection('listings').doc(docId).set(fallbackListing, { merge: true });
+            await adminDb.collection('listings').doc(docId).set(stripUndefined(fallbackListing), { merge: true });
           } catch (firestoreErr: unknown) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
