@@ -292,6 +292,11 @@ export async function POST(req: NextRequest) {
       if (items.length > 0) console.log(`${logPrefix} Using raw body as items (${items.length})`);
     }
 
+    // Return 200 immediately so Apify (and Cloud Run's 300s timeout) never see a delay.
+    // All item processing runs in the background inside the Node.js event loop.
+    // Cloud Run keeps the container alive because minInstances=1 is set in apphosting.yaml.
+    console.log(`${logPrefix} Returning 200 immediately, processing ${items.length} items in background`);
+    void (async () => {
     const results: { id?: string; error?: string }[] = [];
 
     for (let i = 0; i < items.length; i++) {
@@ -504,6 +509,9 @@ export async function POST(req: NextRequest) {
     const successCount = results.filter((r) => r.id).length;
     const failCount = results.filter((r) => r.error).length;
     console.log(`${logPrefix} Batch complete | success=${successCount} | failed=${failCount}`);
+    })().catch((bgErr: unknown) => {
+      console.error(`${logPrefix} Background processing error:`, bgErr instanceof Error ? bgErr.message : String(bgErr));
+    });
 
     // Return plain 200 OK so Apify does not retry the webhook
     return new NextResponse('OK', { status: 200 });

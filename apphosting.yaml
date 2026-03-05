@@ -4,6 +4,7 @@ schemaVersion: "v1"
 runConfig:
   cpu: 1
   memoryMiB: 512
+  minInstances: 1
 
 scripts:
   buildCommand: npm run build
