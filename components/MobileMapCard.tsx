@@ -84,7 +84,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
 
         {/* Price */}
         <p className="text-sm font-black text-slate-900">
-          {formatPrice(sublet.price, currency, language)}
+          {formatPrice(sublet.price, currency, language, sublet.currency)}
           <span className="text-[11px] font-normal text-slate-400"> /mo</span>
         </p>
       </div>

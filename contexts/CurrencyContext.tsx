@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CurrencyCode } from '../types';
+import { loadRates } from '../lib/currencyService';
 
 interface CurrencyContextType {
   currency: CurrencyCode;
@@ -13,7 +14,7 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
   // 1. אתחול עם ערך ברירת מחדל בטוח (ללא גישה ל-localStorage)
   const [currency, setCurrencyState] = useState<CurrencyCode>(CurrencyCode.ILS);
 
-  // 2. טעינת הערך מהדפדפן רק לאחר שהרכיב עלה (Mount)
+  // 2. טעינת הערך מהדפדפן רק לאחר שהרכיב עלה (Mount) + fetch live exchange rates
   useEffect(() => {
     try {
       const saved = localStorage.getItem('subhub_currency');
@@ -23,6 +24,8 @@ export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }
     } catch (error) {
       console.error('Failed to access localStorage:', error);
     }
+    // Pre-load live exchange rates into module cache
+    loadRates();
   }, []);
 
   const setCurrency = (code: CurrencyCode) => {

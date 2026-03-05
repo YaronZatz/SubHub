@@ -364,7 +364,8 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const persistentImages = await uploadImagesToStorage(payload.images, docId);
+        // Use Apify image URLs directly — uploading to Firebase Storage often fails silently
+        const persistentImages = payload.images;
         const now = Date.now();
         const loc = structuredData?.location;
         const dates = structuredData?.dates;

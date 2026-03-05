@@ -69,7 +69,7 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
               {String(sublet.type).toUpperCase()}
             </span>
             <span className="text-base font-black text-indigo-600">
-              {formatPrice(sublet.price, currency, language)}
+              {formatPrice(sublet.price, currency, language, sublet.currency)}
             </span>
           </div>
           <p className="text-sm font-semibold text-slate-800 line-clamp-1">{sublet.location}</p>

@@ -178,9 +178,9 @@ export const persistenceService = {
         firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
       );
       const deduped = deduplicateListings(docs);
-      const valid = deduped.filter(hasValidCoords);
-      console.log(`🔥 After dedup: ${deduped.length} unique, ${valid.length} with coords`);
-      return valid;
+      const withCoords = deduped.filter(hasValidCoords);
+      console.log(`🔥 After dedup: ${deduped.length} unique, ${withCoords.length} with coords`);
+      return deduped;
     } catch (e) {
       console.error('❌ Failed to fetch listings from Firestore:', e);
       return [];
@@ -204,9 +204,9 @@ export const persistenceService = {
           firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
         );
         const deduped = deduplicateListings(docs);
-        const valid = deduped.filter(hasValidCoords);
-        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${valid.length} with coords`);
-        callback(valid);
+        const withCoords = deduped.filter(hasValidCoords);
+        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${withCoords.length} with coords`);
+        callback(deduped);
       },
       (error) => {
         console.error('❌ Firestore listener error:', error);

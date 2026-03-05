@@ -5,6 +5,7 @@ import { MAP_CENTER, MAP_ZOOM } from '../constants';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
+import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
 
 
@@ -73,8 +74,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
       const isSelected = selectedSubletId === sublet.id;
       const symbol = getCurrencySymbol(currency);
 
-      const EXCHANGE_RATES: any = { 'ILS': 1, 'USD': 0.27, 'EUR': 0.25 };
-      const convertedPrice = sublet.price * (EXCHANGE_RATES[currency] || 1);
+      const listingCurrency = sublet.currency || 'ILS';
+      const convertedPrice = convertAmount(sublet.price, listingCurrency, currency);
       const priceText = `${symbol}${convertedPrice >= 1000 ? (convertedPrice / 1000).toFixed(1) + 'k' : Math.round(convertedPrice)}`;
       
       const iconHtml = `

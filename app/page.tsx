@@ -479,7 +479,7 @@ export default function Home() {
                        {String(sublet.type).toUpperCase()}
                      </span>
                      <div className="flex justify-between items-baseline gap-2 mb-1">
-                       <span className="text-lg font-black text-indigo-600">{formatPrice(sublet.price, currency, language)}</span>
+                       <span className="text-lg font-black text-indigo-600">{formatPrice(sublet.price, currency, language, sublet.currency)}</span>
                      </div>
                      <h3 className="font-bold text-slate-900 line-clamp-1 text-sm">{sublet.location}</h3>
                      {sublet.neighborhood && (

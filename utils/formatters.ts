@@ -1,13 +1,6 @@
 
 import { CurrencyCode } from '../types';
-
-// Mock exchange rates (Base: ILS)
-// In a real app, these would be fetched from an API
-const EXCHANGE_RATES: Record<CurrencyCode, number> = {
-  [CurrencyCode.ILS]: 1,
-  [CurrencyCode.USD]: 0.27, // 1 ILS = 0.27 USD
-  [CurrencyCode.EUR]: 0.25, // 1 ILS = 0.25 EUR
-};
+import { getILSBasedRates } from '../lib/currencyService';
 
 const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   [CurrencyCode.ILS]: '₪',
@@ -29,14 +22,15 @@ export const formatPrice = (
   listingCurrency?: string
 ): string => {
   // Normalize to ILS first if the listing is priced in a known non-ILS currency
+  const ilsRates = getILSBasedRates();
   let priceInILS = amountInBase;
   if (listingCurrency && listingCurrency !== 'ILS') {
-    const rate = EXCHANGE_RATES[listingCurrency as CurrencyCode];
+    const rate = ilsRates[listingCurrency];
     if (rate && rate > 0) priceInILS = amountInBase / rate;
-    // Unknown currencies (GBP etc.) fall through and are treated as ILS
+    // Unknown currencies fall through and are treated as ILS
   }
 
-  const convertedAmount = priceInILS * EXCHANGE_RATES[targetCurrency];
+  const convertedAmount = priceInILS * (ilsRates[targetCurrency] ?? 0.27);
 
   return new Intl.NumberFormat(locale, {
     style: 'currency',
@@ -69,5 +63,6 @@ export const formatDate = (dateValue: string | number | undefined): string => {
  * Useful for filtering when the user types a value in USD.
  */
 export const convertToBase = (amount: number, fromCurrency: CurrencyCode): number => {
-  return amount / EXCHANGE_RATES[fromCurrency];
+  const ilsRates = getILSBasedRates();
+  return amount / (ilsRates[fromCurrency] ?? 1);
 };
