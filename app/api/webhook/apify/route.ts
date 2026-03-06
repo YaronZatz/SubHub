@@ -33,6 +33,9 @@ interface ApifyPayload {
   time?: string;
   posterName?: string;
   postID?: string;
+  likesCount?: number;
+  commentsCount?: number;
+  postedAt?: string | null;
   [key: string]: unknown;
 }
 
@@ -177,6 +180,27 @@ function normalizeFbUrl(url: string): string {
   return url;
 }
 
+function isValidListing(item: ApifyPayload, images: string[]): boolean {
+  if (images.length === 0) return false;
+
+  const text = (item.postText || item.text || '').toLowerCase();
+  const lookingForPhrases = [
+    'looking for', 'searching for', 'need a place', 'need an apartment',
+    'seeking', 'wanted', 'iso ', 'in search of', 'anyone know of',
+    'does anyone have', 'any leads', 'מחפש', 'מחפשת', 'דרוש', 'דרושה',
+  ];
+  if (lookingForPhrases.some(phrase => text.includes(phrase))) return false;
+
+  const housingKeywords = [
+    'sublet', 'sublease', 'apartment', 'room', 'studio', 'bedroom', 'br',
+    'rent', 'lease', 'available', 'month', 'weekly', 'furnished',
+    'דירה', 'חדר', 'להשכרה', 'סאבלט',
+  ];
+  if (!housingKeywords.some(keyword => text.includes(keyword))) return false;
+
+  return true;
+}
+
 /** Map Facebook Groups Scraper (and similar) dataset output to our ApifyPayload shape. */
 function mapDatasetItemToPayload(item: unknown): ApifyPayload {
   if (item && typeof item === 'object') {
@@ -203,6 +227,9 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
       attachments,
       images: attachments,
       scrapedAt: r.scrapedAt ?? r.time ?? r.createdAt,
+      likesCount: (r.likesCount ?? r.reactionLikeCount ?? 0) as number,
+      commentsCount: (r.commentsCount ?? 0) as number,
+      postedAt: (r.time ?? null) as string | null,
     } as ApifyPayload;
   }
   return {} as ApifyPayload;
@@ -319,6 +346,11 @@ export async function POST(req: NextRequest) {
     console.log(`${logPrefix} Returning 200 immediately, processing ${items.length} items in background`);
     void (async () => {
     const results: { id?: string; error?: string }[] = [];
+
+    // Filter out low-quality items before processing
+    const preFilterCount = items.length;
+    items = items.filter(item => isValidListing(item, item.images ?? []));
+    console.log(`${logPrefix} Pre-filter: ${preFilterCount} items → ${items.length} after quality filter`);
 
     for (let i = 0; i < items.length; i++) {
       if (i > 0) await new Promise((r) => setTimeout(r, 500));
@@ -467,6 +499,9 @@ export async function POST(req: NextRequest) {
             partialData: payload.partialData ?? false,
             lastParsedAt: now,
             parserVersion: PARSER_VERSION,
+            likesCount: item.likesCount ?? 0,
+            commentsCount: item.commentsCount ?? 0,
+            postedAt: item.time ?? null,
           };
           try {
             await adminDb.collection('listings').doc(docId).set(stripUndefined(finalListing), { merge: true });
@@ -504,6 +539,9 @@ export async function POST(req: NextRequest) {
             partialData: payload.partialData ?? false,
             lastParsedAt: now,
             parserVersion: PARSER_VERSION,
+            likesCount: item.likesCount ?? 0,
+            commentsCount: item.commentsCount ?? 0,
+            postedAt: item.time ?? null,
           };
           try {
             await adminDb.collection('listings').doc(docId).set(stripUndefined(fallbackListing), { merge: true });

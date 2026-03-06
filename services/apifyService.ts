@@ -78,13 +78,10 @@ export function buildRunInput(input: ApifyRunInput): Record<string, unknown> {
     startUrls: input.startUrls.map((u) =>
       typeof u === 'string' ? { url: u } : { url: u.url }
     ),
-    resultsLimit: input.resultsLimit ?? 50,
+    resultsLimit: input.resultsLimit ?? 100,
     viewOption: input.viewOption ?? 'CHRONOLOGICAL',
+    onlyPostsNewerThan: input.onlyPostsNewerThan ?? '7 days',
   };
-
-  if (input.onlyPostsNewerThan) {
-    runInput.onlyPostsNewerThan = input.onlyPostsNewerThan;
-  }
 
   // Cookies: apify/facebook-groups-scraper is for PUBLIC groups only.
   // If you need private groups, use curious_coder/facebook-post-scraper

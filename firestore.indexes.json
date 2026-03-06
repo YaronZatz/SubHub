@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "listings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "postedAt", "order": "DESCENDING" },
+        { "fieldPath": "commentsCount", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

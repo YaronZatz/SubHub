@@ -128,7 +128,12 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
 }
 
 function buildQuery() {
-  return query(collection(db!, COLLECTION), orderBy('createdAt', 'desc'), limit(500));
+  return query(
+    collection(db!, COLLECTION),
+    orderBy('postedAt', 'desc'),
+    orderBy('commentsCount', 'desc'),
+    limit(200)
+  );
 }
 
 /** Filter out listings with no geocoded location — they can't be shown on the map. */

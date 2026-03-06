@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
     const run = await startApifyRun(
       {
         startUrls: body.groupUrls.map((url) => ({ url })),
-        resultsLimit: body.resultsLimit ?? 50,
-        onlyPostsNewerThan: body.onlyPostsNewerThan,
+        resultsLimit: body.resultsLimit ?? 100,
+        onlyPostsNewerThan: body.onlyPostsNewerThan ?? '7 days',
       },
       { webhookUrl }
     );
