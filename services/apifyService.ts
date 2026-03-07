@@ -11,7 +11,7 @@ import { ApifyClient } from 'apify-client';
 import type { WebhookEventType, WebhookUpdateData } from 'apify-client';
 
 const APIFY_BASE = 'https://api.apify.com/v2';
-const FACEBOOK_GROUPS_ACTOR_ID = 'apify/facebook-groups-scraper';
+const FACEBOOK_GROUPS_ACTOR_ID = 'apify~facebook-groups-scraper';
 
 export type ViewOption = 'CHRONOLOGICAL' | 'RECENT_ACTIVITY' | 'TOP_POSTS' | 'CHRONOLOGICAL_LISTINGS';
 
