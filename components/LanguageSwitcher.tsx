@@ -71,8 +71,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ language, setLangua
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2.5 text-xs font-bold rounded-xl transition-all
                   ${language === item.code 
-                    ? 'bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100' 
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-indigo-600'}
+                    ? 'bg-cyan-50 text-cyan-600 ring-1 ring-cyan-100' 
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-cyan-600'}
                 `}
               >
                 <div className="flex items-center gap-3">
@@ -84,7 +84,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ language, setLangua
                     <span>{item.label}</span>
                 </div>
                 {language === item.code && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-cyan-600" />
                 )}
               </button>
             ))}

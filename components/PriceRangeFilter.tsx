@@ -64,7 +64,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
     <div className="w-full space-y-6 pt-2 pb-4 px-1">
       <div className="flex items-center justify-between mb-1">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.priceRange}</label>
-        <div className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full dir-ltr">
+        <div className="text-xs font-bold text-cyan-600 bg-cyan-50 px-2 py-0.5 rounded-full dir-ltr">
           {currencySymbol}{localMin.toLocaleString()} – {currencySymbol}{localMax >= maxLimit ? `${localMax.toLocaleString()}+` : localMax.toLocaleString()}
         </div>
       </div>
@@ -73,7 +73,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
       <div className="relative h-6 flex items-center">
         <div className="absolute w-full h-1.5 bg-slate-200 rounded-full" />
         <div
-          className="absolute h-1.5 bg-indigo-600 rounded-full transition-all duration-100"
+          className="absolute h-1.5 bg-cyan-600 rounded-full transition-all duration-100"
           style={{
             left: `${getPercent(localMin)}%`,
             right: `${100 - getPercent(localMax)}%`,
@@ -88,7 +88,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           step={100}
           value={localMin}
           onChange={handleMinChange}
-          className="absolute w-full appearance-none pointer-events-none bg-transparent z-20 slider-thumb-indigo"
+          className="absolute w-full appearance-none pointer-events-none bg-transparent z-20 slider-thumb-cyan"
         />
         <input
           type="range"
@@ -97,7 +97,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           step={100}
           value={localMax}
           onChange={handleMaxChange}
-          className="absolute w-full appearance-none pointer-events-none bg-transparent z-20 slider-thumb-indigo"
+          className="absolute w-full appearance-none pointer-events-none bg-transparent z-20 slider-thumb-cyan"
         />
       </div>
 
@@ -111,7 +111,7 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
               type="number"
               value={localMin}
               onChange={(e) => setLocalMin(Math.min(Number(e.target.value), localMax))}
-              className="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              className="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-cyan-500 shadow-sm"
             />
           </div>
         </div>
@@ -123,37 +123,37 @@ const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
               type="number"
               value={localMax}
               onChange={(e) => setLocalMax(Math.max(Number(e.target.value), localMin))}
-              className="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+              className="w-full pl-7 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-cyan-500 shadow-sm"
             />
           </div>
         </div>
       </div>
 
       <style>{`
-        .slider-thumb-indigo::-webkit-slider-thumb {
+        .slider-thumb-cyan::-webkit-slider-thumb {
           appearance: none;
           pointer-events: auto;
           width: 22px;
           height: 22px;
           border-radius: 50%;
           background: white;
-          border: 2px solid #4f46e5;
+          border: 2px solid #3382C9;
           cursor: grab;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
           transition: transform 0.1s ease;
         }
-        .slider-thumb-indigo::-webkit-slider-thumb:active {
+        .slider-thumb-cyan::-webkit-slider-thumb:active {
           cursor: grabbing;
           transform: scale(1.1);
         }
-        .slider-thumb-indigo::-moz-range-thumb {
+        .slider-thumb-cyan::-moz-range-thumb {
           appearance: none;
           pointer-events: auto;
           width: 22px;
           height: 22px;
           border-radius: 50%;
           background: white;
-          border: 2px solid #4f46e5;
+          border: 2px solid #3382C9;
           cursor: grab;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }

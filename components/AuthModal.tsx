@@ -149,7 +149,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                   placeholder="John Doe"
                 />
               </div>
@@ -161,7 +161,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                 placeholder="you@example.com"
                 required
               />
@@ -173,7 +173,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                 placeholder="••••••••"
                 required
               />
@@ -189,7 +189,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-lg shadow-indigo-100 mt-4"
+              className="w-full py-4 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-50 transition-all shadow-lg shadow-cyan-100 mt-4"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
@@ -208,7 +208,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ onClose, initialMode = 'login' })
                 setMode(mode === 'login' ? 'signup' : 'login');
                 setError(null);
               }}
-              className="ml-2 text-indigo-600 font-bold hover:underline"
+              className="ml-2 text-cyan-600 font-bold hover:underline"
             >
               {mode === 'login' ? 'Sign Up' : 'Log In'}
             </button>

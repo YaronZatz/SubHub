@@ -75,7 +75,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
         {/* Meta */}
         <div>
           {sublet.neighborhood && (
-            <p className="text-[11px] text-slate-400 font-medium truncate">{sublet.neighborhood}</p>
+            <p className="text-[11px] text-slate-500 font-medium truncate">{sublet.neighborhood}</p>
           )}
           {rooms != null && (
             <p className="text-[11px] text-slate-500">{rooms} bedroom{rooms !== 1 ? 's' : ''}</p>
@@ -85,7 +85,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
         {/* Price */}
         <p className="text-sm font-black text-slate-900">
           {formatPrice(sublet.price, currency, language, sublet.currency)}
-          <span className="text-[11px] font-normal text-slate-400"> /mo</span>
+          <span className="text-[11px] font-normal text-slate-500"> /mo</span>
         </p>
       </div>
     </div>

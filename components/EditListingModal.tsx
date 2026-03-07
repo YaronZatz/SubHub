@@ -67,7 +67,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
                 type="text" 
                 value={formData.location} 
                 onChange={e => setFormData({...formData, location: e.target.value})}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none"
               />
             </div>
             <div className="space-y-1">
@@ -75,7 +75,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
               <select 
                 value={formData.type} 
                 onChange={e => setFormData({...formData, type: e.target.value as SubletType})}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer"
               >
                 {Object.values(SubletType).map(type => (
                   <option key={type} value={type}>{t.subletTypes[type]}</option>
@@ -91,7 +91,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
                 type="number" 
                 value={formData.price} 
                 onChange={e => setFormData({...formData, price: Number(e.target.value)})}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none"
               />
             </div>
             <div className="space-y-1">
@@ -101,7 +101,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
                 value={formData.startDate} 
                 onClick={(e) => e.currentTarget.showPicker?.()}
                 onChange={e => setFormData({...formData, startDate: e.target.value})}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer appearance-none"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer appearance-none"
               />
             </div>
             <div className="space-y-1">
@@ -111,7 +111,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
                 value={formData.endDate} 
                 onClick={(e) => e.currentTarget.showPicker?.()}
                 onChange={e => setFormData({...formData, endDate: e.target.value})}
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer appearance-none"
+                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none cursor-pointer appearance-none"
               />
             </div>
           </div>
@@ -121,7 +121,7 @@ const EditListingModal: React.FC<EditListingModalProps> = ({ sublet, onSave, onC
             <textarea 
               value={formData.originalText} 
               onChange={e => setFormData({...formData, originalText: e.target.value})}
-              className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+              className="w-full h-32 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-500 outline-none resize-none"
             />
           </div>
 

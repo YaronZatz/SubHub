@@ -287,7 +287,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
         <div className="bg-white px-6 pt-6 pb-2 border-b border-slate-50">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-100">
+              <div className="bg-cyan-600 p-2 rounded-xl shadow-lg shadow-cyan-100">
                 <PlusIcon className="w-5 h-5 text-white" />
               </div>
               {isReviewing ? "Review & Verify" : t.addListingTitle}
@@ -300,7 +300,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               type="button"
               onClick={() => handleTabSwitch('ai')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all
-                ${mode === 'ai' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
+                ${mode === 'ai' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
               `}
             >
               {t.importFromFb}
@@ -309,7 +309,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               type="button"
               onClick={() => handleTabSwitch('manual')}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all
-                ${mode === 'manual' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
+                ${mode === 'manual' ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
               `}
             >
               {t.directList}
@@ -328,21 +328,21 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   placeholder="Paste URL (e.g., https://facebook.com/groups/...) or full post text"
-                  className="w-full h-56 p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none outline-none text-sm leading-relaxed"
+                  className="w-full h-56 p-5 bg-slate-50 border border-slate-200 rounded-[1.5rem] focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all resize-none outline-none text-sm leading-relaxed"
                 />
               </div>
               
-              <div className="bg-indigo-50/50 p-5 rounded-2xl flex items-start gap-4 border border-indigo-100/50">
-                <div className="bg-indigo-100 p-1.5 rounded-lg">
-                  <InfoIcon className="w-5 h-5 text-indigo-600" />
+              <div className="bg-cyan-50/50 p-5 rounded-2xl flex items-start gap-4 border border-cyan-100/50">
+                <div className="bg-cyan-100 p-1.5 rounded-lg">
+                  <InfoIcon className="w-5 h-5 text-cyan-600" />
                 </div>
                 <div className="space-y-1">
-                   <p className="text-[11px] text-indigo-700 font-bold">
+                   <p className="text-[11px] text-cyan-700 font-bold">
                     {detectedLink 
                       ? "Direct URL detected. AI will attempt to pull the price, location, dates, and images." 
                       : "Paste text or a public link. Our AI visits the page to verify data."}
                   </p>
-                  <p className="text-[9px] text-indigo-400 uppercase font-black">Powered by Gemini 3 with Google Search</p>
+                  <p className="text-[9px] text-cyan-400 uppercase font-black">Powered by Gemini 3 with Google Search</p>
                 </div>
               </div>
             </div>
@@ -351,22 +351,22 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
           {mode === 'manual' && (
             <div className="space-y-8">
               {!isReviewing && (
-                 <div className="bg-indigo-50/50 rounded-2xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center gap-4">
+                 <div className="bg-cyan-50/50 rounded-2xl p-4 border border-cyan-100 flex flex-col sm:flex-row items-center gap-4">
                      <div className="flex-1">
-                         <h3 className="text-sm font-bold text-indigo-900 flex items-center gap-2">
-                             <CameraIcon className="w-4 h-4 text-indigo-600" />
+                         <h3 className="text-sm font-bold text-cyan-900 flex items-center gap-2">
+                             <CameraIcon className="w-4 h-4 text-cyan-600" />
                              {t.autoFillTitle}
                          </h3>
-                         <p className="text-[10px] text-indigo-600/80 mt-1">
+                         <p className="text-[10px] text-cyan-600/80 mt-1">
                              {t.autoFillDesc}
                          </p>
                      </div>
                      <button 
                         onClick={() => scanInputRef.current?.click()}
                         disabled={loading}
-                        className="px-4 py-2 bg-white text-indigo-600 text-xs font-bold rounded-xl shadow-sm border border-indigo-100 hover:bg-indigo-50 transition-colors whitespace-nowrap flex items-center gap-2"
+                        className="px-4 py-2 bg-white text-cyan-600 text-xs font-bold rounded-xl shadow-sm border border-cyan-100 hover:bg-cyan-50 transition-colors whitespace-nowrap flex items-center gap-2"
                      >
-                        {loading && <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />}
+                        {loading && <div className="w-3 h-3 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin" />}
                         {loading ? "Scanning..." : t.uploadAndScan}
                      </button>
                      <input 
@@ -396,7 +396,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                       placeholder="e.g. 12 Rothschild Blvd"
                       value={manualData.location}
                       onChange={e => setManualData({...manualData, location: e.target.value})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -404,7 +404,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                     <select 
                       value={manualData.type}
                       onChange={e => setManualData({...manualData, type: e.target.value as SubletType})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all cursor-pointer"
                     >
                       {Object.values(SubletType).map(type => (
                         <option key={type} value={type}>{t.subletTypes[type]}</option>
@@ -418,7 +418,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                       placeholder="5000"
                       value={manualData.price}
                       onChange={e => setManualData({...manualData, price: e.target.value})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all"
                     />
                   </div>
                   <div className="space-y-1">
@@ -426,7 +426,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                     <select 
                       value={manualData.city}
                       onChange={e => setManualData({...manualData, city: e.target.value})}
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all cursor-pointer"
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all cursor-pointer"
                     >
                       {Object.keys(CITY_CENTERS).map(city => (
                         <option key={city} value={city}>{city}</option>
@@ -453,7 +453,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                     </div>
                   ))}
                   {manualData.images.length < 10 && (
-                    <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition-all bg-slate-50/50">
+                    <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-cyan-400 hover:text-cyan-500 transition-all bg-slate-50/50">
                         <PlusIcon className="w-5 h-5" />
                         <span className="text-[9px] font-bold uppercase tracking-widest">Add</span>
                     </button>
@@ -472,7 +472,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                       value={manualData.startDate} 
                       onClick={(e) => e.currentTarget.showPicker?.()}
                       onChange={e => setManualData({...manualData, startDate: e.target.value})} 
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none" 
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all cursor-pointer appearance-none" 
                     />
                   </div>
                   <div className="space-y-1">
@@ -482,7 +482,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                       value={manualData.endDate} 
                       onClick={(e) => e.currentTarget.showPicker?.()}
                       onChange={e => setManualData({...manualData, endDate: e.target.value})} 
-                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all cursor-pointer appearance-none" 
+                      className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all cursor-pointer appearance-none" 
                     />
                   </div>
                 </div>
@@ -496,7 +496,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                     placeholder="Describe your sublet..."
                     value={manualData.description}
                     onChange={e => setManualData({...manualData, description: e.target.value})}
-                    className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all resize-none"
+                    className="w-full h-32 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 outline-none transition-all resize-none"
                   />
                 </div>
                 
@@ -509,7 +509,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                         onClick={() => toggleAmenity(opt.key)}
                         className={`px-4 py-2.5 rounded-full text-xs font-bold border flex items-center gap-2 transition-all
                           ${manualData.amenities.includes(opt.key) 
-                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' 
+                            ? 'bg-cyan-600 border-cyan-600 text-white shadow-md' 
                             : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}
                         `}
                       >
@@ -527,7 +527,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
                   <div className="flex flex-wrap gap-2">
                     {groundingChunks.map((chunk, idx) => (
                       chunk.web?.uri && (
-                        <a key={idx} href={chunk.web.uri} target="_blank" className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-all">
+                        <a key={idx} href={chunk.web.uri} target="_blank" className="flex items-center gap-1.5 px-3 py-1 bg-white border border-slate-200 rounded-full text-[10px] text-slate-600 hover:border-cyan-500 hover:text-cyan-600 transition-all">
                           <ExternalLinkIcon className="w-3 h-3" />
                           {chunk.web.title || "Reference"}
                         </a>
@@ -556,7 +556,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               type="button"
               onClick={handleTextExtract}
               disabled={loading || !text.trim()}
-              className="flex-2 py-4 px-8 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-100 touch-none"
+              className="flex-2 py-4 px-8 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-xl shadow-cyan-100 touch-none"
             >
               {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Verify & Extract Link"}
             </button>
@@ -566,7 +566,7 @@ const AddListingModal: React.FC<AddListingModalProps> = ({ onAdd, onClose, langu
               type="button"
               onClick={handleFinalSubmit}
               disabled={loading}
-              className="flex-2 py-4 px-8 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-xl shadow-indigo-100 touch-none"
+              className="flex-2 py-4 px-8 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-50 transition-all shadow-xl shadow-cyan-100 touch-none"
             >
               {loading ? "Posting..." : (isReviewing ? "Confirm & Post" : t.postListing)}
             </button>

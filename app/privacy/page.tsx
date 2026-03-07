@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
 
       {/* Header */}
       <div className="bg-slate-900 px-6 py-10 text-center">
-        <p className="text-indigo-400 text-xs font-black uppercase tracking-widest mb-2">SubHub</p>
+        <p className="text-cyan-400 text-xs font-black uppercase tracking-widest mb-2">SubHub</p>
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Privacy Policy</h1>
         <p className="text-slate-400 text-sm mt-2">Last updated: {LAST_UPDATED}</p>
       </div>
@@ -141,14 +141,14 @@ export default function PrivacyPolicyPage() {
         ))}
 
         {/* Contact */}
-        <section className="bg-indigo-50 rounded-2xl border border-indigo-100 p-6 space-y-2">
-          <h2 className="text-xs font-black text-indigo-400 uppercase tracking-widest">Contact Us</h2>
+        <section className="bg-cyan-50 rounded-2xl border border-cyan-100 p-6 space-y-2">
+          <h2 className="text-xs font-black text-cyan-400 uppercase tracking-widest">Contact Us</h2>
           <p className="text-sm text-slate-600 leading-relaxed">
             For any privacy-related questions or to exercise your rights, contact us at:
           </p>
           <a
             href="mailto:support@subhub.app?subject=Privacy%20Request"
-            className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 hover:underline"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />

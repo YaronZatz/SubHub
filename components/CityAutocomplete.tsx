@@ -127,7 +127,7 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
           aria-activedescendant={
             highlightedIndex === -1 ? 'city-option-clear' : highlightedIndex >= 0 ? `city-option-${highlightedIndex}` : undefined
           }
-          className={`w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-blue-500 cursor-text placeholder:text-slate-400 ${value ? 'pr-8' : ''}`}
+          className={`w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-cyan-500 cursor-text placeholder:text-slate-400 ${value ? 'pr-8' : ''}`}
         />
         {value && (
           <button

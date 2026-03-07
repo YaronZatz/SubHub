@@ -160,7 +160,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
     const priceStr = `${SYMBOLS[currency] || '₪'}${converted >= 1000 ? (converted / 1000).toFixed(1) + 'k' : converted}`;
     const pin = L.divIcon({
       className: 'custom-div-icon',
-      html: `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#4f46e5;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`,
+      html: `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#3382C9;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`,
       iconSize: [72, 28],
       iconAnchor: [36, 14],
     });
@@ -243,7 +243,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
             <div className="flex items-center gap-3">
               <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{sublet.location}</h1>
               {isNew(sublet.createdAt) && (
-                <span className="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
+                <span className="bg-cyan-600 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg flex items-center gap-1.5">
                    <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
                    {t.addedXhAgo.replace('{x}', getHoursAgo(sublet.createdAt).toString())}
                 </span>
@@ -335,7 +335,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 key={i} 
                 onClick={() => setActiveImgIndex(i)}
                 className={`relative shrink-0 w-20 h-14 md:w-28 md:h-20 rounded-xl overflow-hidden border-2 transition-all snap-start
-                  ${activeImgIndex === i ? 'border-indigo-600 ring-2 ring-indigo-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
+                  ${activeImgIndex === i ? 'border-cyan-600 ring-2 ring-cyan-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
                 `}
               >
                 <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.closest('button')?.classList.add('hidden'); }} />
@@ -358,7 +358,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 {!sublet.ownerId && (
                   <button 
                     onClick={() => onClaim(sublet.id)}
-                    className="mt-3 text-blue-600 hover:text-blue-700 text-xs font-bold underline underline-offset-4"
+                    className="mt-3 text-cyan-600 hover:text-cyan-700 text-xs font-bold underline underline-offset-4"
                   >
                     {t.claimThis}
                   </button>
@@ -394,7 +394,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                       href={`https://www.google.com/maps?q=${sublet.lat},${sublet.lng}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-slate-400 hover:text-blue-600 underline cursor-pointer flex items-center gap-1 justify-end mt-1 transition-colors"
+                      className="text-xs text-slate-400 hover:text-cyan-600 underline cursor-pointer flex items-center gap-1 justify-end mt-1 transition-colors"
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                       Open in Google Maps
@@ -449,7 +449,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                   </span>
                 </div>
                 <div className="pt-1">
-                   <span className="px-2 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded tracking-wider">
+                   <span className="px-2 py-1 bg-cyan-50 text-cyan-600 text-[10px] font-black uppercase rounded tracking-wider">
                     {t.subletTypes[sublet.type]}
                   </span>
                 </div>
@@ -482,14 +482,14 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                   <a 
                     href={sublet.sourceUrl} 
                     target="_blank" 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 uppercase tracking-widest text-sm"
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-cyan-100 uppercase tracking-widest text-sm"
                   >
                     {t.contactHost}
                     <ExternalLinkIcon className="w-4 h-4" />
                   </a>
                 ) : (
                   <button 
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-blue-100 uppercase tracking-widest text-sm"
+                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-cyan-100 uppercase tracking-widest text-sm"
                   >
                     Direct Listing - Contact Hidden
                   </button>
@@ -507,7 +507,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
               <div className="flex items-start gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <div className="shrink-0 mt-0.5">
-                  <InfoIcon className="w-5 h-5 text-indigo-400" />
+                  <InfoIcon className="w-5 h-5 text-cyan-400" />
                 </div>
                 <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
                   {t.noCommission}

@@ -325,7 +325,7 @@ const AppContent: React.FC = () => {
       {toast && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[200] animate-in slide-in-from-top-10 duration-300">
           <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border
-            ${toast.type === 'success' ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-red-600 border-red-400 text-white'}
+            ${toast.type === 'success' ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-red-600 border-red-400 text-white'}
           `}>
             <span className="font-bold text-sm tracking-tight">{toast.message}</span>
           </div>
@@ -360,7 +360,7 @@ const AppContent: React.FC = () => {
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`w-full ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'} py-1.5 bg-slate-100 border-none rounded-full text-xs md:text-sm focus:ring-2 focus:ring-blue-500 transition-all outline-none`}
+            className={`w-full ${isRTL ? 'pr-9 pl-4' : 'pl-9 pr-4'} py-1.5 bg-slate-100 border-none rounded-full text-xs md:text-sm focus:ring-2 focus:ring-cyan-500 transition-all outline-none`}
           />
         </div>
 
@@ -369,7 +369,7 @@ const AppContent: React.FC = () => {
             <button 
               onClick={() => setViewMode(ViewMode.BROWSE)}
               className={`px-2 sm:px-4 py-1 sm:py-1.5 text-[10px] font-bold rounded-full transition-all uppercase tracking-wider
-                ${viewMode === ViewMode.BROWSE ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
+                ${viewMode === ViewMode.BROWSE ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
               `}
             >
               {t.browse}
@@ -377,7 +377,7 @@ const AppContent: React.FC = () => {
             <button 
               onClick={() => setViewMode(ViewMode.SAVED)}
               className={`px-2 sm:px-4 py-1 sm:py-1.5 text-[10px] font-bold rounded-full transition-all uppercase tracking-wider flex items-center gap-1 sm:gap-2
-                ${viewMode === ViewMode.SAVED ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
+                ${viewMode === ViewMode.SAVED ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}
               `}
             >
               <HeartIcon className="w-3 h-3" filled={viewMode === ViewMode.SAVED} />
@@ -394,7 +394,7 @@ const AppContent: React.FC = () => {
             <>
               <button 
                 onClick={handleAddPostClick}
-                className="bg-blue-600 text-white p-1.5 sm:p-2 md:px-4 md:py-2 rounded-full hover:bg-blue-700 transition-all flex items-center gap-1.5 shadow-md active:scale-95 shrink-0"
+                className="bg-cyan-600 text-white p-1.5 sm:p-2 md:px-4 md:py-2 rounded-full hover:bg-cyan-700 transition-all flex items-center gap-1.5 shadow-md active:scale-95 shrink-0"
               >
                 <PlusIcon className="w-4 h-4" />
                 <span className="hidden sm:inline font-bold text-xs">{t.addPost}</span>
@@ -434,7 +434,7 @@ const AppContent: React.FC = () => {
           <div className="sticky top-0 bg-white z-30 border-b border-slate-100 shadow-sm shrink-0">
             <div className="px-6 py-4 flex items-center justify-between">
               <div className="flex flex-col">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">
                   {viewMode === ViewMode.SAVED ? t.savedListings : t.results}
                 </span>
                 <span className="text-base font-bold text-slate-900 leading-none">{filteredSublets.length} {t.results}</span>
@@ -465,7 +465,7 @@ const AppContent: React.FC = () => {
                  </div>
 
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.city}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.city}</label>
                    <CityAutocomplete
                      value={filters.city}
                      options={cityOptions}
@@ -475,8 +475,8 @@ const AppContent: React.FC = () => {
                    />
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.type}</label>
-                   <select value={filters.type || ''} onChange={(e) => setFilters({...filters, type: e.target.value as SubletType || undefined})} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.type}</label>
+                   <select value={filters.type || ''} onChange={(e) => setFilters({...filters, type: e.target.value as SubletType || undefined})} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-cyan-500 cursor-pointer">
                      <option value="">{t.allTypes}</option>
                      {Object.values(SubletType).map(type => (
                        <option key={type} value={type}>{t.subletTypes[type]}</option>
@@ -485,38 +485,38 @@ const AppContent: React.FC = () => {
                  </div>
                  
                  <div className="space-y-1.5 group">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.startDate}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.startDate}</label>
                    <div className="relative">
                      <input 
                        type="date" 
                        value={filters.startDate} 
                        onClick={(e) => e.currentTarget.showPicker?.()}
                        onChange={(e) => setFilters({...filters, startDate: e.target.value})}
-                       className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none"
+                       className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-cyan-500 cursor-pointer appearance-none"
                      />
                    </div>
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.endDate}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.endDate}</label>
                    <div className="relative">
                      <input 
                        type="date" 
                        value={filters.endDate} 
                        onClick={(e) => e.currentTarget.showPicker?.()}
                        onChange={(e) => setFilters({...filters, endDate: e.target.value})}
-                       className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none"
+                       className="w-full p-3 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none shadow-sm focus:ring-2 focus:ring-cyan-500 cursor-pointer appearance-none"
                      />
                    </div>
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.dateMode}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.dateMode}</label>
                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm h-[44px]">
                      {Object.values(DateMode).map((mode) => (
                        <button
                          key={mode}
                          onClick={() => setFilters({ ...filters, dateMode: mode })}
                          className={`flex-1 text-[10px] font-bold rounded-lg transition-all uppercase tracking-wider
-                           ${filters.dateMode === mode ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}
+                           ${filters.dateMode === mode ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}
                          `}
                        >
                          {t.dateModes[mode]}
@@ -525,11 +525,11 @@ const AppContent: React.FC = () => {
                    </div>
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.petsAllowed}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.petsAllowed}</label>
                    <button
                      onClick={() => setFilters({ ...filters, petsAllowed: !filters.petsAllowed })}
                      className={`w-full p-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2
-                       ${filters.petsAllowed ? 'bg-indigo-600 border-indigo-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}
+                       ${filters.petsAllowed ? 'bg-cyan-600 border-cyan-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}
                      `}
                    >
                      <span>{filters.petsAllowed ? '🐾' : '🐕'}</span>
@@ -537,14 +537,14 @@ const AppContent: React.FC = () => {
                    </button>
                  </div>
                  <div className="space-y-1.5">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.rentTermLabel}</label>
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.rentTermLabel}</label>
                    <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm h-[44px]">
                      {[RentTerm.ALL, RentTerm.SHORT_TERM, RentTerm.LONG_TERM].map((term) => (
                        <button
                          key={term}
                          onClick={() => setFilters({ ...filters, rentTerm: term })}
                          className={`flex-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-wider leading-tight px-1
-                           ${(filters.rentTerm ?? RentTerm.ALL) === term ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}
+                           ${(filters.rentTerm ?? RentTerm.ALL) === term ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}
                          `}
                        >
                          {t.rentTerms[term]}
@@ -559,7 +559,7 @@ const AppContent: React.FC = () => {
           <div ref={listContainerRef} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4 bg-slate-50/20">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin" />
                 <p className="text-slate-400 font-bold text-sm">Loading Listings...</p>
               </div>
             ) : (
@@ -572,7 +572,7 @@ const AppContent: React.FC = () => {
                     onDoubleClick={() => openFullDetail(sublet.id)}
                     className={`rounded-2xl border transition-all cursor-pointer group bg-white relative overflow-hidden
                       ${selectedSubletId === sublet.id 
-                        ? 'border-indigo-500 ring-4 ring-indigo-500/10 shadow-lg scale-[1.01]' 
+                        ? 'border-cyan-500 ring-4 ring-cyan-500/10 shadow-lg scale-[1.01]' 
                         : 'border-slate-100 shadow-sm hover:border-slate-300 hover:shadow-md'}
                       ${sublet.status === ListingStatus.TAKEN ? 'opacity-60' : ''}
                     `}
@@ -582,7 +582,7 @@ const AppContent: React.FC = () => {
 
                     <div className="p-5">
                       {isNew(sublet.createdAt) && (
-                        <div className={`absolute top-3 ${isRTL ? 'right-3' : 'left-3'} bg-indigo-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-lg animate-pulse ring-4 ring-indigo-100 z-10 flex items-center gap-1.5`}>
+                        <div className={`absolute top-3 ${isRTL ? 'right-3' : 'left-3'} bg-cyan-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-lg animate-pulse ring-4 ring-cyan-100 z-10 flex items-center gap-1.5`}>
                           <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                           {t.addedXhAgo.replace('{x}', getHoursAgo(sublet.createdAt).toString())}
                         </div>
@@ -591,7 +591,7 @@ const AppContent: React.FC = () => {
                       <button 
                         onClick={(e) => toggleSaveListing(sublet.id, e)}
                         className={`absolute top-3 ${isRTL ? 'left-3' : 'right-3'} z-10 p-2 rounded-full transition-all active:scale-90
-                          ${savedListingIds.has(sublet.id) ? 'bg-indigo-50 text-indigo-600' : 'bg-white/80 backdrop-blur-md text-slate-300 hover:text-slate-400 shadow-sm'}
+                          ${savedListingIds.has(sublet.id) ? 'bg-cyan-50 text-cyan-600' : 'bg-white/80 backdrop-blur-md text-slate-300 hover:text-slate-400 shadow-sm'}
                         `}
                       >
                         <HeartIcon className="w-4 h-4" filled={savedListingIds.has(sublet.id)} />
@@ -605,7 +605,7 @@ const AppContent: React.FC = () => {
                             {t.subletTypes[sublet.type]}
                           </span>
                           {hasAmenity(sublet, 'petFriendly') && (
-                            <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-indigo-100 text-indigo-700 uppercase tracking-widest">
+                            <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-cyan-100 text-cyan-700 uppercase tracking-widest">
                               🐾 Pets
                             </span>
                           )}
@@ -654,7 +654,7 @@ const AppContent: React.FC = () => {
                 {viewMode === ViewMode.SAVED && (
                   <button 
                     onClick={() => setViewMode(ViewMode.BROWSE)}
-                    className="mt-6 px-6 py-2 bg-indigo-600 text-white font-bold rounded-full hover:bg-indigo-700 transition-all text-sm"
+                    className="mt-6 px-6 py-2 bg-cyan-600 text-white font-bold rounded-full hover:bg-cyan-700 transition-all text-sm"
                   >
                     {t.browse}
                   </button>
@@ -676,7 +676,7 @@ const AppContent: React.FC = () => {
             >
              <div className="flex p-3 relative">
                {isNew(selectedSublet.createdAt) && (
-                  <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} bg-indigo-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 flex items-center gap-1`}>
+                  <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} bg-cyan-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 flex items-center gap-1`}>
                     <span className="w-1 h-1 bg-white rounded-full"></span>
                     {t.addedXhAgo.replace('{x}', getHoursAgo(selectedSublet.createdAt).toString())}
                   </div>
@@ -696,10 +696,10 @@ const AppContent: React.FC = () => {
 
                  <div className="pt-2">
                    <h4 className="font-bold text-slate-900 text-sm pr-8 line-clamp-1">{selectedSublet.location}</h4>
-                   <div className="text-indigo-600 font-black text-lg mt-0.5 dir-ltr">
+                   <div className="text-cyan-600 font-black text-lg mt-0.5 dir-ltr">
                      {formatPrice(selectedSublet.price, currency, language, selectedSublet.currency)}
                    </div>
-                   <div className="text-[10px] text-slate-400 font-black uppercase mt-1 tracking-widest">{selectedSublet.neighborhood || selectedSublet.city}</div>
+                   <div className="text-[10px] text-slate-500 font-black uppercase mt-1 tracking-widest">{selectedSublet.neighborhood || selectedSublet.city}</div>
                    <FeatureIcons apartment_details={selectedSublet.apartment_details} className="mt-1.5" />
                  </div>
 
@@ -712,7 +712,7 @@ const AppContent: React.FC = () => {
                        {t.edit}
                      </button>
                    ) : (
-                     <div className="flex-1 bg-indigo-600 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-indigo-100">
+                     <div className="flex-1 bg-cyan-600 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-cyan-100">
                        {t.viewOnFb}
                      </div>
                    )}

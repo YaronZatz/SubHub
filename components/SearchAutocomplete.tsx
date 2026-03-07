@@ -39,7 +39,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   sublets,
   placeholder = 'Search...',
   className = '',
-  inputClassName = 'w-full py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none border border-transparent focus:bg-white',
+  inputClassName = 'w-full py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-cyan-500 outline-none border border-transparent focus:bg-white',
   onCitySelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);

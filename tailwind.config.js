@@ -7,7 +7,13 @@ module.exports = {
       "./lib/**/*.{js,ts,jsx,tsx,mdx}",
     ],
     theme: {
-      extend: {},
+      extend: {
+        colors: {
+          cyan: {
+            600: '#3382C9',
+          },
+        },
+      },
     },
     plugins: [],
   };

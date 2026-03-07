@@ -31,7 +31,7 @@ const CurrencySwitcher: React.FC = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1 sm:gap-2 px-2 py-1 sm:px-3 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-full transition-all text-[10px] sm:text-xs font-black shadow-sm"
       >
-        <span className="text-indigo-600">{getCurrencySymbol(currency)}</span>
+        <span className="text-cyan-600">{getCurrencySymbol(currency)}</span>
         <span>{currency}</span>
         <svg className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
@@ -49,7 +49,7 @@ const CurrencySwitcher: React.FC = () => {
                   setIsOpen(false);
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold rounded-xl transition-colors
-                  ${currency === item.code ? 'bg-indigo-50 text-indigo-600' : 'text-slate-600 hover:bg-slate-50'}
+                  ${currency === item.code ? 'bg-cyan-50 text-cyan-600' : 'text-slate-600 hover:bg-slate-50'}
                 `}
               >
                 <span>{item.label}</span>
