@@ -1,5 +1,5 @@
 
-import { collection, getDocs, doc, updateDoc, addDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
 
@@ -130,8 +130,8 @@ function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sub
 function buildQuery() {
   return query(
     collection(db!, COLLECTION),
+    where('status', '==', 'active'),
     orderBy('postedAt', 'desc'),
-    orderBy('commentsCount', 'desc'),
     limit(200)
   );
 }

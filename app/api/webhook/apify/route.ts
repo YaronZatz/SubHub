@@ -180,6 +180,30 @@ function normalizeFbUrl(url: string): string {
   return url;
 }
 
+async function expireOldListings(): Promise<void> {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const cutoffTimestamp = thirtyDaysAgo.toISOString();
+
+  const oldListings = await adminDb
+    .collection('listings')
+    .where('status', '==', 'active')
+    .where('postedAt', '<', cutoffTimestamp)
+    .get();
+
+  if (oldListings.empty) {
+    console.log('[Apify Webhook] No listings to expire');
+    return;
+  }
+
+  const batch = adminDb.batch();
+  oldListings.docs.forEach(doc => {
+    batch.update(doc.ref, { status: 'expired', expiredAt: new Date().toISOString() });
+  });
+  await batch.commit();
+  console.log(`[Apify Webhook] Expired ${oldListings.docs.length} old listings`);
+}
+
 function isValidListing(item: ApifyPayload, images: string[]): boolean {
   if (images.length === 0) return false;
 
@@ -240,6 +264,7 @@ export async function POST(req: NextRequest) {
   let rawBody: string | null = null;
 
   console.log(`${logPrefix} Webhook hit`);
+  await expireOldListings();
 
   try {
     rawBody = await req.text();
@@ -374,8 +399,13 @@ export async function POST(req: NextRequest) {
         try {
           const urlSnapshot = await adminDb.collection('listings').where('sourceUrl', '==', canonicalUrl).limit(1).get();
           if (!urlSnapshot.empty) {
-            console.log(`${logPrefix} Duplicate detected (sourceUrl), skipping. Existing doc: ${urlSnapshot.docs[0].id}`);
-            results.push({ id: urlSnapshot.docs[0].id });
+            const existingDoc = urlSnapshot.docs[0];
+            await adminDb.collection('listings').doc(existingDoc.id).update({
+              lastSeenAt: new Date().toISOString(),
+              status: 'active',
+            });
+            console.log(`${logPrefix} Duplicate detected (sourceUrl), refreshed lastSeenAt. Existing doc: ${existingDoc.id}`);
+            results.push({ id: existingDoc.id });
             continue;
           }
         } catch (urlDedupErr) {
@@ -502,6 +532,7 @@ export async function POST(req: NextRequest) {
             likesCount: item.likesCount ?? 0,
             commentsCount: item.commentsCount ?? 0,
             postedAt: item.time ?? null,
+            lastSeenAt: new Date().toISOString(),
           };
           try {
             await adminDb.collection('listings').doc(docId).set(stripUndefined(finalListing), { merge: true });
@@ -542,6 +573,7 @@ export async function POST(req: NextRequest) {
             likesCount: item.likesCount ?? 0,
             commentsCount: item.commentsCount ?? 0,
             postedAt: item.time ?? null,
+            lastSeenAt: new Date().toISOString(),
           };
           try {
             await adminDb.collection('listings').doc(docId).set(stripUndefined(fallbackListing), { merge: true });
