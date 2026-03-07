@@ -15,7 +15,13 @@ export enum Language {
   EN = 'en',
   HE = 'he',
   FR = 'fr',
-  RU = 'ru'
+  RU = 'ru',
+  ES = 'es',
+  UK = 'uk',
+  DE = 'de',
+  ZH = 'zh',
+  PT = 'pt',
+  IT = 'it'
 }
 
 export enum CurrencyCode {

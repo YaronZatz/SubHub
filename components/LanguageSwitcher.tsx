@@ -26,6 +26,12 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ language, setLangua
     { code: Language.HE, label: 'עברית', flagUrl: 'https://flagcdn.com/w40/il.png', alt: 'IL' },
     { code: Language.FR, label: 'Français', flagUrl: 'https://flagcdn.com/w40/fr.png', alt: 'FR' },
     { code: Language.RU, label: 'Русский', flagUrl: 'https://flagcdn.com/w40/ru.png', alt: 'RU' },
+    { code: Language.ES, label: 'Español', flagUrl: 'https://flagcdn.com/w40/es.png', alt: 'ES' },
+    { code: Language.UK, label: 'Українська', flagUrl: 'https://flagcdn.com/w40/ua.png', alt: 'UA' },
+    { code: Language.DE, label: 'Deutsch', flagUrl: 'https://flagcdn.com/w40/de.png', alt: 'DE' },
+    { code: Language.ZH, label: '中文', flagUrl: 'https://flagcdn.com/w40/cn.png', alt: 'CN' },
+    { code: Language.PT, label: 'Português', flagUrl: 'https://flagcdn.com/w40/br.png', alt: 'BR' },
+    { code: Language.IT, label: 'Italiano', flagUrl: 'https://flagcdn.com/w40/it.png', alt: 'IT' },
   ];
 
   const current = languages.find(l => l.code === language) || languages[0];
