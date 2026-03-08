@@ -5,7 +5,7 @@ export const translations = {
   [Language.EN]: {
     appName: "SubHub",
     aiPowered: "AI-Powered Aggregator",
-    searchPlaceholder: "Search neighborhood, street...",
+    searchPlaceholder: "Search city, neighborhood, street...",
     addPost: "Add Post",
     filters: "Filters",
     clearFilters: "Clear filters & search",
@@ -103,7 +103,7 @@ export const translations = {
   [Language.HE]: {
     appName: "SubHub",
     aiPowered: "אגרגטור מבוסס AI",
-    searchPlaceholder: "חיפוש שכונה, רחוב...",
+    searchPlaceholder: "חיפוש עיר, שכונה, רחוב...",
     addPost: "הוסף פוסט",
     filters: "מסננים",
     clearFilters: "נקה מסננים וחיפוש",
@@ -201,7 +201,7 @@ export const translations = {
   [Language.FR]: {
     appName: "SubHub",
     aiPowered: "Agrégateur par IA",
-    searchPlaceholder: "Chercher quartier, rue...",
+    searchPlaceholder: "Chercher ville, quartier, rue...",
     addPost: "Ajouter",
     filters: "Filtres",
     clearFilters: "Réinitialiser filtres et recherche",
@@ -299,7 +299,7 @@ export const translations = {
   [Language.RU]: {
     appName: "SubHub",
     aiPowered: "Агрегатор на базе ИИ",
-    searchPlaceholder: "Поиск района, улицы...",
+    searchPlaceholder: "Поиск города, района, улицы...",
     addPost: "Добавить",
     filters: "Фильтры",
     clearFilters: "Сбросить фильтры и поиск",
@@ -397,7 +397,7 @@ export const translations = {
   [Language.ES]: {
     appName: "SubHub",
     aiPowered: "Agregador con IA",
-    searchPlaceholder: "Buscar barrio, calle...",
+    searchPlaceholder: "Buscar ciudad, barrio, calle...",
     addPost: "Añadir",
     filters: "Filtros",
     clearFilters: "Borrar filtros y búsqueda",
@@ -495,7 +495,7 @@ export const translations = {
   [Language.UK]: {
     appName: "SubHub",
     aiPowered: "Агрегатор на основі ШІ",
-    searchPlaceholder: "Пошук району, вулиці...",
+    searchPlaceholder: "Пошук міста, району, вулиці...",
     addPost: "Додати",
     filters: "Фільтри",
     clearFilters: "Скинути фільтри та пошук",
@@ -593,7 +593,7 @@ export const translations = {
   [Language.DE]: {
     appName: "SubHub",
     aiPowered: "KI-gestützter Aggregator",
-    searchPlaceholder: "Stadtteil, Straße suchen...",
+    searchPlaceholder: "Stadt, Stadtteil, Straße suchen...",
     addPost: "Hinzufügen",
     filters: "Filter",
     clearFilters: "Filter und Suche zurücksetzen",
@@ -691,7 +691,7 @@ export const translations = {
   [Language.ZH]: {
     appName: "SubHub",
     aiPowered: "AI 驱动的聚合平台",
-    searchPlaceholder: "搜索社区、街道...",
+    searchPlaceholder: "搜索城市、社区、街道...",
     addPost: "添加",
     filters: "筛选",
     clearFilters: "清除筛选和搜索",
@@ -789,7 +789,7 @@ export const translations = {
   [Language.PT]: {
     appName: "SubHub",
     aiPowered: "Agregador com IA",
-    searchPlaceholder: "Buscar bairro, rua...",
+    searchPlaceholder: "Buscar cidade, bairro, rua...",
     addPost: "Adicionar",
     filters: "Filtros",
     clearFilters: "Limpar filtros e busca",
@@ -887,7 +887,7 @@ export const translations = {
   [Language.IT]: {
     appName: "SubHub",
     aiPowered: "Aggregatore basato su IA",
-    searchPlaceholder: "Cerca quartiere, via...",
+    searchPlaceholder: "Cerca città, quartiere, via...",
     addPost: "Aggiungi",
     filters: "Filtri",
     clearFilters: "Reimposta filtri e ricerca",

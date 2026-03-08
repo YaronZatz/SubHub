@@ -175,7 +175,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
       {/* Dropdown */}
       {isOpen && sections.length > 0 && (
         <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-          {sections.map(section => (
+          {sections.filter(section => section.items.length > 0).map(section => (
             <div key={section.label}>
               <div className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
                 {section.label}
