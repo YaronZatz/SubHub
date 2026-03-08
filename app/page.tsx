@@ -9,7 +9,7 @@ import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '../constants'
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { persistenceService } from '../services/persistenceService';
-import { formatPrice } from '../utils/formatters';
+import { formatPrice, formatDate } from '../utils/formatters';
 import {
   FilterIcon,
   ListIcon,
@@ -486,10 +486,14 @@ export default function Home() {
                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{sublet.neighborhood}</p>
                      )}
                      <FeatureIcons apartment_details={sublet.apartment_details} className="mt-1.5" />
+                     {(formatDate(sublet.startDate) || formatDate(sublet.endDate)) && (
                      <div className="flex items-center gap-1.5 mt-2 text-[11px] text-slate-500">
                        <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-                       <span>{sublet.startDate} – {sublet.endDate}</span>
+                       <span>
+                         {formatDate(sublet.startDate)}{formatDate(sublet.startDate) && formatDate(sublet.endDate) ? ' – ' : ''}{formatDate(sublet.endDate)}
+                       </span>
                      </div>
+                    )}
                    </div>
                  </div>
                ))}
@@ -561,6 +565,7 @@ export default function Home() {
           sublet={detailSublet}
           onClose={() => setDetailSublet(null)}
           language={language}
+          setLanguage={setLanguageState}
           currentUserId={user?.id ?? ''}
           onClaim={() => {}}
           onEdit={(id) => setDetailSublet(null)}

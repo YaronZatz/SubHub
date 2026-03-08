@@ -8,6 +8,7 @@ import { formatPrice, formatDate } from '../utils/formatters';
 import { getActiveAmenities } from '../utils/amenityHelpers';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
 import { TranslatedText } from './TranslatedText';
+import LanguageSwitcher from './LanguageSwitcher';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 
 const SWIPE_THRESHOLD = 50;
@@ -16,18 +17,20 @@ interface SubletDetailPageProps {
   sublet: Sublet;
   onClose: () => void;
   language: Language;
+  setLanguage: (lang: Language) => void;
   currentUserId: string;
   onClaim: (id: string) => void;
   onEdit: (id: string) => void;
   onShowToast?: (message: string, type: 'success' | 'error') => void;
 }
 
-const SubletDetailPage: React.FC<SubletDetailPageProps> = ({ 
-  sublet, 
-  onClose, 
-  language, 
-  currentUserId, 
-  onClaim, 
+const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
+  sublet,
+  onClose,
+  language,
+  setLanguage,
+  currentUserId,
+  onClaim,
   onEdit,
   onShowToast
 }) => {
@@ -218,16 +221,17 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
           <span className="hidden sm:inline">Back</span>
         </button>
         
-        <div className="flex gap-4">
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher language={language} setLanguage={setLanguage} />
           {isOwner && (
-            <button 
+            <button
               onClick={() => onEdit(sublet.id)}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-full font-bold text-xs transition-all"
             >
               {t.edit}
             </button>
           )}
-          <button 
+          <button
             onClick={handleShare}
             className="text-slate-600 hover:text-slate-900 font-bold text-sm flex items-center gap-1.5 underline underline-offset-4"
           >

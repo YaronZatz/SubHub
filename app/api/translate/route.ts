@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: `Translate the following text to ${langName}. Return ONLY the translated text, nothing else. If the text is already in ${langName}, return it unchanged.\n\n${text}`,
     });
     const translation = response.text?.trim() ?? null;
