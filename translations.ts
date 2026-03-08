@@ -98,7 +98,13 @@ export const translations = {
       [RentTerm.ALL]: "All",
       [RentTerm.SHORT_TERM]: "Sublet / Short-term",
       [RentTerm.LONG_TERM]: "Long-term"
-    }
+    },
+    postedWithin: "Posted Within",
+    postedWithinAll: "Any time",
+    postedWithin1h: "Last hour",
+    postedWithin24h: "Last 24h",
+    postedWithin7d: "Last 7 days",
+    postedWithin30d: "Last 30 days",
   },
   [Language.HE]: {
     appName: "SubHub",
@@ -196,7 +202,13 @@ export const translations = {
       [RentTerm.ALL]: "הכל",
       [RentTerm.SHORT_TERM]: "סאבלט / קצר מועד",
       [RentTerm.LONG_TERM]: "ארוך טווח"
-    }
+    },
+    postedWithin: "פורסם לפני",
+    postedWithinAll: "כל הזמנים",
+    postedWithin1h: "שעה אחרונה",
+    postedWithin24h: "24 שעות אחרונות",
+    postedWithin7d: "7 ימים אחרונים",
+    postedWithin30d: "30 ימים אחרונים",
   },
   [Language.FR]: {
     appName: "SubHub",
@@ -294,7 +306,13 @@ export const translations = {
       [RentTerm.ALL]: "Tout",
       [RentTerm.SHORT_TERM]: "Sous-location / Court terme",
       [RentTerm.LONG_TERM]: "Long terme"
-    }
+    },
+    postedWithin: "Publié depuis",
+    postedWithinAll: "N'importe quand",
+    postedWithin1h: "Dernière heure",
+    postedWithin24h: "Dernières 24h",
+    postedWithin7d: "7 derniers jours",
+    postedWithin30d: "30 derniers jours",
   },
   [Language.RU]: {
     appName: "SubHub",
@@ -392,7 +410,13 @@ export const translations = {
       [RentTerm.ALL]: "Все",
       [RentTerm.SHORT_TERM]: "Субаренда / Краткосрочная",
       [RentTerm.LONG_TERM]: "Долгосрочная"
-    }
+    },
+    postedWithin: "Опубликовано за",
+    postedWithinAll: "Любое время",
+    postedWithin1h: "Последний час",
+    postedWithin24h: "Последние 24ч",
+    postedWithin7d: "Последние 7 дней",
+    postedWithin30d: "Последние 30 дней",
   },
   [Language.ES]: {
     appName: "SubHub",
@@ -490,7 +514,13 @@ export const translations = {
       [RentTerm.ALL]: "Todos",
       [RentTerm.SHORT_TERM]: "Subarriendo / Corto plazo",
       [RentTerm.LONG_TERM]: "Largo plazo"
-    }
+    },
+    postedWithin: "Publicado hace",
+    postedWithinAll: "Cualquier momento",
+    postedWithin1h: "Última hora",
+    postedWithin24h: "Últimas 24h",
+    postedWithin7d: "Últimos 7 días",
+    postedWithin30d: "Últimos 30 días",
   },
   [Language.UK]: {
     appName: "SubHub",
@@ -588,7 +618,13 @@ export const translations = {
       [RentTerm.ALL]: "Всі",
       [RentTerm.SHORT_TERM]: "Суборенда / Короткострокова",
       [RentTerm.LONG_TERM]: "Довгострокова"
-    }
+    },
+    postedWithin: "Опубліковано за",
+    postedWithinAll: "Будь-який час",
+    postedWithin1h: "Остання година",
+    postedWithin24h: "Останні 24г",
+    postedWithin7d: "Останні 7 днів",
+    postedWithin30d: "Останні 30 днів",
   },
   [Language.DE]: {
     appName: "SubHub",
@@ -686,7 +722,13 @@ export const translations = {
       [RentTerm.ALL]: "Alle",
       [RentTerm.SHORT_TERM]: "Untermiete / Kurzfristig",
       [RentTerm.LONG_TERM]: "Langfristig"
-    }
+    },
+    postedWithin: "Veröffentlicht vor",
+    postedWithinAll: "Jederzeit",
+    postedWithin1h: "Letzte Stunde",
+    postedWithin24h: "Letzte 24h",
+    postedWithin7d: "Letzte 7 Tage",
+    postedWithin30d: "Letzte 30 Tage",
   },
   [Language.ZH]: {
     appName: "SubHub",
@@ -784,7 +826,13 @@ export const translations = {
       [RentTerm.ALL]: "全部",
       [RentTerm.SHORT_TERM]: "转租 / 短期",
       [RentTerm.LONG_TERM]: "长期"
-    }
+    },
+    postedWithin: "发布时间",
+    postedWithinAll: "任何时间",
+    postedWithin1h: "最近1小时",
+    postedWithin24h: "最近24小时",
+    postedWithin7d: "最近7天",
+    postedWithin30d: "最近30天",
   },
   [Language.PT]: {
     appName: "SubHub",
@@ -882,7 +930,13 @@ export const translations = {
       [RentTerm.ALL]: "Todos",
       [RentTerm.SHORT_TERM]: "Sublocação / Curto prazo",
       [RentTerm.LONG_TERM]: "Longo prazo"
-    }
+    },
+    postedWithin: "Publicado há",
+    postedWithinAll: "Qualquer hora",
+    postedWithin1h: "Última hora",
+    postedWithin24h: "Últimas 24h",
+    postedWithin7d: "Últimos 7 dias",
+    postedWithin30d: "Últimos 30 dias",
   },
   [Language.IT]: {
     appName: "SubHub",
@@ -980,6 +1034,12 @@ export const translations = {
       [RentTerm.ALL]: "Tutti",
       [RentTerm.SHORT_TERM]: "Subaffitto / Breve termine",
       [RentTerm.LONG_TERM]: "Lungo termine"
-    }
+    },
+    postedWithin: "Pubblicato da",
+    postedWithinAll: "Qualsiasi momento",
+    postedWithin1h: "Ultima ora",
+    postedWithin24h: "Ultime 24h",
+    postedWithin7d: "Ultimi 7 giorni",
+    postedWithin30d: "Ultimi 30 giorni",
   }
 };

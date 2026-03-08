@@ -177,4 +177,5 @@ export interface Filters {
   maxRooms?: number;
   amenities?: Partial<Record<keyof ParsedAmenities, boolean>>;
   country?: string;
+  postedWithin?: string; // 'all' | '1h' | '24h' | '7d' | '30d'
 }

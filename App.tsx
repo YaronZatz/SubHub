@@ -75,6 +75,7 @@ const AppContent: React.FC = () => {
     dateMode: DateMode.FLEXIBLE,
     petsAllowed: false,
     rentTerm: RentTerm.ALL,
+    postedWithin: 'all',
   });
 
   const t = translations[language] || translations[Language.EN];
@@ -214,6 +215,19 @@ const AppContent: React.FC = () => {
         (!filters.minRooms || (effectiveRooms?.totalRooms ?? 0) >= filters.minRooms) &&
         (!filters.maxRooms || (effectiveRooms?.totalRooms ?? Infinity) <= filters.maxRooms);
 
+      let matchesPostedWithin = true;
+      if (filters.postedWithin && filters.postedWithin !== 'all') {
+        const now = Date.now();
+        const durations: Record<string, number> = {
+          '1h':  1 * 60 * 60 * 1000,
+          '24h': 24 * 60 * 60 * 1000,
+          '7d':  7 * 24 * 60 * 60 * 1000,
+          '30d': 30 * 24 * 60 * 60 * 1000,
+        };
+        const cutoff = now - (durations[filters.postedWithin] ?? 0);
+        matchesPostedWithin = s.createdAt >= cutoff;
+      }
+
       let matchesDates = true;
       if (filters.startDate || filters.endDate) {
         const filterStart = filters.startDate ? new Date(filters.startDate).getTime() : -Infinity;
@@ -239,7 +253,7 @@ const AppContent: React.FC = () => {
         }
       }
 
-      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms && matchesRentTerm;
+      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms && matchesRentTerm && matchesPostedWithin;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -536,6 +550,29 @@ const AppContent: React.FC = () => {
                      <span>{filters.petsAllowed ? '🐾' : '🐕'}</span>
                      {t.petsAllowed}
                    </button>
+                 </div>
+                 <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.postedWithin}</label>
+                   <div className="flex flex-wrap gap-2">
+                     {([
+                       { value: 'all', label: t.postedWithinAll },
+                       { value: '1h',  label: t.postedWithin1h  },
+                       { value: '24h', label: t.postedWithin24h },
+                       { value: '7d',  label: t.postedWithin7d  },
+                       { value: '30d', label: t.postedWithin30d },
+                     ] as const).map(opt => (
+                       <button
+                         key={opt.value}
+                         onClick={() => setFilters(prev => ({ ...prev, postedWithin: prev.postedWithin === opt.value && opt.value !== 'all' ? 'all' : opt.value }))}
+                         className={`px-3 py-2 rounded-full text-[10px] font-bold border transition-all
+                           ${(filters.postedWithin ?? 'all') === opt.value
+                             ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                             : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                       >
+                         {opt.label}
+                       </button>
+                     ))}
+                   </div>
                  </div>
                  <div className="space-y-1.5">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.rentTermLabel}</label>
