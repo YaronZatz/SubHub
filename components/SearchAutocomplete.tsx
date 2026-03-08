@@ -173,30 +173,37 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
       )}
 
       {/* Dropdown */}
-      {isOpen && sections.length > 0 && (
-        <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
-          {sections.filter(section => section.items.length > 0).map(section => (
-            <div key={section.label}>
-              <div className="px-4 pt-3 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                {section.label}
-              </div>
-              {section.items.map(({ label, flatIdx }) => (
-                <div
-                  key={label}
-                  className={`px-4 py-2.5 text-sm text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors ${
-                    highlightedIndex === flatIdx ? 'bg-slate-50' : 'hover:bg-slate-50'
-                  }`}
-                  onMouseEnter={() => setHighlightedIndex(flatIdx)}
-                  onClick={() => select(label, section.label)}
-                >
-                  <span className="text-base leading-none shrink-0">{section.icon}</span>
-                  <HighlightMatch text={label} query={value} />
-                </div>
-              ))}
+      {isOpen && sections.length > 0 && (() => {
+        const citiesSection      = sections.find(s => s.label === 'Cities');
+        const neighborhoodsSection = sections.find(s => s.label === 'Neighborhoods');
+        const streetsSection     = sections.find(s => s.label === 'Streets');
+        const renderSection = (section: Section) => (
+          <div>
+            <div className="px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              {section.icon} {section.label}
             </div>
-          ))}
-        </div>
-      )}
+            {section.items.map(({ label, flatIdx }) => (
+              <div
+                key={label}
+                className={`px-4 py-2.5 text-sm text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors ${
+                  highlightedIndex === flatIdx ? 'bg-slate-50' : 'hover:bg-slate-50'
+                }`}
+                onMouseEnter={() => setHighlightedIndex(flatIdx)}
+                onClick={() => select(label, section.label)}
+              >
+                <HighlightMatch text={label} query={value} />
+              </div>
+            ))}
+          </div>
+        );
+        return (
+          <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-64 overflow-y-auto py-1">
+            {citiesSection       && renderSection(citiesSection)}
+            {neighborhoodsSection && renderSection(neighborhoodsSection)}
+            {streetsSection      && renderSection(streetsSection)}
+          </div>
+        );
+      })()}
     </div>
   );
 };
