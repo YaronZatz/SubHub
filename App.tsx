@@ -340,7 +340,8 @@ const AppContent: React.FC = () => {
             // Optional: Clear URL param on close if desired
             // window.history.pushState({}, '', window.location.pathname);
           }} 
-          language={language} 
+          language={language}
+          setLanguage={setLanguage}
           currentUserId={user?.id || ''}
           onClaim={handleClaimListing}
           onEdit={openEditModal}
@@ -621,11 +622,13 @@ const AppContent: React.FC = () => {
                       <p className="text-xs text-slate-400 font-medium uppercase mb-1">{sublet.neighborhood || sublet.city}</p>
                       <FeatureIcons apartment_details={sublet.apartment_details} className="mb-3" />
                       <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                        {(formatDate(sublet.startDate) || formatDate(sublet.endDate)) && (
                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-bold">
                           <svg className="w-3.5 h-3.5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                           {formatDate(sublet.startDate)}
                           {sublet.endDate ? ` - ${formatDate(sublet.endDate)}` : ''}
                         </div>
+                        )}
                         {sublet.status === ListingStatus.TAKEN && (
                           <span className="text-[10px] font-black text-red-500 uppercase ring-1 ring-red-100 px-1.5 py-0.5 rounded">{t.taken}</span>
                         )}
