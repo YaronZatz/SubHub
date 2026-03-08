@@ -62,7 +62,8 @@ const INITIAL_FILTERS: Filters = {
   endDate: '',
   dateMode: DateMode.FLEXIBLE,
   petsAllowed: false,
-  rentTerm: RentTerm.ALL
+  rentTerm: RentTerm.ALL,
+  postedWithin: 'all',
 };
 
 export default function Home() {
@@ -108,6 +109,7 @@ export default function Home() {
   };
 
   const t = translations[language] || translations[Language.EN];
+  const isRTL = language === Language.HE;
 
   useEffect(() => {
     async function loadData() {
@@ -148,7 +150,18 @@ export default function Home() {
         if (rentTerm === RentTerm.SHORT_TERM) return days <= SHORT_TERM_DAYS;
         return days > SHORT_TERM_DAYS;
       })();
-      return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesRentTerm;
+      let matchesPostedWithin = true;
+      if (filters.postedWithin && filters.postedWithin !== 'all') {
+        const durations: Record<string, number> = {
+          '1h':  1 * 60 * 60 * 1000,
+          '24h': 24 * 60 * 60 * 1000,
+          '7d':  7 * 24 * 60 * 60 * 1000,
+          '30d': 30 * 24 * 60 * 60 * 1000,
+        };
+        const cutoff = Date.now() - (durations[filters.postedWithin] ?? 0);
+        matchesPostedWithin = s.createdAt >= cutoff;
+      }
+      return matchesSearch && matchesPrice && matchesStatus && matchesType && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesRentTerm && matchesPostedWithin;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -190,6 +203,20 @@ export default function Home() {
   };
 
   const mapSelectedSublet = mapSelectedSubletId ? filteredSublets.find(s => s.id === mapSelectedSubletId) : undefined;
+
+  const activeFilterCount = [
+    filters.minPrice !== 0,
+    filters.maxPrice !== 20000,
+    !!filters.type,
+    !!filters.city,
+    !!filters.neighborhood,
+    !!filters.startDate,
+    !!filters.endDate,
+    filters.petsAllowed,
+    filters.showTaken,
+    (filters.rentTerm ?? RentTerm.ALL) !== RentTerm.ALL,
+    (filters.postedWithin ?? 'all') !== 'all',
+  ].filter(Boolean).length;
 
   return (
     <div data-root className="flex flex-col h-screen overflow-hidden bg-white">
@@ -293,12 +320,17 @@ export default function Home() {
                    <ListIcon className="w-4 h-4" />
                    <span className="hidden sm:inline">{showMapView ? 'List only' : 'Map'}</span>
                  </button>
-                 <button 
-                    onClick={() => setIsFilterExpanded(!isFilterExpanded)} 
-                    className={`p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${isFilterExpanded ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                 <button
+                    onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+                    className={`relative p-2.5 rounded-xl transition-all flex items-center gap-2 text-sm font-bold ${isFilterExpanded ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-100' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                  >
                     <FilterIcon className="w-4 h-4" />
                     {t.filters}
+                    {activeFilterCount > 0 && (
+                      <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full text-[10px] font-black flex items-center justify-center px-1 ${isFilterExpanded ? 'bg-white text-cyan-600' : 'bg-cyan-600 text-white'}`}>
+                        {activeFilterCount}
+                      </span>
+                    )}
                  </button>
                </div>
              </div>
@@ -432,6 +464,31 @@ export default function Home() {
                      className="rounded border-slate-300 text-cyan-600 focus:ring-cyan-500"
                    />
                    <label htmlFor="show-taken" className="text-xs font-bold text-slate-600">{t.showTaken}</label>
+                 </div>
+
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{(t as { postedWithin: string }).postedWithin}</label>
+                   <div className="flex flex-wrap gap-2" dir={isRTL ? 'rtl' : 'ltr'}>
+                     {([
+                       { value: 'all', label: (t as { postedWithinAll: string }).postedWithinAll },
+                       { value: '1h',  label: (t as { postedWithin1h:  string }).postedWithin1h  },
+                       { value: '24h', label: (t as { postedWithin24h: string }).postedWithin24h },
+                       { value: '7d',  label: (t as { postedWithin7d:  string }).postedWithin7d  },
+                       { value: '30d', label: (t as { postedWithin30d: string }).postedWithin30d },
+                     ] as const).map(opt => (
+                       <button
+                         key={opt.value}
+                         type="button"
+                         onClick={() => setFilters(f => ({ ...f, postedWithin: f.postedWithin === opt.value && opt.value !== 'all' ? 'all' : opt.value }))}
+                         className={`px-3 py-2 rounded-full text-[10px] font-bold border transition-all
+                           ${(filters.postedWithin ?? 'all') === opt.value
+                             ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                             : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                       >
+                         {opt.label}
+                       </button>
+                     ))}
+                   </div>
                  </div>
 
                  <div className="pt-3 border-t border-slate-200">
