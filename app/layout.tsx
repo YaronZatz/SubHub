@@ -15,9 +15,21 @@ function getMetadataBase(): URL | undefined {
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
-  title: "SubHub | One Map. Zero Noise.",
-  description: "AI-Powered Facebook Sublet Aggregator",
+  title: "SubHub — One Map | Zero Noise",
+  description: "Find sublets on one map with zero noise.",
   metadataBase: getMetadataBase(),
+  openGraph: {
+    type: 'website',
+    siteName: 'SubHub',
+    title: 'SubHub — One Map | Zero Noise',
+    description: 'Find sublets on one map with zero noise.',
+    url: process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'SubHub — One Map | Zero Noise',
+    description: 'Find sublets on one map with zero noise.',
+  },
 };
 export const viewport = {
   width: 'device-width' as const,

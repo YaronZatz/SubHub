@@ -28,6 +28,10 @@ env:
     value: "gen-lang-client-0322888127.firebaseapp.com"
     availability: [BUILD, RUNTIME]
 
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://web--gen-lang-client-0322888127.us-east4.hosted.app"
+    availability: [BUILD, RUNTIME]
+
   # --- סודות (Secrets) - כאן התיקון הקריטי ---
   
   # 1. מפתח Gemini
