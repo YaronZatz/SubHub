@@ -46,8 +46,8 @@ export const getCurrencySymbol = (code: CurrencyCode): string => {
 /**
  * Formats a date string or timestamp to DD/MM/YYYY.
  */
-export const formatDate = (dateValue: string | number | undefined): string => {
-  if (!dateValue) return '';
+export const formatDate = (dateValue: string | number | undefined | null): string => {
+  if (!dateValue || dateValue === 'null') return '';
   const date = new Date(dateValue);
   if (isNaN(date.getTime())) return String(dateValue);
   
