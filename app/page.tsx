@@ -26,7 +26,7 @@ import ListingCarousel from '../components/ListingCarousel';
 import PriceRangeFilter from '../components/PriceRangeFilter';
 import CityAutocomplete from '../components/CityAutocomplete';
 import EditListingModal from '../components/EditListingModal';
-import SubletDetailPage from '../components/SubletDetailPage';
+const SubletDetailPage = dynamic(() => import('../components/SubletDetailPage'), { ssr: false });
 import FeatureIcons from '../components/FeatureIcons';
 import CurrencySwitcher from '../components/CurrencySwitcher';
 import LanguageSwitcher from '../components/LanguageSwitcher';
