@@ -2,8 +2,6 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-
 const LANGUAGE_NAMES: Record<string, string> = {
   he: 'Hebrew', es: 'Spanish', fr: 'French', it: 'Italian',
   ru: 'Russian', uk: 'Ukrainian', pt: 'Portuguese', de: 'German', zh: 'Chinese',
@@ -17,6 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   const langName = LANGUAGE_NAMES[targetLanguage];
+  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
   try {
     const response = await ai.models.generateContent({
