@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     });
     const translation = response.text?.trim() ?? null;
     return NextResponse.json({ translation });
-  } catch {
-    return NextResponse.json({ error: 'Translation failed' }, { status: 500 });
+  } catch (err) {
+    console.error('[/api/translate] Gemini error:', err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

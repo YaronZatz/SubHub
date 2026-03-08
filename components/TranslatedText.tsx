@@ -18,7 +18,11 @@ export function TranslatedText({ text, language }: Props) {
     }
     setLoading(true);
     translateText(text, language)
-      .then(setTranslation)
+      .then((result) => {
+        console.log('[TranslatedText] result:', result, 'lang:', language);
+        setTranslation(result);
+      })
+      .catch((err) => console.error('[TranslatedText] error:', err))
       .finally(() => setLoading(false));
   }, [text, language]);
 
