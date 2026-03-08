@@ -7,6 +7,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { formatPrice, formatDate } from '../utils/formatters';
 import { getActiveAmenities } from '../utils/amenityHelpers';
 import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from './Icons';
+import { TranslatedText } from './TranslatedText';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 
 const SWIPE_THRESHOLD = 50;
@@ -371,9 +372,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-900">{t.description}</h3>
-              <p className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm md:text-base">
-                {sublet.originalText}
-              </p>
+              <TranslatedText text={sublet.originalText} language={language} />
             </div>
 
             {/* Location Map */}
@@ -455,6 +454,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 </div>
               </div>
 
+              {(formatDate(sublet.startDate) || formatDate(sublet.endDate)) && (
               <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs shadow-sm">
                 <div className="grid grid-cols-2 border-b border-slate-200">
                   <div className="p-4 border-r border-slate-200 bg-white">
@@ -469,6 +469,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                   </div>
                 </div>
               </div>
+              )}
 
               {isOwner ? (
                 <button 
