@@ -30,9 +30,6 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   );
 }
 
-type SectionItem = { label: string; flatIdx: number; sectionLabel: string };
-type Section = { label: string; icon: string; items: SectionItem[] };
-
 const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   value,
   onChange,
@@ -67,26 +64,21 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     };
   }, [sublets]);
 
-  // Filter, group, and annotate with flat indices for keyboard nav
-  const sections: Section[] = useMemo(() => {
-    const q = value.trim().toLowerCase();
-    if (!q) return [];
-    const result: Section[] = [];
-    let idx = 0;
+  // Compute matches for each section independently
+  const q = value.trim().toLowerCase();
+  const cityMatches         = useMemo(() => q ? cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4)        : [], [q, cities]);
+  const neighborhoodMatches = useMemo(() => q ? neighborhoods.filter(n => n.toLowerCase().includes(q)).slice(0, 4) : [], [q, neighborhoods]);
+  const streetMatches       = useMemo(() => q ? streets.filter(s => s.toLowerCase().includes(q)).slice(0, 4)       : [], [q, streets]);
 
-    const mc = cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4);
-    if (mc.length) result.push({ label: 'Cities', icon: '🏙', items: mc.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Cities' })) });
+  // Flat ordered list for keyboard navigation: cities first, then neighborhoods, then streets
+  const flatItems = useMemo(() => [
+    ...cityMatches.map(label        => ({ label, sectionLabel: 'Cities'        as const })),
+    ...neighborhoodMatches.map(label => ({ label, sectionLabel: 'Neighborhoods' as const })),
+    ...streetMatches.map(label       => ({ label, sectionLabel: 'Streets'       as const })),
+  ], [cityMatches, neighborhoodMatches, streetMatches]);
 
-    const mn = neighborhoods.filter(n => n.toLowerCase().includes(q)).slice(0, 4);
-    if (mn.length) result.push({ label: 'Neighborhoods', icon: '🏘', items: mn.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Neighborhoods' })) });
-
-    const ms = streets.filter(s => s.toLowerCase().includes(q)).slice(0, 4);
-    if (ms.length) result.push({ label: 'Streets', icon: '📍', items: ms.map(label => ({ label, flatIdx: idx++, sectionLabel: 'Streets' })) });
-
-    return result;
-  }, [value, neighborhoods, streets, cities]);
-
-  const totalItems = sections.reduce((sum, s) => sum + s.items.length, 0);
+  const totalItems   = flatItems.length;
+  const showDropdown = isOpen && totalItems > 0;
 
   useEffect(() => { setHighlightedIndex(-1); }, [value]);
 
@@ -101,7 +93,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = (label: string, sectionLabel?: string) => {
+  const select = (label: string, sectionLabel: string) => {
     onChange(label);
     if (sectionLabel === 'Cities') onCitySelect?.(label);
     setIsOpen(false);
@@ -123,8 +115,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex >= 0) {
-          const flat = sections.flatMap(s => s.items);
-          const item = flat[highlightedIndex];
+          const item = flatItems[highlightedIndex];
           if (item) select(item.label, item.sectionLabel);
         } else {
           setIsOpen(false);
@@ -138,6 +129,13 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         break;
     }
   };
+
+  const itemClass = (flatIdx: number) =>
+    `px-4 py-2.5 text-sm text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors ${
+      highlightedIndex === flatIdx ? 'bg-slate-50' : 'hover:bg-slate-50'
+    }`;
+
+  const sectionHeaderClass = 'px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400';
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -172,38 +170,66 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         </button>
       )}
 
-      {/* Dropdown */}
-      {isOpen && sections.length > 0 && (() => {
-        const citiesSection      = sections.find(s => s.label === 'Cities');
-        const neighborhoodsSection = sections.find(s => s.label === 'Neighborhoods');
-        const streetsSection     = sections.find(s => s.label === 'Streets');
-        const renderSection = (section: Section) => (
-          <div>
-            <div className="px-4 pt-2 pb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
-              {section.icon} {section.label}
+      {/* Dropdown — only mounts when there is at least one match */}
+      {showDropdown && (
+        <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-64 overflow-y-auto">
+
+          {cityMatches.length > 0 && (
+            <div>
+              <div className={sectionHeaderClass}>🏙 Cities</div>
+              {cityMatches.map((label, i) => (
+                <div
+                  key={label}
+                  className={itemClass(i)}
+                  onMouseEnter={() => setHighlightedIndex(i)}
+                  onClick={() => select(label, 'Cities')}
+                >
+                  <HighlightMatch text={label} query={value} />
+                </div>
+              ))}
             </div>
-            {section.items.map(({ label, flatIdx }) => (
-              <div
-                key={label}
-                className={`px-4 py-2.5 text-sm text-slate-700 cursor-pointer flex items-center gap-2.5 transition-colors ${
-                  highlightedIndex === flatIdx ? 'bg-slate-50' : 'hover:bg-slate-50'
-                }`}
-                onMouseEnter={() => setHighlightedIndex(flatIdx)}
-                onClick={() => select(label, section.label)}
-              >
-                <HighlightMatch text={label} query={value} />
-              </div>
-            ))}
-          </div>
-        );
-        return (
-          <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-64 overflow-y-auto py-1">
-            {citiesSection       && renderSection(citiesSection)}
-            {neighborhoodsSection && renderSection(neighborhoodsSection)}
-            {streetsSection      && renderSection(streetsSection)}
-          </div>
-        );
-      })()}
+          )}
+
+          {neighborhoodMatches.length > 0 && (
+            <div>
+              <div className={sectionHeaderClass}>🏘 Neighborhoods</div>
+              {neighborhoodMatches.map((label, i) => {
+                const flatIdx = cityMatches.length + i;
+                return (
+                  <div
+                    key={label}
+                    className={itemClass(flatIdx)}
+                    onMouseEnter={() => setHighlightedIndex(flatIdx)}
+                    onClick={() => select(label, 'Neighborhoods')}
+                  >
+                    <HighlightMatch text={label} query={value} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {streetMatches.length > 0 && (
+            <div>
+              <div className={sectionHeaderClass}>📍 Streets</div>
+              {streetMatches.map((label, i) => {
+                const flatIdx = cityMatches.length + neighborhoodMatches.length + i;
+                return (
+                  <div
+                    key={label}
+                    className={itemClass(flatIdx)}
+                    onMouseEnter={() => setHighlightedIndex(flatIdx)}
+                    onClick={() => select(label, 'Streets')}
+                  >
+                    <HighlightMatch text={label} query={value} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
   );
 };
