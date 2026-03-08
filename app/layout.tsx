@@ -24,11 +24,20 @@ export const metadata: Metadata = {
     title: 'SubHub — One Map | Zero Noise',
     description: 'Find sublets on one map with zero noise.',
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app',
+    images: [
+      {
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/api/og`,
+        width: 1200,
+        height: 630,
+        alt: 'SubHub — One Map | Zero Noise',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'SubHub — One Map | Zero Noise',
     description: 'Find sublets on one map with zero noise.',
+    images: [`${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/api/og`],
   },
 };
 export const viewport = {
