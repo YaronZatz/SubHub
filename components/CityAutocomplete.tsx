@@ -1,29 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { importLibrary } from '../lib/googleMapsLoader';
 
 interface CityAutocompleteProps {
   value: string;
-  options: string[];
+  options: string[]; // kept for interface compatibility — Google Places provides suggestions
   placeholder?: string;
   onChange: (city: string) => void;
   onCitySelect?: (city: string) => void;
   className?: string;
-}
-
-/** Renders text with the matching substring wrapped in a bold span. */
-function HighlightMatch({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <>{text}</>;
-  const q = query.trim();
-  const idx = text.toLowerCase().indexOf(q.toLowerCase());
-  if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <span className="font-black text-slate-900">{text.slice(idx, idx + q.length)}</span>
-      {text.slice(idx + q.length)}
-    </>
-  );
 }
 
 const PinIcon = () => (
@@ -35,67 +21,91 @@ const PinIcon = () => (
 
 const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
   value,
-  options,
+  options: _options, // unused — Places API provides suggestions
   placeholder = 'All cities',
   onChange,
   onCitySelect,
   className = '',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [predictions, setPredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const serviceRef = useRef<google.maps.places.AutocompleteService | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  const filteredOptions = useMemo(() => {
-    const q = value.trim().toLowerCase();
-    if (!q) return options;
-    return options.filter((c) => c.toLowerCase().includes(q)).slice(0, 8);
-  }, [options, value]);
-
+  // Load Places service once
   useEffect(() => {
-    setHighlightedIndex(-1);
-  }, [value, filteredOptions]);
+    importLibrary('places').then(() => {
+      serviceRef.current = new google.maps.places.AutocompleteService();
+    }).catch(console.error);
+  }, []);
 
+  // Fetch predictions on input change
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    const query = value.trim();
+    if (!query || !serviceRef.current) {
+      setPredictions([]);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const response = await serviceRef.current!.getPlacePredictions({
+          input: query,
+          types: ['(cities)'],
+        });
+        setPredictions(response.predictions);
+      } catch {
+        setPredictions([]);
+      }
+    }, 300);
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [value]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleSelect = (city: string) => {
-    onChange(city);
-    onCitySelect?.(city);
+  const handleSelect = (cityName: string) => {
+    onChange(cityName);
+    onCitySelect?.(cityName);
     setIsOpen(false);
+    setPredictions([]);
     inputRef.current?.blur();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') {
-        e.preventDefault();
-        setIsOpen(true);
-      }
+      if (e.key === 'ArrowDown' || e.key === 'Enter') { e.preventDefault(); setIsOpen(true); }
       return;
     }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        setHighlightedIndex((i) => (i < filteredOptions.length - 1 ? i + 1 : -1));
+        setHighlightedIndex(i => (i < predictions.length - 1 ? i + 1 : -1));
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setHighlightedIndex((i) => (i > -1 ? i - 1 : filteredOptions.length - 1));
+        setHighlightedIndex(i => (i > -1 ? i - 1 : predictions.length - 1));
         break;
       case 'Enter':
         e.preventDefault();
         if (highlightedIndex === -1) {
           handleSelect('');
-        } else if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
-          handleSelect(filteredOptions[highlightedIndex]);
+        } else if (predictions[highlightedIndex]) {
+          handleSelect(predictions[highlightedIndex].structured_formatting.main_text);
         }
         break;
       case 'Escape':
@@ -109,13 +119,12 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      {/* Input + clear button */}
       <div className="relative">
         <input
           ref={inputRef}
           type="text"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
@@ -144,7 +153,6 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
         )}
       </div>
 
-      {/* Dropdown */}
       {isOpen && (
         <ul
           id="city-listbox"
@@ -156,33 +164,34 @@ const CityAutocomplete: React.FC<CityAutocompleteProps> = ({
             role="option"
             id="city-option-clear"
             aria-selected={!value}
-            className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-slate-400 italic ${
-              highlightedIndex === -1 ? 'bg-slate-50' : ''
-            }`}
+            className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-slate-400 italic ${highlightedIndex === -1 ? 'bg-slate-50' : ''}`}
             onMouseEnter={() => setHighlightedIndex(-1)}
             onClick={() => handleSelect('')}
           >
             {placeholder}
           </li>
 
-          {filteredOptions.map((city, i) => (
+          {predictions.map((pred, i) => (
             <li
-              key={city}
+              key={pred.place_id}
               role="option"
               id={`city-option-${i}`}
-              aria-selected={value === city}
-              className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-slate-600 ${
-                highlightedIndex === i ? 'bg-slate-50' : ''
-              }`}
+              aria-selected={false}
+              className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-slate-50 flex items-center gap-2 text-slate-600 ${highlightedIndex === i ? 'bg-slate-50' : ''}`}
               onMouseEnter={() => setHighlightedIndex(i)}
-              onClick={() => handleSelect(city)}
+              onClick={() => handleSelect(pred.structured_formatting.main_text)}
             >
               <PinIcon />
-              <HighlightMatch text={city} query={value} />
+              <span>
+                <span className="font-semibold">{pred.structured_formatting.main_text}</span>
+                {pred.structured_formatting.secondary_text && (
+                  <span className="text-slate-400 text-xs ml-1">{pred.structured_formatting.secondary_text}</span>
+                )}
+              </span>
             </li>
           ))}
 
-          {filteredOptions.length === 0 && value.trim() && (
+          {value.trim() && predictions.length === 0 && (
             <li className="px-4 py-2.5 text-sm text-slate-400 italic">
               No matching cities
             </li>

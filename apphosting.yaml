@@ -32,6 +32,12 @@ env:
     value: "https://web--gen-lang-client-0322888127.us-east4.hosted.app"
     availability: [BUILD, RUNTIME]
 
+  - variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    value: "YAIzaSyDX_potofLWXkYj8y77EN-97V7NzhBtSY8"
+    availability:
+      - BUILD
+      - RUNTIME
+
   # --- סודות (Secrets) - כאן התיקון הקריטי ---
   
   # 1. מפתח Gemini

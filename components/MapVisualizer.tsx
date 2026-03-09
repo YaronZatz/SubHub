@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
+import { importLibrary } from '../lib/googleMapsLoader';
 import { Sublet, ListingStatus, Language } from '../types';
 import { MAP_CENTER, MAP_ZOOM } from '../constants';
 import { translations } from '../translations';
@@ -7,7 +9,6 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol } from '../utils/formatters';
 import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
-
 
 interface MapVisualizerProps {
   sublets: Sublet[];
@@ -17,162 +18,232 @@ interface MapVisualizerProps {
   flyToCity?: { lat: number; lng: number; zoom?: number } | null;
 }
 
-const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, selectedSubletId, language, flyToCity }) => {
+/** Builds the inline HTML for a price pill marker. */
+function markerHtml(priceText: string, taken: boolean, selected: boolean) {
+  const bg =
+    taken ? 'bg-slate-400 border-slate-500'
+    : selected ? 'bg-cyan-600 border-white ring-4 ring-cyan-200'
+    : 'bg-cyan-600 border-white';
+  return `<div class="price-marker flex items-center justify-center px-2 py-1 rounded-full shadow-lg border-2 ${bg} transition-all duration-300"><span class="text-white text-[10px] font-bold whitespace-nowrap">${priceText}</span></div>`;
+}
+
+/** Creates an OverlayView-based price marker and adds it to the map. */
+function createPriceOverlay(
+  position: google.maps.LatLng,
+  html: string,
+  map: google.maps.Map,
+  onClick: () => void
+) {
+  type PriceOverlay = google.maps.OverlayView & {
+    _pos: google.maps.LatLng;
+    _html: string;
+    _div: HTMLDivElement | null;
+    setHtml(h: string): void;
+  };
+
+  const overlay = new google.maps.OverlayView() as PriceOverlay;
+  overlay._pos = position;
+  overlay._html = html;
+  overlay._div = null;
+
+  overlay.setHtml = function (h) {
+    this._html = h;
+    if (this._div) this._div.innerHTML = h;
+  };
+
+  overlay.onAdd = function () {
+    const div = document.createElement('div');
+    div.style.cssText = 'position:absolute;cursor:pointer;transform:translate(-50%,-50%)';
+    div.innerHTML = this._html;
+    div.addEventListener('click', onClick);
+    this._div = div;
+    this.getPanes()!.overlayMouseTarget.appendChild(div);
+  };
+
+  overlay.draw = function () {
+    const pos = this.getProjection().fromLatLngToDivPixel(this._pos)!;
+    if (this._div) {
+      this._div.style.left = `${pos.x}px`;
+      this._div.style.top = `${pos.y}px`;
+    }
+  };
+
+  overlay.onRemove = function () {
+    this._div?.parentNode?.removeChild(this._div);
+    this._div = null;
+  };
+
+  overlay.setMap(map);
+  return overlay as PriceOverlay;
+}
+
+const MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+];
+
+const MapVisualizer: React.FC<MapVisualizerProps> = ({
+  sublets,
+  onMarkerClick,
+  selectedSubletId,
+  language,
+  flyToCity,
+}) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<{ [key: string]: L.Marker }>({});
-  const userMarkerRef = useRef<L.Marker | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<Record<string, ReturnType<typeof createPriceOverlay>>>({});
+  const userOverlayRef = useRef<google.maps.OverlayView | null>(null);
   const initialFitDoneRef = useRef(false);
   const [isLocating, setIsLocating] = useState(false);
-  
+  const [isMapReady, setIsMapReady] = useState(false);
+
   const t = translations[language];
   const { currency } = useCurrency();
 
-  // Initialize Map
+  // Initialize Google Maps
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
+    let cancelled = false;
 
-    mapRef.current = L.map(mapContainerRef.current, {
-      center: [MAP_CENTER.lat, MAP_CENTER.lng],
-      zoom: MAP_ZOOM,
-      zoomControl: false,
-      attributionControl: false
-    });
+    (async () => {
+      const { Map } = await importLibrary('maps') as google.maps.MapsLibrary;
+      if (cancelled || !mapContainerRef.current) return;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20
-    }).addTo(mapRef.current);
+      mapRef.current = new Map(mapContainerRef.current, {
+        center: { lat: MAP_CENTER.lat, lng: MAP_CENTER.lng },
+        zoom: MAP_ZOOM,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: 'greedy',
+        styles: MAP_STYLES,
+      });
 
-    L.control.zoom({
-      position: 'bottomright'
-    }).addTo(mapRef.current);
+      if (!cancelled) setIsMapReady(true);
+    })();
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      cancelled = true;
+      Object.values(markersRef.current).forEach(m => m.setMap(null));
+      markersRef.current = {};
+      userOverlayRef.current?.setMap(null);
+      userOverlayRef.current = null;
+      mapRef.current = null;
     };
   }, []);
 
-  // Update Markers
+  // Update price markers
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !isMapReady) return;
 
     const currentIds = new Set(sublets.map(s => s.id));
+
+    // Remove stale markers
     Object.keys(markersRef.current).forEach(id => {
       if (!currentIds.has(id)) {
-        markersRef.current[id].remove();
+        markersRef.current[id].setMap(null);
         delete markersRef.current[id];
       }
     });
 
     sublets.forEach(sublet => {
-      // Skip listings with unknown coordinates (lat=0, lng=0 means geocoding failed)
       if (!sublet.lat && !sublet.lng) return;
 
       const isSelected = selectedSubletId === sublet.id;
       const symbol = getCurrencySymbol(currency);
-
       const listingCurrency = sublet.currency || 'ILS';
       const convertedPrice = convertAmount(sublet.price, listingCurrency, currency);
       const priceText = `${symbol}${convertedPrice >= 1000 ? (convertedPrice / 1000).toFixed(1) + 'k' : Math.round(convertedPrice)}`;
-      
-      const iconHtml = `
-        <div class="price-marker ${isSelected ? 'selected' : ''} flex items-center justify-center p-2 rounded-full shadow-lg border-2 
-          ${sublet.status === ListingStatus.TAKEN ? 'bg-slate-400 border-slate-500' : isSelected ? 'bg-cyan-600 border-white ring-4 ring-cyan-200' : 'bg-cyan-600 border-white'}
-          transition-all duration-300">
-          <span class="text-white text-[10px] font-bold">${priceText}</span>
-        </div>
-      `;
-
-      const icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: iconHtml,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-      });
+      const html = markerHtml(priceText, sublet.status === ListingStatus.TAKEN, isSelected);
 
       if (markersRef.current[sublet.id]) {
-        const marker = markersRef.current[sublet.id];
-        marker.setLatLng([sublet.lat, sublet.lng]);
-        marker.setIcon(icon);
+        markersRef.current[sublet.id].setHtml(html);
       } else {
-        const marker = L.marker([sublet.lat, sublet.lng], { icon })
-          .addTo(mapRef.current!)
-          .on('click', () => onMarkerClick(sublet));
-        markersRef.current[sublet.id] = marker;
+        const position = new google.maps.LatLng(sublet.lat, sublet.lng);
+        markersRef.current[sublet.id] = createPriceOverlay(position, html, mapRef.current!, () => onMarkerClick(sublet));
       }
     });
 
-    if (!initialFitDoneRef.current && mapRef.current) {
-      const validMarkers = Object.values(markersRef.current);
-      if (validMarkers.length > 0) {
-        const group = L.featureGroup(validMarkers);
-        mapRef.current.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 15 });
+    // Initial fit-to-bounds
+    if (!initialFitDoneRef.current) {
+      const valid = sublets.filter(s => s.lat && s.lng);
+      if (valid.length > 0) {
+        const bounds = new google.maps.LatLngBounds();
+        valid.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+        mapRef.current.fitBounds(bounds, 50);
         initialFitDoneRef.current = true;
       }
     }
-  }, [sublets, selectedSubletId, onMarkerClick, currency]);
+  }, [sublets, selectedSubletId, onMarkerClick, currency, isMapReady]);
 
   // Pan to selected sublet
   useEffect(() => {
-    if (!mapRef.current || !selectedSubletId) return;
-
+    if (!mapRef.current || !selectedSubletId || !isMapReady) return;
     const selected = sublets.find(s => s.id === selectedSubletId);
-    if (selected) {
-      mapRef.current.setView([selected.lat, selected.lng], 16, {
-        animate: true,
-        duration: 0.8
-      });
+    if (selected?.lat && selected?.lng) {
+      mapRef.current.panTo({ lat: selected.lat, lng: selected.lng });
+      mapRef.current.setZoom(16);
     }
-  }, [selectedSubletId, sublets]);
+  }, [selectedSubletId, sublets, isMapReady]);
 
-  // Fly to city when city filter is selected
+  // Fly to city
   useEffect(() => {
-    if (!mapRef.current || !flyToCity) return;
-    mapRef.current.flyTo([flyToCity.lat, flyToCity.lng], flyToCity.zoom ?? 12, {
-      animate: true,
-      duration: 1.2,
-    });
-  }, [flyToCity]);
+    if (!mapRef.current || !flyToCity || !isMapReady) return;
+    mapRef.current.panTo({ lat: flyToCity.lat, lng: flyToCity.lng });
+    mapRef.current.setZoom(flyToCity.zoom ?? 12);
+  }, [flyToCity, isMapReady]);
 
   const handleLocate = () => {
     if (!navigator.geolocation || !mapRef.current) return;
-
     setIsLocating(true);
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
+      ({ coords: { latitude, longitude } }) => {
         setIsLocating(false);
+        mapRef.current!.panTo({ lat: latitude, lng: longitude });
+        mapRef.current!.setZoom(16);
 
-        mapRef.current?.flyTo([latitude, longitude], 16, {
-          duration: 1.5
-        });
-
-        // Add or update user location marker
-        const userIcon = L.divIcon({
-          className: 'user-location-marker',
-          html: `
-            <div class="relative flex items-center justify-center">
-              <div class="absolute w-8 h-8 bg-cyan-500 rounded-full animate-ping opacity-25"></div>
-              <div class="relative w-4 h-4 bg-cyan-600 border-2 border-white rounded-full shadow-lg"></div>
-            </div>
-          `,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
-        });
-
-        if (userMarkerRef.current) {
-          userMarkerRef.current.setLatLng([latitude, longitude]);
+        if (userOverlayRef.current) {
+          (userOverlayRef.current as any)._pos = new google.maps.LatLng(latitude, longitude);
+          userOverlayRef.current.draw();
         } else {
-          userMarkerRef.current = L.marker([latitude, longitude], { icon: userIcon }).addTo(mapRef.current!);
+          // Pulsing user-location dot overlay
+          const dot = new google.maps.OverlayView() as google.maps.OverlayView & {
+            _pos: google.maps.LatLng; _div: HTMLDivElement | null;
+          };
+          dot._pos = new google.maps.LatLng(latitude, longitude);
+          dot._div = null;
+
+          dot.onAdd = function () {
+            const div = document.createElement('div');
+            div.style.cssText = 'position:absolute;transform:translate(-50%,-50%);pointer-events:none';
+            div.innerHTML = `
+              <div class="relative flex items-center justify-center">
+                <div class="absolute w-8 h-8 bg-cyan-500 rounded-full animate-ping opacity-25"></div>
+                <div class="relative w-4 h-4 bg-cyan-600 border-2 border-white rounded-full shadow-lg"></div>
+              </div>`;
+            this._div = div;
+            this.getPanes()!.floatPane.appendChild(div);
+          };
+          dot.draw = function () {
+            const pos = this.getProjection().fromLatLngToDivPixel(this._pos)!;
+            if (this._div) { this._div.style.left = `${pos.x}px`; this._div.style.top = `${pos.y}px`; }
+          };
+          dot.onRemove = function () { this._div?.parentNode?.removeChild(this._div); this._div = null; };
+
+          dot.setMap(mapRef.current);
+          userOverlayRef.current = dot;
         }
       },
-      (error) => {
-        console.error("Geolocation error:", error);
-        setIsLocating(false);
-      },
+      (error) => { console.error('Geolocation error:', error); setIsLocating(false); },
       { enableHighAccuracy: true }
     );
   };
@@ -180,7 +251,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
   return (
     <div className="relative w-full h-full overflow-hidden border border-slate-200 bg-slate-50">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
-      
+
       <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
         <button className="bg-white px-4 py-2 rounded-full shadow-md border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
           <svg className="w-3.5 h-3.5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,18 +261,15 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
         </button>
       </div>
 
-      {/* Current Location Button */}
       <div className="absolute bottom-20 right-3 md:bottom-24 z-10">
-        <button 
+        <button
           onClick={handleLocate}
           disabled={isLocating}
-          className={`bg-white p-3 rounded-xl shadow-lg border border-slate-200 text-slate-700 transition-all hover:bg-slate-50 active:scale-90 flex items-center justify-center
-            ${isLocating ? 'opacity-50 cursor-not-allowed' : ''}
-          `}
+          className={`bg-white p-3 rounded-xl shadow-lg border border-slate-200 text-slate-700 transition-all hover:bg-slate-50 active:scale-90 flex items-center justify-center ${isLocating ? 'opacity-50 cursor-not-allowed' : ''}`}
           title="Find my location"
         >
           {isLocating ? (
-            <div className="w-5 h-5 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-5 h-5 border-2 border-cyan-600 border-t-transparent rounded-full animate-spin" />
           ) : (
             <NavigationIcon className="w-5 h-5 text-cyan-600" />
           )}
@@ -209,7 +277,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({ sublets, onMarkerClick, s
       </div>
 
       <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200 text-[10px] text-slate-500 font-medium pointer-events-none">
-        OpenStreetMap • CartoDB
+        Google Maps
       </div>
     </div>
   );

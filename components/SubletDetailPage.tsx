@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import L from 'leaflet';
+import { importLibrary } from '../lib/googleMapsLoader';
 import { Sublet, Language, ListingStatus } from '../types';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -135,47 +135,64 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   // Map initialisation (runs when the listing has coordinates)
   useEffect(() => {
     if (!sublet.lat || !sublet.lng || !mapRef.current) return;
+    const container = mapRef.current;
+    let cancelled = false;
+
+    // Destroy previous map instance if any
     if (mapInstanceRef.current) {
-      try { mapInstanceRef.current.remove(); } catch (_) {}
       mapInstanceRef.current = null;
     }
-    const map = L.map(mapRef.current, {
-      zoomControl: false,
-      scrollWheelZoom: false,
-      dragging: true,
-      touchZoom: true,
-      doubleClickZoom: true,
-    }).setView([sublet.lat, sublet.lng], 15);
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    (async () => {
+      const { Map } = await importLibrary('maps') as google.maps.MapsLibrary;
+      if (cancelled || !container) return;
 
-    // Enable scroll zoom on click, disable again on mouseout (prevents hijacking page scroll)
-    map.on('click', () => map.scrollWheelZoom.enable());
-    map.on('mouseout', () => map.scrollWheelZoom.disable());
+      const map = new Map(container, {
+        center: { lat: sublet.lat, lng: sublet.lng },
+        zoom: 15,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: 'cooperative',
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
+          { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
+        ],
+      });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 20,
-    }).addTo(map);
+      // Price-pill marker (same style as MapVisualizer)
+      const RATES: Record<string, number> = { ILS: 1, USD: 0.27, EUR: 0.25 };
+      const SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
+      const converted = Math.round(sublet.price * (RATES[currency] || 1));
+      const priceStr = `${SYMBOLS[currency] || '₪'}${converted >= 1000 ? (converted / 1000).toFixed(1) + 'k' : converted}`;
 
-    // Price-pill marker (same style as MapVisualizer)
-    const RATES: Record<string, number> = { ILS: 1, USD: 0.27, EUR: 0.25 };
-    const SYMBOLS: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€' };
-    const converted = Math.round(sublet.price * (RATES[currency] || 1));
-    const priceStr = `${SYMBOLS[currency] || '₪'}${converted >= 1000 ? (converted / 1000).toFixed(1) + 'k' : converted}`;
-    const pin = L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#3382C9;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`,
-      iconSize: [72, 28],
-      iconAnchor: [36, 14],
-    });
-    L.marker([sublet.lat, sublet.lng], { icon: pin, interactive: false }).addTo(map);
+      const pin = new google.maps.OverlayView() as google.maps.OverlayView & { _div: HTMLDivElement | null };
+      pin._div = null;
+      pin.onAdd = function () {
+        const div = document.createElement('div');
+        div.style.cssText = 'position:absolute;transform:translate(-50%,-50%);pointer-events:none';
+        div.innerHTML = `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#3382C9;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`;
+        this._div = div;
+        this.getPanes()!.floatPane.appendChild(div);
+      };
+      pin.draw = function () {
+        const pos = this.getProjection().fromLatLngToDivPixel(new google.maps.LatLng(sublet.lat, sublet.lng))!;
+        if (this._div) { this._div.style.left = `${pos.x}px`; this._div.style.top = `${pos.y}px`; }
+      };
+      pin.onRemove = function () { this._div?.parentNode?.removeChild(this._div); this._div = null; };
+      pin.setMap(map);
 
-    mapInstanceRef.current = map;
+      mapInstanceRef.current = map;
+    })();
+
     return () => {
-      if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.remove(); } catch (_) {}
-        mapInstanceRef.current = null;
-      }
+      cancelled = true;
+      mapInstanceRef.current = null;
     };
   }, [sublet.id, sublet.lat, sublet.lng, currency]);
 
@@ -386,10 +403,6 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
 
                 {sublet.lat && sublet.lng ? (
                   <>
-                    <style>{`
-                      .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important; border-radius: 10px !important; overflow: hidden; }
-                      .leaflet-control-zoom a { border-radius: 0 !important; border: none !important; color: #1e293b !important; font-weight: bold !important; }
-                    `}</style>
                     <div className="w-full h-[240px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
                       <div ref={mapRef} className="w-full h-full" />
                     </div>
