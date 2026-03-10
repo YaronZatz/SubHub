@@ -17,6 +17,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: "SubHub — One Map | Zero Noise",
   description: "Find sublets on one map with zero noise.",
+  robots: { index: true, follow: true },
   metadataBase: getMetadataBase(),
   openGraph: {
     type: 'website',
