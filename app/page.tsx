@@ -24,7 +24,8 @@ const MapVisualizer = dynamic(() => import('../components/MapVisualizer'), { ssr
 import AddListingModal from '../components/AddListingModal';
 import ListingCarousel from '../components/ListingCarousel';
 import PriceRangeFilter from '../components/PriceRangeFilter';
-import CityAutocomplete from '../components/CityAutocomplete';
+// Uses @googlemaps/js-api-loader which accesses window at module init — must be client-only
+const CityAutocomplete = dynamic(() => import('../components/CityAutocomplete'), { ssr: false });
 import EditListingModal from '../components/EditListingModal';
 const SubletDetailPage = dynamic(() => import('../components/SubletDetailPage'), { ssr: false });
 import FeatureIcons from '../components/FeatureIcons';

@@ -1,3 +1,5 @@
+'use client';
+
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 // Configure the Google Maps JS API (must be called before any importLibrary).
