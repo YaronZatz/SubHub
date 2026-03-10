@@ -77,18 +77,6 @@ function createPriceOverlay(
   return overlay as PriceOverlay;
 }
 
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-  { featureType: 'road.arterial', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
-];
 
 const MapVisualizer: React.FC<MapVisualizerProps> = ({
   sublets,
@@ -120,11 +108,11 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
       mapRef.current = new Map(mapContainerRef.current, {
         center: { lat: MAP_CENTER.lat, lng: MAP_CENTER.lng },
         zoom: MAP_ZOOM,
+        mapTypeId: 'roadmap',
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
         gestureHandling: 'greedy',
-        styles: MAP_STYLES,
       });
 
       if (!cancelled) setIsMapReady(true);

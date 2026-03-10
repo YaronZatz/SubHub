@@ -150,19 +150,11 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
       const map = new Map(container, {
         center: { lat: sublet.lat, lng: sublet.lng },
         zoom: 15,
+        mapTypeId: 'roadmap',
         mapTypeControl: false,
         streetViewControl: false,
         fullscreenControl: false,
         gestureHandling: 'cooperative',
-        styles: [
-          { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-          { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#f5f5f5' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#dadada' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9c9c9' }] },
-        ],
       });
 
       // Price-pill marker (same style as MapVisualizer)
