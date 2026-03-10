@@ -26,7 +26,9 @@ export const metadata: Metadata = {
     url: process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app',
     images: [
       {
-        url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/logo.png`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/og-image.png`,
+        width: 1200,
+        height: 630,
         alt: 'SubHub — One Map | Zero Noise',
       },
     ],
@@ -35,7 +37,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'SubHub — One Map | Zero Noise',
     description: 'Find sublets on one map with zero noise.',
-    images: [`${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/logo.png`],
+    images: [`${process.env.NEXT_PUBLIC_APP_URL || 'https://web--gen-lang-client-0322888127.us-east4.hosted.app'}/og-image.png`],
   },
 };
 export const viewport = {
