@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CurrencyProvider } from "../contexts/CurrencyContext";
+import PlatformWrapper from "../components/shared/PlatformWrapper";
 
 function getMetadataBase(): URL | undefined {
   try {
@@ -65,7 +66,10 @@ export default function RootLayout({
       <body className="antialiased" style={{ margin: 0, minHeight: '100vh' }}>
         <AuthProvider>
           <CurrencyProvider>
-            {children}
+            <PlatformWrapper 
+              web={children}
+              mobile={<div className="pb-20">{children}</div>}
+            />
           </CurrencyProvider>
         </AuthProvider>
       </body>
