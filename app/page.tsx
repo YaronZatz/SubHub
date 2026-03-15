@@ -223,9 +223,43 @@ export default function Home() {
   ].filter(Boolean).length;
 
   return (
-    <PlatformWrapper
-      web={<WebHomePage />}
-      mobile={<MobileHomePlaceholder />}
-    />
+    <>
+      <PlatformWrapper
+        web={
+          <WebHomePage 
+            onPostClick={handleAddPostClick}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filters={filters}
+            setFilters={setFilters}
+            cityFlyTo={cityFlyTo}
+            handleCityFlyTo={handleCityFlyTo}
+            mapSelectedSubletId={mapSelectedSubletId}
+            setMapSelectedSubletId={setMapSelectedSubletId}
+            filteredSublets={filteredSublets}
+            toggleSaved={toggleSaved}
+            savedListingIds={savedListingIds}
+            activeFilterCount={activeFilterCount}
+          />
+        }
+        mobile={<MobileHomePlaceholder />}
+      />
+
+      {isAddModalOpen && user && (
+        <AddListingModal
+          onClose={() => setIsAddModalOpen(false)}
+          onAdd={(newListing) => {
+            setSublets(prev => [newListing, ...prev]);
+            setIsAddModalOpen(false);
+          }}
+          language={language}
+          currentUser={user}
+        />
+      )}
+
+      {isAuthModalOpen && (
+        <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+      )}
+    </>
   );
 }

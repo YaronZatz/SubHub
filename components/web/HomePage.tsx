@@ -1,42 +1,133 @@
-import React from 'react';
+'use client';
 
-export function WebHomePage() {
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import AuthModal from '@/components/AuthModal';
+import SearchAutocomplete from '@/components/SearchAutocomplete';
+import { Sublet, Filters } from '@/types';
+
+interface WebHomePageProps {
+  onPostClick?: () => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
+  cityFlyTo: { lat: number; lng: number; zoom?: number } | null;
+  handleCityFlyTo: (city: string) => void;
+  mapSelectedSubletId: string | undefined;
+  setMapSelectedSubletId: (id: string | undefined) => void;
+  filteredSublets: Sublet[];
+  toggleSaved: (e: React.MouseEvent, id: string) => void;
+  savedListingIds: Set<string>;
+  activeFilterCount: number;
+}
+
+export function WebHomePage({ 
+  onPostClick,
+  searchQuery,
+  setSearchQuery,
+  filters,
+  setFilters,
+  cityFlyTo,
+  handleCityFlyTo,
+  mapSelectedSubletId,
+  setMapSelectedSubletId,
+  filteredSublets,
+  toggleSaved,
+  savedListingIds,
+  activeFilterCount
+}: WebHomePageProps) {
+  const { user, logout } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [isUserMenuOpen]);
+
+  const handlePostClick = () => {
+    if (onPostClick) {
+      onPostClick();
+    } else if (!user) {
+      setIsAuthModalOpen(true);
+    }
+  };
+
+  const handleSearchClick = () => {
+    // Scroll down to the map section or just trigger a smooth scroll down
+    window.scrollTo({ top: 800, behavior: 'smooth' });
+  };
+
   return (
-    <div className="font-sans bg-[#f6f7f8] text-slate-900 overflow-x-hidden">
+    <div className="font-sans bg-[#f6f7f8] text-slate-900">
       
       {/* Top Navbar */}
       <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-24">
             {/* Logo Left */}
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-black tracking-tight">
-                <span className="text-[#4A7CC7]">Sub</span>
-                <span className="text-[#F5831F]">Hub</span>
-              </span>
+              <img src="/logo.png" alt="SubHub Logo" className="h-20 w-auto mix-blend-multiply" />
             </div>
             
             {/* Nav Links Center */}
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">How it Works</a>
-              <a href="#" className="text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Renters</a>
-              <a href="#" className="text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Landlords</a>
-              <a href="#" className="text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">Pricing</a>
+              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">How it Works</a>
+              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Renters</a>
+              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Landlords</a>
+              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">Pricing</a>
             </div>
             
             {/* Auth Buttons Right */}
-            <div className="flex items-center gap-4">
-              <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9s-2.015-9-4.5-9m0 18c-2.485 0-4.5-4.03-4.5-9s2.015-9 4.5-9m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-                </svg>
-              </button>
-              <button className="hidden lg:block px-4 py-2 text-sm font-bold text-[#4A7CC7] border border-[#4A7CC7]/30 hover:bg-[#4A7CC7]/5 rounded-lg transition-all">
-                List a Property
-              </button>
-              <button className="px-5 py-2.5 text-sm font-bold bg-[#4A7CC7] text-white rounded-lg shadow-lg shadow-[#4A7CC7]/20 hover:bg-[#4A7CC7]/90 transition-all">
-                Find a Place
-              </button>
+            <div className="flex items-center gap-4 relative">
+              {user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button 
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className="flex items-center gap-2 p-1 focus:outline-none rounded-full hover:bg-slate-100 transition-colors"
+                  >
+                    {('photoURL' in user && (user as any).photoURL) ? (
+                      <img src={(user as any).photoURL} alt="User" className="w-8 h-8 rounded-full shadow-sm" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-[#4A7CC7] text-white flex items-center justify-center font-bold text-sm shadow-sm hover:bg-[#3b66a6] transition-colors">
+                        {('displayName' in user && (user as any).displayName) ? (user as any).displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || '?'}
+                      </div>
+                    )}
+                  </button>
+                  {isUserMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 overflow-hidden">
+                      <div className="px-4 py-2 text-sm text-slate-600 border-b border-slate-100">
+                        <div className="font-semibold text-slate-800 truncate">{('displayName' in user && (user as any).displayName) || 'User'}</div>
+                        <div className="text-xs truncate">{user.email}</div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          logout();
+                          setIsUserMenuOpen(false);
+                        }} 
+                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
+                      >
+                        Log out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsAuthModalOpen(true)}
+                  className="hidden lg:block px-4 py-2 text-sm font-black text-[#4A7CC7] border border-[#4A7CC7]/30 hover:bg-[#4A7CC7]/5 rounded-lg transition-all"
+                >
+                  Log In
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -62,14 +153,31 @@ export function WebHomePage() {
               <p className="text-xl text-slate-600 leading-relaxed max-w-xl">
                 SubHub scrapes Facebook groups — and transforms every messy post into a structured, searchable listing. Sublets, short stays, long-term rentals. All on one map.
               </p>
-              <div className="flex flex-wrap gap-4 pt-4">
-                <button className="px-8 py-4 bg-[#4A7CC7] text-white rounded-xl font-bold text-lg shadow-xl shadow-[#4A7CC7]/30 hover:-translate-y-1 transition-all flex items-center gap-2">
-                  Search Listings
+              
+              <div className="pt-2 max-w-lg relative z-20">
+                <SearchAutocomplete
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  sublets={filteredSublets}
+                  onCitySelect={(city) => {
+                    setSearchQuery(city);
+                    handleCityFlyTo(city);
+                    handleSearchClick();
+                  }}
+                  className="w-full shadow-2xl shadow-[#4A7CC7]/10 rounded-xl"
+                  inputClassName="w-full pl-10 pr-4 py-4 bg-white rounded-xl text-base font-medium focus:ring-4 focus:ring-[#4A7CC7]/20 outline-none border-2 border-slate-200 focus:border-[#4A7CC7] transition-all"
+                  placeholder="Search cities, neighborhoods, streets..."
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-4 pt-2">
+                <button onClick={handleSearchClick} className="px-8 py-4 bg-[#4A7CC7] text-white rounded-xl font-bold text-lg shadow-xl shadow-[#4A7CC7]/30 hover:-translate-y-1 transition-all flex items-center gap-2">
+                  View on Map
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </button>
-                <button className="px-8 py-4 border-2 border-[#F5831F] text-[#F5831F] rounded-xl font-bold text-lg hover:bg-[#F5831F]/5 transition-all">
+                <button onClick={handlePostClick} className="px-8 py-4 border-2 border-[#F5831F] text-[#F5831F] rounded-xl font-bold text-lg hover:bg-[#F5831F]/5 transition-all">
                   Post a Listing
                 </button>
               </div>
@@ -167,7 +275,7 @@ export function WebHomePage() {
                   <p className="text-slate-700 font-medium leading-relaxed">Get instant alerts when a match is posted anywhere</p>
                 </li>
               </ul>
-              <button className="mt-10 px-6 py-3 bg-white text-[#4A7CC7] font-bold rounded-xl shadow-sm border border-[#4A7CC7]/20 hover:shadow-md transition-all">
+              <button onClick={handleSearchClick} className="mt-10 px-6 py-3 bg-white text-[#4A7CC7] font-bold rounded-xl shadow-sm border border-[#4A7CC7]/20 hover:shadow-md transition-all">
                 Start Searching
               </button>
             </div>
@@ -194,7 +302,7 @@ export function WebHomePage() {
                   <p className="text-slate-700 font-medium leading-relaxed">Centralized inbox to manage inquiries from all channels</p>
                 </li>
               </ul>
-              <button className="mt-10 px-6 py-3 bg-white text-[#F5831F] font-bold rounded-xl shadow-sm border border-[#F5831F]/20 hover:shadow-md transition-all">
+              <button onClick={handlePostClick} className="mt-10 px-6 py-3 bg-white text-[#F5831F] font-bold rounded-xl shadow-sm border border-[#F5831F]/20 hover:shadow-md transition-all">
                 Create Listing
               </button>
             </div>
@@ -257,10 +365,7 @@ export function WebHomePage() {
           <div className="grid md:grid-cols-4 gap-12">
             <div className="col-span-1 md:col-span-1">
               <div className="flex items-center gap-2 mb-6">
-                <span className="text-3xl font-black tracking-tight">
-                  <span className="text-[#4A7CC7]">Sub</span>
-                  <span className="text-[#F5831F]">Hub</span>
-                </span>
+                <img src="/logo.png" alt="SubHub Logo" className="h-16 w-auto mix-blend-screen opacity-90" />
               </div>
               <p className="text-slate-500 leading-relaxed">
                 Connecting people with the perfect home by bringing all fragmented rental posts into one unified platform.
@@ -311,6 +416,9 @@ export function WebHomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} />}
     </div>
   );
 }
