@@ -1,5 +1,5 @@
 
-import { collection, getDocs, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
 
@@ -258,6 +258,22 @@ export const persistenceService = {
       await updateDoc(doc(db, COLLECTION, id), data as Record<string, unknown>);
     } catch (e) {
       console.error('❌ Failed to update listing:', e);
+    }
+  },
+
+  /**
+   * Fetch a single listing by Firestore document ID.
+   * Returns null if the document does not exist or Firestore is unavailable.
+   */
+  async fetchListingById(id: string): Promise<Sublet | null> {
+    if (!db) return null;
+    try {
+      const docSnap = await getDoc(doc(db, COLLECTION, id));
+      if (!docSnap.exists()) return null;
+      return firestoreDocToSublet(docSnap.id, docSnap.data() as Record<string, unknown>);
+    } catch (e) {
+      console.error('❌ Failed to fetch listing by ID:', e);
+      return null;
     }
   },
 

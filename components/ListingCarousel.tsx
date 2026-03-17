@@ -262,7 +262,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
 
       {/* Badge */}
       {images.length > 1 && (
-        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest z-10">
+        <div className="absolute bottom-3 right-3 bg-black/40 backdrop-blur-md text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest z-10">
           {index + 1} / {images.length}
         </div>
       )}

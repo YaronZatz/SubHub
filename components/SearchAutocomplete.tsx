@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Sublet } from '../types';
 import { SearchIcon } from './Icons';
+import { GLOBAL_CITIES } from '../constants';
 
 interface SearchAutocompleteProps {
   value: string;
@@ -48,7 +49,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   const { neighborhoods, streets, cities } = useMemo(() => {
     const ns = new Set<string>();
     const sts = new Set<string>();
-    const cs = new Set<string>();
+    const cs = new Set<string>(GLOBAL_CITIES);
     sublets.forEach(s => {
       if (s.neighborhood?.trim()) ns.add(s.neighborhood.trim());
       if (s.location?.trim()) {
@@ -172,7 +173,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
       {/* Dropdown — only mounts when there is at least one match */}
       {showDropdown && (
-        <div className="absolute z-[100] mt-1 w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-64 overflow-y-auto">
+        <div className="absolute z-[100] top-full w-full bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden max-h-64 overflow-y-auto">
 
           {cityMatches.length > 0 && (
             <div>

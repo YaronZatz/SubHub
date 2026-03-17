@@ -270,6 +270,65 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
           )}
         </div>
 
+        {/* Property Highlights */}
+        {(() => {
+          const rooms = sublet.parsedRooms || sublet.rooms;
+          const pa = sublet.parsedAmenities;
+          const ad = sublet.apartment_details;
+          const highlights: { icon: React.ReactNode; label: string }[] = [];
+
+          // Type / Rooms
+          if (rooms?.isStudio) {
+            highlights.push({
+              icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>,
+              label: 'Studio',
+            });
+          } else if (rooms?.bedrooms || rooms?.totalRooms || ad?.rooms_count) {
+            const count = rooms?.bedrooms || rooms?.totalRooms || ad?.rooms_count || 0;
+            highlights.push({
+              icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" /></svg>,
+              label: `${count} Room${count > 1 ? 's' : ''}`,
+            });
+          }
+
+          // Bathrooms
+          if (rooms?.bathrooms) {
+            highlights.push({
+              icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>,
+              label: `${rooms.bathrooms} Bath${rooms.bathrooms > 1 ? 's' : ''}`,
+            });
+          }
+
+          // Floor area
+          if (rooms?.floorArea) {
+            highlights.push({
+              icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
+              label: `${rooms.floorArea} ${rooms.floorAreaUnit || 'sqm'}`,
+            });
+          }
+
+          // Pet Friendly
+          if (pa?.petFriendly || ad?.is_pet_friendly) {
+            highlights.push({
+              icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904m7.594-4.5v-4.5" /></svg>,
+              label: 'Pet Friendly',
+            });
+          }
+
+          if (highlights.length === 0) return null;
+
+          return (
+            <div className="flex flex-wrap gap-3 mb-6">
+              {highlights.map((h, i) => (
+                <div key={i} className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-700 bg-white">
+                  <span className="text-[#2F6EA8]">{h.icon}</span>
+                  <span className="text-sm font-semibold">{h.label}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Responsive Image Gallery */}
         <div className="mb-8 space-y-3">
           {images.length === 0 && (

@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
+import WebNavbar from '@/components/web/WebNavbar';
 import { Sublet, Filters } from '@/types';
 
 interface WebHomePageProps {
@@ -37,10 +40,18 @@ export function WebHomePage({
   savedListingIds,
   activeFilterCount
 }: WebHomePageProps) {
-  const { user, logout } = useAuth();
+  const { user, isLoading, logout } = useAuth();
+  const router = useRouter();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Logged-in users skip the landing page entirely
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace('/map');
+    }
+  }, [user, isLoading, router]);
 
   useEffect(() => {
     if (!isUserMenuOpen) return;
@@ -62,76 +73,14 @@ export function WebHomePage({
   };
 
   const handleSearchClick = () => {
-    // Scroll down to the map section or just trigger a smooth scroll down
-    window.scrollTo({ top: 800, behavior: 'smooth' });
+    // Navigate handled by Link component
   };
 
   return (
     <div className="font-sans bg-[#f6f7f8] text-slate-900">
       
-      {/* Top Navbar */}
-      <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-24">
-            {/* Logo Left */}
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="SubHub Logo" className="h-20 w-auto mix-blend-multiply" />
-            </div>
-            
-            {/* Nav Links Center */}
-            <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">How it Works</a>
-              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Renters</a>
-              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">For Landlords</a>
-              <a href="#" className="cursor-pointer text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors">Pricing</a>
-            </div>
-            
-            {/* Auth Buttons Right */}
-            <div className="flex items-center gap-4 relative">
-              {user ? (
-                <div className="relative" ref={userMenuRef}>
-                  <button 
-                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                    className="flex items-center gap-2 p-1 focus:outline-none rounded-full hover:bg-slate-100 transition-colors"
-                  >
-                    {('photoURL' in user && (user as any).photoURL) ? (
-                      <img src={(user as any).photoURL} alt="User" className="w-8 h-8 rounded-full shadow-sm" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-[#4A7CC7] text-white flex items-center justify-center font-bold text-sm shadow-sm hover:bg-[#3b66a6] transition-colors">
-                        {('displayName' in user && (user as any).displayName) ? (user as any).displayName.charAt(0).toUpperCase() : user.email?.charAt(0).toUpperCase() || '?'}
-                      </div>
-                    )}
-                  </button>
-                  {isUserMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1 z-50 overflow-hidden">
-                      <div className="px-4 py-2 text-sm text-slate-600 border-b border-slate-100">
-                        <div className="font-semibold text-slate-800 truncate">{('displayName' in user && (user as any).displayName) || 'User'}</div>
-                        <div className="text-xs truncate">{user.email}</div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          logout();
-                          setIsUserMenuOpen(false);
-                        }} 
-                        className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
-                      >
-                        Log out
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setIsAuthModalOpen(true)}
-                  className="hidden lg:block px-4 py-2 text-sm font-black text-[#4A7CC7] border border-[#4A7CC7]/30 hover:bg-[#4A7CC7]/5 rounded-lg transition-all"
-                >
-                  Log In
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Shared Navbar */}
+      <WebNavbar />
 
       {/* Hero Section */}
       <header className="relative pt-16 pb-24 overflow-hidden">
@@ -162,24 +111,24 @@ export function WebHomePage({
                   onCitySelect={(city) => {
                     setSearchQuery(city);
                     handleCityFlyTo(city);
-                    handleSearchClick();
+                    router.push('/map');
                   }}
                   className="w-full shadow-2xl shadow-[#4A7CC7]/10 rounded-xl"
-                  inputClassName="w-full pl-10 pr-4 py-4 bg-white rounded-xl text-base font-medium focus:ring-4 focus:ring-[#4A7CC7]/20 outline-none border-2 border-slate-200 focus:border-[#4A7CC7] transition-all"
+                  inputClassName="w-full py-4 bg-white rounded-xl text-base font-medium focus:ring-4 focus:ring-[#4A7CC7]/20 outline-none border-2 border-slate-200 focus:border-[#4A7CC7] transition-all"
                   placeholder="Search cities, neighborhoods, streets..."
                 />
               </div>
 
               <div className="flex flex-wrap gap-4 pt-2">
-                <button onClick={handleSearchClick} className="px-8 py-4 bg-[#4A7CC7] text-white rounded-xl font-bold text-lg shadow-xl shadow-[#4A7CC7]/30 hover:-translate-y-1 transition-all flex items-center gap-2">
+                <Link href="/map" className="px-8 py-4 bg-[#4A7CC7] text-white rounded-xl font-bold text-lg shadow-xl shadow-[#4A7CC7]/30 hover:-translate-y-1 transition-all flex items-center gap-2">
                   View on Map
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
-                </button>
-                <button onClick={handlePostClick} className="px-8 py-4 border-2 border-[#F5831F] text-[#F5831F] rounded-xl font-bold text-lg hover:bg-[#F5831F]/5 transition-all">
+                </Link>
+                <Link href="/map" className="px-8 py-4 border-2 border-[#F5831F] text-[#F5831F] rounded-xl font-bold text-lg hover:bg-[#F5831F]/5 transition-all">
                   Post a Listing
-                </button>
+                </Link>
               </div>
             </div>
             
@@ -221,6 +170,7 @@ export function WebHomePage({
           </div>
         </div>
       </header>
+
 
       {/* Stats Bar */}
       <div className="bg-[#0F172A] py-8 border-y border-slate-800">
@@ -275,9 +225,9 @@ export function WebHomePage({
                   <p className="text-slate-700 font-medium leading-relaxed">Get instant alerts when a match is posted anywhere</p>
                 </li>
               </ul>
-              <button onClick={handleSearchClick} className="mt-10 px-6 py-3 bg-white text-[#4A7CC7] font-bold rounded-xl shadow-sm border border-[#4A7CC7]/20 hover:shadow-md transition-all">
+              <Link href="/map" className="mt-10 px-6 py-3 bg-white text-[#4A7CC7] font-bold rounded-xl shadow-sm border border-[#4A7CC7]/20 hover:shadow-md transition-all inline-block">
                 Start Searching
-              </button>
+              </Link>
             </div>
             
             {/* Reach the Right Tenants */}
@@ -302,9 +252,9 @@ export function WebHomePage({
                   <p className="text-slate-700 font-medium leading-relaxed">Centralized inbox to manage inquiries from all channels</p>
                 </li>
               </ul>
-              <button onClick={handlePostClick} className="mt-10 px-6 py-3 bg-white text-[#F5831F] font-bold rounded-xl shadow-sm border border-[#F5831F]/20 hover:shadow-md transition-all">
+              <Link href="/map" className="mt-10 px-6 py-3 bg-white text-[#F5831F] font-bold rounded-xl shadow-sm border border-[#F5831F]/20 hover:shadow-md transition-all inline-block">
                 Create Listing
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -375,7 +325,7 @@ export function WebHomePage({
               <h4 className="text-white font-bold mb-6 text-lg">Platform</h4>
               <ul className="space-y-4 text-sm font-medium">
                 <li><a href="#" className="text-slate-400 hover:text-white transition-colors">How it Works</a></li>
-                <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Search Map</a></li>
+                <li><Link href="/map" className="text-slate-400 hover:text-white transition-colors">Search Map</Link></li>
                 <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Pricing Plans</a></li>
                 <li><a href="#" className="text-slate-400 hover:text-white transition-colors">Mobile App</a></li>
               </ul>

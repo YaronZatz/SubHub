@@ -1,18 +1,20 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { importLibrary } from '../lib/googleMapsLoader';
 import { Sublet, ListingStatus, Language } from '../types';
 import { MAP_CENTER, MAP_ZOOM } from '../constants';
 import { translations } from '../translations';
 import { useCurrency } from '../contexts/CurrencyContext';
-import { getCurrencySymbol } from '../utils/formatters';
+import { getCurrencySymbol, formatPrice } from '../utils/formatters';
 import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
 
 interface MapVisualizerProps {
   sublets: Sublet[];
   onMarkerClick: (sublet: Sublet) => void;
+  onDeselect?: () => void;
   selectedSubletId?: string;
   language: Language;
   flyToCity?: { lat: number; lng: number; zoom?: number } | null;
@@ -81,6 +83,7 @@ function createPriceOverlay(
 const MapVisualizer: React.FC<MapVisualizerProps> = ({
   sublets,
   onMarkerClick,
+  onDeselect,
   selectedSubletId,
   language,
   flyToCity,
@@ -236,6 +239,14 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
     );
   };
 
+  const selectedSublet = selectedSubletId ? sublets.find(s => s.id === selectedSubletId) : null;
+  const popupTitle = selectedSublet
+    ? [selectedSublet.neighborhood, selectedSublet.city].filter(Boolean).join(', ') || selectedSublet.location || 'Unknown location'
+    : '';
+  const popupBeds = selectedSublet
+    ? (selectedSublet as any).parsedRooms?.bedrooms ?? (selectedSublet as any).rooms?.bedrooms ?? null
+    : null;
+
   return (
     <div className="relative w-full h-full overflow-hidden border border-slate-200 bg-slate-50">
       <div ref={mapContainerRef} className="w-full h-full z-0" />
@@ -267,6 +278,67 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
       <div className="absolute bottom-4 left-4 z-10 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-200 text-[10px] text-slate-500 font-medium pointer-events-none">
         Google Maps
       </div>
+
+      {/* ── Pin popup card (desktop only) ── */}
+      {selectedSublet && (
+        <div className={`hidden md:block absolute bottom-10 left-1/2 -translate-x-1/2 z-20 w-80 transition-all duration-300`}>
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100">
+
+            {/* Close */}
+            <button
+              onClick={onDeselect}
+              className="absolute top-2.5 right-2.5 z-30 w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center text-slate-400 hover:text-slate-700 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <Link href={`/listing/${selectedSublet.id}`} className="flex">
+
+              {/* Photo */}
+              <div className="w-28 h-28 shrink-0 bg-slate-100 overflow-hidden">
+                {selectedSublet.images?.[0] ? (
+                  <img
+                    src={selectedSublet.images[0]}
+                    alt={popupTitle}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-300">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0 p-3 pr-8">
+                <p className="font-black text-slate-900 text-sm leading-tight">
+                  {formatPrice(selectedSublet.price, currency as import('../types').CurrencyCode, 'en-US', selectedSublet.currency)}
+                  <span className="text-slate-400 font-medium text-xs ml-1">/mo</span>
+                </p>
+                <p className="font-semibold text-slate-700 text-xs mt-1 truncate">{popupTitle}</p>
+                {popupBeds !== null && (
+                  <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 12V8a2 2 0 012-2h14a2 2 0 012 2v4M3 12v5a1 1 0 001 1h16a1 1 0 001-1v-5" />
+                    </svg>
+                    {popupBeds} bedroom{popupBeds !== 1 ? 's' : ''}
+                  </p>
+                )}
+                <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-[#4A7CC7]">
+                  View listing
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
