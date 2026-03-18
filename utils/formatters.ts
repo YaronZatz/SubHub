@@ -6,6 +6,7 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   [CurrencyCode.ILS]: '₪',
   [CurrencyCode.USD]: '$',
   [CurrencyCode.EUR]: '€',
+  [CurrencyCode.GBP]: '£',
 };
 
 /**

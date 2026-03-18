@@ -27,7 +27,8 @@ export enum Language {
 export enum CurrencyCode {
   ILS = 'ILS',
   USD = 'USD',
-  EUR = 'EUR'
+  EUR = 'EUR',
+  GBP = 'GBP',
 }
 
 export enum DateMode {

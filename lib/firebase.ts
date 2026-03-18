@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import type { Auth } from "firebase/auth";
+import { getStorage, type FirebaseStorage } from "firebase/storage";
 
 /**
  * FIREBASE CLIENT CONFIG
@@ -21,17 +22,20 @@ const firebaseConfig = {
 let app: FirebaseApp | undefined;
 let db: Firestore | undefined;
 let auth: Auth | undefined;
+let storage: FirebaseStorage | undefined;
 
 try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     db = getFirestore(app);
     auth = getAuth(app);
+    storage = getStorage(app);
     console.log("✅ Firebase initialized successfully for project:", firebaseConfig.projectId);
 } catch (error) {
     console.error("❌ Firebase Initialization Failed:", error);
     app = undefined;
     db = undefined;
     auth = undefined;
+    storage = undefined;
 }
 
-export { db, auth, app };
+export { db, auth, app, storage };

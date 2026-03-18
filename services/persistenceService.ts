@@ -1,5 +1,5 @@
 
-import { collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
 
@@ -238,7 +238,7 @@ export const persistenceService = {
       } else {
         const docRef = await addDoc(collection(db, COLLECTION), {
           ...data,
-          createdAt: Date.now(),
+          createdAt: serverTimestamp(),
         });
         return { ...listing, id: docRef.id };
       }

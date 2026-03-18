@@ -18,6 +18,8 @@ interface MapVisualizerProps {
   selectedSubletId?: string;
   language: Language;
   flyToCity?: { lat: number; lng: number; zoom?: number } | null;
+  /** Optional ref populated with the live map instance once ready. */
+  mapInstanceRef?: React.MutableRefObject<google.maps.Map | null>;
 }
 
 /** Builds the inline HTML for a price pill marker. */
@@ -87,6 +89,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
   selectedSubletId,
   language,
   flyToCity,
+  mapInstanceRef,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -118,7 +121,10 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
         gestureHandling: 'greedy',
       });
 
-      if (!cancelled) setIsMapReady(true);
+      if (!cancelled) {
+        setIsMapReady(true);
+        if (mapInstanceRef) mapInstanceRef.current = mapRef.current;
+      }
     })();
 
     return () => {
@@ -127,6 +133,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
       markersRef.current = {};
       userOverlayRef.current?.setMap(null);
       userOverlayRef.current = null;
+      if (mapInstanceRef) mapInstanceRef.current = null;
       mapRef.current = null;
     };
   }, []);

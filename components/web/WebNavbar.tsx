@@ -137,6 +137,7 @@ const CURRENCY_OPTIONS: PillOption[] = [
   { value: CurrencyCode.ILS, label: '₪ ILS', display: <CurrencyDisplay symbol="₪" code="ILS" color="#4A7CC7" /> },
   { value: CurrencyCode.USD, label: '$ USD', display: <CurrencyDisplay symbol="$" code="USD" color="#4A7CC7" /> },
   { value: CurrencyCode.EUR, label: '€ EUR', display: <CurrencyDisplay symbol="€" code="EUR" color="#4A7CC7" /> },
+  { value: CurrencyCode.GBP, label: '£ GBP', display: <CurrencyDisplay symbol="£" code="GBP" color="#4A7CC7" /> },
 ];
 
 const LANGUAGE_OPTIONS: PillOption[] = [
@@ -146,7 +147,24 @@ const LANGUAGE_OPTIONS: PillOption[] = [
   { value: 'ru', label: 'RU', display: <><Flag code="ru" /> RU</> },
   { value: 'es', label: 'ES', display: <><Flag code="es" /> ES</> },
   { value: 'de', label: 'DE', display: <><Flag code="de" /> DE</> },
+  { value: 'pt', label: 'PT', display: <><Flag code="pt" /> PT</> },
+  { value: 'uk', label: 'UK', display: <><Flag code="ua" /> UK</> },
+  { value: 'it', label: 'IT', display: <><Flag code="it" /> IT</> },
+  { value: 'zh', label: 'ZH', display: <><Flag code="cn" /> ZH</> },
 ];
+
+const LANG_CURRENCY: Record<string, CurrencyCode> = {
+  he: CurrencyCode.ILS,
+  en: CurrencyCode.USD,
+  fr: CurrencyCode.EUR,
+  de: CurrencyCode.EUR,
+  it: CurrencyCode.EUR,
+  pt: CurrencyCode.EUR,
+  es: CurrencyCode.USD,
+  ru: CurrencyCode.USD,
+  uk: CurrencyCode.GBP,
+  zh: CurrencyCode.USD,
+};
 
 export default function WebNavbar() {
   const { user, logout } = useAuth();
@@ -170,6 +188,8 @@ export default function WebNavbar() {
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem('subhub_lang', lang);
+    const matched = LANG_CURRENCY[lang];
+    if (matched) setCurrency(matched);
   };
 
   // Close user dropdown on outside click
@@ -234,6 +254,17 @@ export default function WebNavbar() {
                 className="hidden lg:block text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors px-3 py-2 whitespace-nowrap"
               >
                 How it Works
+              </Link>
+
+              {/* Post a Listing */}
+              <Link
+                href="/post"
+                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4A7CC7] text-white text-sm font-bold hover:bg-[#3b66a6] transition-colors whitespace-nowrap shrink-0"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Post a Listing
               </Link>
 
               {/* Saved Listings — always visible in header */}

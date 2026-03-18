@@ -6,6 +6,8 @@ import React, {
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import WebNavbar from '@/components/web/WebNavbar';
+import PlatformWrapper from '@/components/shared/PlatformWrapper';
+import MapScreen from '@/components/mobile/MapScreen';
 import ListingCarousel from '@/components/ListingCarousel';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import AuthModal from '@/components/shared/AuthModal';
@@ -435,7 +437,7 @@ function SkeletonCard() {
 
 // ─── Map Page ─────────────────────────────────────────────────────────────────
 
-export default function MapPage() {
+function WebMapPage() {
   const { user } = useAuth();
   const { currency } = useCurrency();
 
@@ -717,4 +719,8 @@ export default function MapPage() {
       )}
     </div>
   );
+}
+
+export default function MapPage() {
+  return <PlatformWrapper web={<WebMapPage />} mobile={<MapScreen />} />;
 }
