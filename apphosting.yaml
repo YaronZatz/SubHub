@@ -2,6 +2,7 @@ kind: "AppStack"
 schemaVersion: "v1"
 
 runConfig:
+  runtime: nodejs22
   cpu: 1
   memoryMiB: 512
   minInstances: 1
