@@ -1,28 +1,17 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import imageCompression from 'browser-image-compression';
 import { extractListingFromText } from '@/actions/gemini';
 import { geocodeAddress } from '@/services/geocodingService';
 import { persistenceService } from '@/services/persistenceService';
-import { storage, auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { type GeminiResult } from '@/services/geminiService';
 import { SubletType, ListingStatus, type Sublet } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PhotoUpload {
-  id: string;
-  file: File;
-  preview: string;
-  progress: number;   // 0-100, 100 = done
-  url: string | null; // download URL after upload
-  error: string | null;
-}
 
 interface FormState {
   type: SubletType;
@@ -83,157 +72,18 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
   );
 }
 
-// ─── Photo uploader ───────────────────────────────────────────────────────────
-
-function PhotoUploader({
-  photos,
-  onChange,
-}: {
-  photos: PhotoUpload[];
-  onChange: React.Dispatch<React.SetStateAction<PhotoUpload[]>>;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const MAX = 8;
-  const MAX_MB = 5;
-
-  const uploadFile = useCallback(async (photo: PhotoUpload) => {
-    if (!storage) {
-      onChange(prev => prev.map(p =>
-        p.id === photo.id ? { ...p, error: 'Storage not configured', progress: 0 } : p
-      ));
-      return;
-    }
-    const storageRef = ref(storage, `listing-photos/${Date.now()}-${photo.file.name}`);
-    const task = uploadBytesResumable(storageRef, photo.file);
-
-    task.on(
-      'state_changed',
-      (snap) => {
-        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, progress: pct } : p));
-      },
-      (err) => {
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, error: err.message, progress: 0 } : p));
-      },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, url, progress: 100 } : p));
-      }
-    );
-  }, [onChange]);
-
-  const handleFiles = useCallback(async (files: FileList | null) => {
-    if (!files) return;
-    const remaining = MAX - photos.length;
-    const toAdd = Array.from(files).slice(0, remaining);
-
-    const newPhotos: PhotoUpload[] = await Promise.all(
-      toAdd.map(async (file) => {
-        if (file.size > MAX_MB * 1024 * 1024) {
-          return {
-            id: crypto.randomUUID(),
-            file,
-            preview: URL.createObjectURL(file),
-            progress: 0,
-            url: null,
-            error: `File too large (max ${MAX_MB}MB)`,
-          };
-        }
-        const compressed = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
-        return {
-          id: crypto.randomUUID(),
-          file: compressed,
-          preview: URL.createObjectURL(compressed),
-          progress: 0,
-          url: null,
-          error: null,
-        };
-      })
-    );
-
-    const updated = [...photos, ...newPhotos];
-    onChange(updated);
-    newPhotos.filter(p => !p.error).forEach(p => uploadFile(p));
-  }, [photos, onChange, uploadFile]);
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    handleFiles(e.dataTransfer.files);
-  };
-
-  const remove = (id: string) => onChange(photos.filter(p => p.id !== id));
-
-  return (
-    <div className="space-y-3">
-      {photos.length < MAX && (
-        <div
-          onClick={() => inputRef.current?.click()}
-          onDrop={handleDrop}
-          onDragOver={e => e.preventDefault()}
-          className="border-2 border-dashed border-[#4A7CC7]/30 rounded-xl p-8 text-center cursor-pointer hover:border-[#4A7CC7]/60 hover:bg-blue-50/30 transition-colors"
-        >
-          <div className="text-3xl mb-2">📷</div>
-          <p className="text-sm font-semibold text-slate-600">Drag & drop or click to upload</p>
-          <p className="text-xs text-slate-400 mt-1">Max {MAX} photos · {MAX_MB}MB each · JPEG or PNG</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="hidden"
-            onChange={e => handleFiles(e.target.files)}
-          />
-        </div>
-      )}
-
-      {photos.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
-          {photos.map(p => (
-            <div key={p.id} className="relative aspect-square rounded-lg overflow-hidden bg-slate-100">
-              <img src={p.preview} alt="" className="w-full h-full object-cover" />
-
-              {/* Progress overlay */}
-              {p.progress < 100 && !p.error && (
-                <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
-                  <div className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin mb-1" />
-                  <span className="text-white text-[10px] font-bold">{p.progress}%</span>
-                </div>
-              )}
-
-              {/* Error overlay */}
-              {p.error && (
-                <div className="absolute inset-0 bg-red-900/60 flex items-center justify-center p-1">
-                  <span className="text-white text-[9px] text-center leading-tight">{p.error}</span>
-                </div>
-              )}
-
-              {/* Remove button */}
-              <button
-                onClick={() => remove(p.id)}
-                className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors"
-              >
-                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── AI extracted fields ──────────────────────────────────────────────────────
 
 function AiExtractedFields({
   result,
   form,
   onFormChange,
+  images,
 }: {
   result: GeminiResult;
   form: FormState;
   onFormChange: (patch: Partial<FormState>) => void;
+  images: string[];
 }) {
   const conf = result.confidence;
 
@@ -265,6 +115,20 @@ function AiExtractedFields({
         <span className="text-green-600 font-bold text-sm">✓ AI extracted</span>
         <span className="text-slate-400 text-xs">— edit any field if needed</span>
       </div>
+
+      {images.length > 0 && (
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+          {images.slice(0, 5).map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={url}
+              alt=""
+              className="h-20 w-28 object-cover rounded-lg shrink-0 border border-slate-200"
+            />
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         {field('Location', 'location', conf?.location)}
         {field('Price', 'price', conf?.price, 'number')}
@@ -283,105 +147,19 @@ function AiExtractedFields({
   );
 }
 
-// ─── Manual form ──────────────────────────────────────────────────────────────
-
-function ManualForm({ form, onChange }: { form: FormState; onChange: (p: Partial<FormState>) => void }) {
-  return (
-    <div className="space-y-4 pt-4">
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <Label>Property type</Label>
-          <select
-            value={form.type}
-            onChange={e => onChange({ type: e.target.value as SubletType })}
-            className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors"
-          >
-            <option value={SubletType.ENTIRE}>Entire Place</option>
-            <option value={SubletType.ROOMMATE}>Room / Roommate</option>
-            <option value={SubletType.STUDIO}>Studio</option>
-          </select>
-        </div>
-        <div>
-          <Label>Title <span className="normal-case font-normal text-slate-400">(max 80 chars)</span></Label>
-          <Input
-            value={form.title}
-            maxLength={80}
-            onChange={e => onChange({ title: e.target.value })}
-            placeholder="e.g. Bright 2BR in Florentin"
-          />
-        </div>
-        <div>
-          <Label>Location</Label>
-          <Input
-            value={form.location}
-            onChange={e => onChange({ location: e.target.value })}
-            placeholder="Neighborhood or full address"
-          />
-        </div>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <Label>Price / month</Label>
-            <Input
-              type="number"
-              value={form.price}
-              onChange={e => onChange({ price: e.target.value })}
-              placeholder="0"
-              min={0}
-            />
-          </div>
-          <div className="w-24">
-            <Label>Currency</Label>
-            <select
-              value={form.currency}
-              onChange={e => onChange({ currency: e.target.value })}
-              className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors"
-            >
-              <option value="ILS">₪ ILS</option>
-              <option value="USD">$ USD</option>
-              <option value="EUR">€ EUR</option>
-              <option value="GBP">£ GBP</option>
-            </select>
-          </div>
-        </div>
-        <div>
-          <Label>Available from</Label>
-          <Input type="date" value={form.startDate} onChange={e => onChange({ startDate: e.target.value })} />
-        </div>
-        <div>
-          <Label>Available until</Label>
-          <Input type="date" value={form.endDate} onChange={e => onChange({ endDate: e.target.value })} />
-        </div>
-      </div>
-      <div>
-        <Label>Description <span className="normal-case font-normal text-slate-400">(max 500 chars)</span></Label>
-        <textarea
-          value={form.description}
-          maxLength={500}
-          onChange={e => onChange({ description: e.target.value })}
-          rows={3}
-          placeholder="Describe the apartment, vibe, rules, what's included..."
-          className="w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors resize-none"
-        />
-        <p className="text-[11px] text-slate-400 mt-0.5 text-right">{form.description.length}/500</p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export function WebPostPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // Input method
-  const [inputTab, setInputTab] = useState<'ai' | 'manual'>('ai');
   const [pasteUrl, setPasteUrl] = useState('');
 
   // AI result
   const [aiResult, setAiResult] = useState<GeminiResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [extractedImages, setExtractedImages] = useState<string[]>([]);
 
   // Form
   const [form, setForm] = useState<FormState>(BLANK_FORM);
@@ -391,9 +169,6 @@ export function WebPostPage() {
   const [contactMode, setContactMode] = useState<'profile' | 'custom'>('profile');
   const [contactPhone, setContactPhone] = useState('');
   const [contactEmail, setContactEmail] = useState('');
-
-  // Photos
-  const [photos, setPhotos] = useState<PhotoUpload[]>([]);
 
   // Publish state
   const [isPublishing, setIsPublishing] = useState(false);
@@ -414,6 +189,7 @@ export function WebPostPage() {
     try {
       const result = await extractListingFromText(input);
       setAiResult(result);
+      setExtractedImages(result.imageUrls ?? []);
       // Pre-fill form with AI values
       setForm({
         type: result.type ?? SubletType.ENTIRE,
@@ -427,7 +203,7 @@ export function WebPostPage() {
         description: result.extractedDescription ?? '',
       });
     } catch {
-      setAiError('Analysis failed. Please try again or fill manually.');
+      setAiError('Analysis failed. Please check the URL and try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -439,12 +215,6 @@ export function WebPostPage() {
     const firebaseUser = auth?.currentUser;
     if (!user || !firebaseUser) {
       setPublishError('You must be signed in to publish a listing.');
-      return;
-    }
-
-    const stillUploading = photos.some(p => p.progress < 100 && !p.error);
-    if (stillUploading) {
-      setPublishError('Please wait for all photos to finish uploading.');
       return;
     }
 
@@ -468,12 +238,10 @@ export function WebPostPage() {
       return;
     }
 
-    const imageUrls = photos.filter(p => p.url).map(p => p.url as string);
-
     const listing: Sublet = {
       id: 'new',
-      sourceUrl: '',
-      originalText: pasteUrl || '',
+      sourceUrl: pasteUrl.trim(),
+      originalText: pasteUrl.trim(),
       price: Number(form.price),
       currency: form.currency,
       startDate: form.startDate,
@@ -486,7 +254,7 @@ export function WebPostPage() {
       createdAt: Date.now(),
       ownerId: firebaseUser.uid,
       authorName: firebaseUser.displayName ?? user.name,
-      images: imageUrls,
+      images: extractedImages,
       ai_summary: form.description || undefined,
       city: aiResult?.city || undefined,
       // ownership fields written to Firestore
@@ -520,7 +288,7 @@ export function WebPostPage() {
           </div>
           <div className="flex flex-col gap-2 pt-2">
             <button
-              onClick={() => { setPublishedId(null); setForm(BLANK_FORM); setPasteUrl(''); setAiResult(null); setPhotos([]); }}
+              onClick={() => { setPublishedId(null); setForm(BLANK_FORM); setPasteUrl(''); setAiResult(null); }}
               className="w-full py-2.5 rounded-lg border border-[#4A7CC7] text-[#4A7CC7] text-sm font-bold hover:bg-blue-50 transition-colors"
             >
               Post another listing
@@ -562,81 +330,39 @@ export function WebPostPage() {
           </div>
         </Card>
 
-        {/* ── Card 2: Input method ── */}
+        {/* ── Card 2: URL input ── */}
         <Card>
-          {/* Main tabs */}
-          <div className="flex border-b border-slate-100 mb-4 -mx-5 px-5">
-            {([['ai', '✨ AI powered'], ['manual', 'Fill manually']] as const).map(([tab, label]) => (
-              <button
-                key={tab}
-                onClick={() => setInputTab(tab)}
-                className={`pb-3 mr-6 text-sm font-bold border-b-2 transition-colors ${
-                  inputTab === tab
-                    ? 'border-[#4A7CC7] text-[#4A7CC7]'
-                    : 'border-transparent text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="space-y-2 mb-4">
+            <Label>Listing or post URL</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔗</span>
+              <Input
+                value={pasteUrl}
+                onChange={e => setPasteUrl(e.target.value)}
+                placeholder="https://facebook.com/groups/... or https://www.yad2.co.il/..."
+                className="pl-8"
+              />
+            </div>
+            <p className="text-xs text-slate-400">Paste any public URL — Facebook, Airbnb, Yad2, Madlan, and more</p>
           </div>
 
-          {inputTab === 'ai' ? (
-            <div>
-              <div className="space-y-2 mb-4">
-                <Label>Listing or post URL</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔗</span>
-                  <Input
-                    value={pasteUrl}
-                    onChange={e => setPasteUrl(e.target.value)}
-                    placeholder="https://facebook.com/groups/... or https://www.yad2.co.il/..."
-                    className="pl-8"
-                  />
-                </div>
-                <p className="text-xs text-slate-400">Paste any public URL — Facebook, Airbnb, Yad2, Madlan, and more</p>
-              </div>
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing || !pasteUrl.trim()}
+            className="px-5 py-2.5 bg-[#4A7CC7] text-white text-sm font-bold rounded-lg hover:bg-[#3b66a6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            {isAnalyzing ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Fetching and analyzing...
+              </>
+            ) : 'Fetch & Analyze'}
+          </button>
 
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleAnalyze}
-                  disabled={isAnalyzing || !pasteUrl.trim()}
-                  className="px-5 py-2.5 bg-[#4A7CC7] text-white text-sm font-bold rounded-lg hover:bg-[#3b66a6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Analyzing...
-                    </>
-                  ) : 'Fetch & Analyze'}
-                </button>
-                <button
-                  onClick={() => setInputTab('manual')}
-                  className="text-xs text-[#4A7CC7] font-semibold hover:underline"
-                >
-                  or fill manually →
-                </button>
-              </div>
+          {aiError && <p className="text-xs text-red-500 mt-2 font-medium">{aiError}</p>}
 
-              {aiError && <p className="text-xs text-red-500 mt-2 font-medium">{aiError}</p>}
-
-              {aiResult && (
-                <>
-                  <AiExtractedFields result={aiResult} form={form} onFormChange={patchForm} />
-                  <p className="mt-3 text-xs text-slate-400">
-                    📷 Add photos after publishing from your listing page
-                  </p>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-              <ManualForm form={form} onChange={patchForm} />
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <p className="text-sm font-bold text-slate-800 mb-3">Photos</p>
-                <PhotoUploader photos={photos} onChange={setPhotos} />
-              </div>
-            </>
+          {aiResult && (
+            <AiExtractedFields result={aiResult} form={form} onFormChange={patchForm} images={extractedImages} />
           )}
         </Card>
 

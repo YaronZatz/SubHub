@@ -1,27 +1,17 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import imageCompression from 'browser-image-compression';
+import { useRouter } from 'next/navigation';
 import { extractListingFromText } from '@/actions/gemini';
 import { geocodeAddress } from '@/services/geocodingService';
 import { persistenceService } from '@/services/persistenceService';
-import { storage, auth } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { type GeminiResult } from '@/services/geminiService';
 import { SubletType, ListingStatus, type Sublet } from '@/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-interface PhotoUpload {
-  id: string;
-  file: File;
-  preview: string;
-  progress: number;
-  url: string | null;
-  error: string | null;
-}
 
 interface FormState {
   type: SubletType;
@@ -93,121 +83,18 @@ function ProgressDots({ step }: { step: number }) {
   );
 }
 
-// ─── Photo strip (mobile) ─────────────────────────────────────────────────────
-
-function MobilePhotoStrip({
-  photos,
-  onChange,
-}: {
-  photos: PhotoUpload[];
-  onChange: React.Dispatch<React.SetStateAction<PhotoUpload[]>>;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const MAX = 8;
-
-  const uploadFile = useCallback(async (photo: PhotoUpload) => {
-    if (!storage) {
-      onChange(prev => prev.map(p => p.id === photo.id ? { ...p, error: 'Storage unavailable', progress: 0 } : p));
-      return;
-    }
-    const storageRef = ref(storage, `listing-photos/${Date.now()}-${photo.file.name}`);
-    const task = uploadBytesResumable(storageRef, photo.file);
-    task.on(
-      'state_changed',
-      snap => {
-        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, progress: pct } : p));
-      },
-      err => {
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, error: err.message, progress: 0 } : p));
-      },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        onChange(prev => prev.map(p => p.id === photo.id ? { ...p, url, progress: 100 } : p));
-      }
-    );
-  }, [onChange]);
-
-  const handleFiles = useCallback(async (files: FileList | null) => {
-    if (!files) return;
-    const remaining = MAX - photos.length;
-    const toAdd = Array.from(files).slice(0, remaining);
-    const newPhotos: PhotoUpload[] = await Promise.all(
-      toAdd.map(async file => {
-        if (file.size > 5 * 1024 * 1024) {
-          return { id: crypto.randomUUID(), file, preview: URL.createObjectURL(file), progress: 0, url: null, error: 'Too large (max 5MB)' };
-        }
-        const compressed = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
-        return { id: crypto.randomUUID(), file: compressed, preview: URL.createObjectURL(compressed), progress: 0, url: null, error: null };
-      })
-    );
-    const updated = [...photos, ...newPhotos];
-    onChange(updated);
-    newPhotos.filter(p => !p.error).forEach(p => uploadFile(p));
-  }, [photos, onChange, uploadFile]);
-
-  return (
-    <div>
-      <FieldLabel>Photos (optional, max {MAX})</FieldLabel>
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-        {photos.map(p => (
-          <div key={p.id} className="relative w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-slate-100">
-            <img src={p.preview} alt="" className="w-full h-full object-cover" />
-            {p.progress < 100 && !p.error && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="text-white text-[10px] font-bold">{p.progress}%</span>
-              </div>
-            )}
-            {p.error && (
-              <div className="absolute inset-0 bg-red-900/60 flex items-center justify-center p-1">
-                <span className="text-white text-[9px] text-center leading-tight">!</span>
-              </div>
-            )}
-            <button
-              onClick={() => onChange(prev => prev.filter(x => x.id !== p.id))}
-              className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white"
-            >
-              <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        ))}
-
-        {photos.length < MAX && (
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="w-20 h-20 shrink-0 rounded-xl border-2 border-dashed border-[#4A7CC7]/30 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-[#4A7CC7]/60 hover:bg-blue-50/30 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="text-[10px] font-medium">Add</span>
-          </button>
-        )}
-      </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        className="hidden"
-        onChange={e => handleFiles(e.target.files)}
-      />
-    </div>
-  );
-}
-
 // ─── AI extracted fields (mobile) ────────────────────────────────────────────
 
 function AiFields({
   result,
   form,
   onChange,
+  images,
 }: {
   result: GeminiResult;
   form: FormState;
   onChange: (p: Partial<FormState>) => void;
+  images: string[];
 }) {
   const c = result.confidence;
   const field = (label: string, key: keyof FormState, score: number | undefined, type = 'text') => (
@@ -230,6 +117,20 @@ function AiFields({
         <span className="text-xs font-bold text-green-600">✓ AI extracted</span>
         <span className="text-xs text-slate-400">— tap any field to edit</span>
       </div>
+
+      {images.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {images.slice(0, 4).map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={i}
+              src={url}
+              alt=""
+              className="h-16 w-24 object-cover rounded-xl shrink-0 border border-[#4A7CC7]/20"
+            />
+          ))}
+        </div>
+      )}
       {field('Location', 'location', c?.location)}
       {field('Price', 'price', c?.price, 'number')}
       {field('Available from', 'startDate', c?.dates, 'date')}
@@ -246,92 +147,17 @@ function AiFields({
   );
 }
 
-// ─── Manual form (mobile) ─────────────────────────────────────────────────────
-
-function ManualFields({ form, onChange }: { form: FormState; onChange: (p: Partial<FormState>) => void }) {
-  return (
-    <div className="space-y-3 mt-3">
-      <div>
-        <FieldLabel>Property type</FieldLabel>
-        <select
-          value={form.type}
-          onChange={e => onChange({ type: e.target.value as SubletType })}
-          className="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors"
-        >
-          <option value={SubletType.ENTIRE}>Entire Place</option>
-          <option value={SubletType.ROOMMATE}>Room / Roommate</option>
-          <option value={SubletType.STUDIO}>Studio</option>
-        </select>
-      </div>
-      <div>
-        <FieldLabel>Title</FieldLabel>
-        <MobileInput value={form.title} onChange={e => onChange({ title: e.target.value })} placeholder="e.g. Bright 2BR in Florentin" maxLength={80} />
-      </div>
-      <div>
-        <FieldLabel>Location</FieldLabel>
-        <MobileInput value={form.location} onChange={e => onChange({ location: e.target.value })} placeholder="Neighborhood or full address" />
-      </div>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <FieldLabel>Price / month</FieldLabel>
-          <MobileInput type="number" value={form.price} onChange={e => onChange({ price: e.target.value })} placeholder="0" min={0} />
-        </div>
-        <div className="w-24">
-          <FieldLabel>Currency</FieldLabel>
-          <select
-            value={form.currency}
-            onChange={e => onChange({ currency: e.target.value })}
-            className="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors"
-          >
-            <option value="ILS">₪ ILS</option>
-            <option value="USD">$ USD</option>
-            <option value="EUR">€ EUR</option>
-            <option value="GBP">£ GBP</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <FieldLabel>From</FieldLabel>
-          <MobileInput type="date" value={form.startDate} onChange={e => onChange({ startDate: e.target.value })} />
-        </div>
-        <div className="flex-1">
-          <FieldLabel>Until</FieldLabel>
-          <MobileInput type="date" value={form.endDate} onChange={e => onChange({ endDate: e.target.value })} />
-        </div>
-      </div>
-      <div>
-        <div className="flex items-center justify-between mb-1">
-          <FieldLabel>Description</FieldLabel>
-          <span className="text-[11px] text-slate-400">{form.description.length}/500</span>
-        </div>
-        <textarea
-          value={form.description}
-          maxLength={500}
-          onChange={e => onChange({ description: e.target.value })}
-          rows={4}
-          placeholder="Describe the apartment, vibe, rules, what's included..."
-          className="w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors resize-none"
-        />
-      </div>
-    </div>
-  );
-}
-
 // ─── Preview card ─────────────────────────────────────────────────────────────
 
 function PreviewCard({
   form,
   aiResult,
-  photos,
   user,
 }: {
   form: FormState;
   aiResult: GeminiResult | null;
-  photos: PhotoUpload[];
   user: { name: string; email: string } | null;
 }) {
-  const coverUrl = photos.find(p => p.url)?.url ?? photos[0]?.preview ?? null;
   const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
   const sym = currencySymbol[form.currency] ?? form.currency;
 
@@ -345,15 +171,11 @@ function PreviewCard({
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
       {/* Image */}
       <div className="w-full h-44 relative" style={{ backgroundColor: '#d0dff5' }}>
-        {coverUrl ? (
-          <img src={coverUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-[#4A7CC7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-        )}
+        <div className="w-full h-full flex items-center justify-center">
+          <svg className="w-10 h-10 text-[#4A7CC7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
         {aiResult && (
           <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-black text-white rounded-full" style={{ backgroundColor: '#F5831F' }}>
             AI PARSED
@@ -411,19 +233,18 @@ function PreviewCard({
 
 export function MobilePostScreen() {
   const { user } = useAuth();
+  const router = useRouter();
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [inputTab, setInputTab] = useState<'ai' | 'manual'>('ai');
   const [pasteUrl, setPasteUrl] = useState('');
 
   const [aiResult, setAiResult] = useState<GeminiResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiError, setAiError] = useState('');
+  const [extractedImages, setExtractedImages] = useState<string[]>([]);
 
   const [form, setForm] = useState<FormState>(BLANK_FORM);
   const patchForm = (p: Partial<FormState>) => setForm(f => ({ ...f, ...p }));
-
-  const [photos, setPhotos] = useState<PhotoUpload[]>([]);
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
@@ -441,6 +262,7 @@ export function MobilePostScreen() {
     try {
       const result = await extractListingFromText(input);
       setAiResult(result);
+      setExtractedImages(result.imageUrls ?? []);
       setForm({
         type: result.type ?? SubletType.ENTIRE,
         title: result.extractedTitle
@@ -453,7 +275,7 @@ export function MobilePostScreen() {
         endDate: result.endDate ?? '',
       });
     } catch {
-      setAiError('Analysis failed. Try again or fill manually.');
+      setAiError('Analysis failed. Please check the URL and try again.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -468,8 +290,6 @@ export function MobilePostScreen() {
       return;
     }
 
-    const stillUploading = photos.some(p => p.progress < 100 && !p.error);
-    if (stillUploading) { setPublishError('Please wait for photos to finish uploading.'); return; }
     if (!form.location.trim()) { setPublishError('Please enter a location.'); return; }
     if (!form.price || Number(form.price) <= 0) { setPublishError('Please enter a valid price.'); return; }
 
@@ -483,12 +303,10 @@ export function MobilePostScreen() {
       return;
     }
 
-    const imageUrls = photos.filter(p => p.url).map(p => p.url as string);
-
     const listing = {
       id: 'new',
-      sourceUrl: '',
-      originalText: pasteUrl || '',
+      sourceUrl: pasteUrl.trim(),
+      originalText: pasteUrl.trim(),
       price: Number(form.price),
       currency: form.currency,
       startDate: form.startDate,
@@ -501,7 +319,7 @@ export function MobilePostScreen() {
       createdAt: Date.now(),
       ownerId: firebaseUser.uid,
       authorName: firebaseUser.displayName ?? user.name,
-      images: imageUrls,
+      images: extractedImages,
       city: aiResult?.city || undefined,
       ...({ userId: firebaseUser.uid, userEmail: firebaseUser.email ?? '', userDisplayName: firebaseUser.displayName ?? '' } as any),
     } as Sublet;
@@ -521,7 +339,7 @@ export function MobilePostScreen() {
     setForm(BLANK_FORM);
     setPasteUrl('');
     setAiResult(null);
-    setPhotos([]);
+    setExtractedImages([]);
     setPublished(false);
     setPublishError('');
   };
@@ -561,7 +379,16 @@ export function MobilePostScreen() {
       {/* ── Header ── */}
       <div className="bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0 flex items-center justify-between">
         <div className="w-8">
-          {step > 1 && (
+          {step === 1 ? (
+            <button
+              onClick={() => router.back()}
+              className="w-8 h-8 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          ) : (
             <button
               onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
               className="w-8 h-8 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors"
@@ -611,75 +438,43 @@ export function MobilePostScreen() {
 
           {/* ════════════════ STEP 2 ════════════════ */}
           {step === 2 && (
-            <div>
-              {/* Main tabs */}
-              <div className="flex bg-slate-100 rounded-xl p-1 mb-4">
-                {([['ai', '✨ AI'], ['manual', 'Manual']] as const).map(([t, l]) => (
-                  <button
-                    key={t}
-                    onClick={() => setInputTab(t)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
-                      inputTab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-                    }`}
-                  >
-                    {l}
-                  </button>
-                ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 bg-[#4A7CC7]/10 text-[#4A7CC7] text-xs font-black rounded-full">✨ Gemini AI</span>
+                <span className="text-xs text-slate-400">powered extraction</span>
               </div>
 
-              {inputTab === 'ai' ? (
-                <div className="space-y-3">
-                  {/* AI badge */}
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 bg-[#4A7CC7]/10 text-[#4A7CC7] text-xs font-black rounded-full">✨ Gemini AI</span>
-                    <span className="text-xs text-slate-400">powered extraction</span>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <FieldLabel>Listing or post URL</FieldLabel>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔗</span>
-                      <MobileInput
-                        value={pasteUrl}
-                        onChange={e => setPasteUrl(e.target.value)}
-                        placeholder="https://facebook.com/groups/..."
-                        className="pl-8"
-                      />
-                    </div>
-                    <p className="text-xs text-slate-400">Paste any public URL — Facebook, Airbnb, Yad2, Madlan, and more</p>
-                  </div>
-
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={isAnalyzing || !pasteUrl.trim()}
-                    className="w-full py-3 bg-[#4A7CC7] text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : 'Fetch & Analyze'}
-                  </button>
-
-                  {aiError && <p className="text-xs text-red-500 font-medium">{aiError}</p>}
-
-                  {aiResult && (
-                    <>
-                      <AiFields result={aiResult} form={form} onChange={patchForm} />
-                      <p className="mt-3 text-xs text-slate-400">
-                        📷 Add photos after publishing from your listing page
-                      </p>
-                    </>
-                  )}
+              <div className="space-y-1.5">
+                <FieldLabel>Listing or post URL</FieldLabel>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">🔗</span>
+                  <MobileInput
+                    value={pasteUrl}
+                    onChange={e => setPasteUrl(e.target.value)}
+                    placeholder="https://facebook.com/groups/..."
+                    className="pl-8"
+                  />
                 </div>
-              ) : (
-                <>
-                  <ManualFields form={form} onChange={patchForm} />
-                  <div className="mt-5 pt-4 border-t border-slate-100">
-                    <MobilePhotoStrip photos={photos} onChange={setPhotos} />
-                  </div>
-                </>
+                <p className="text-xs text-slate-400">Paste any public URL — Facebook, Airbnb, Yad2, Madlan, and more</p>
+              </div>
+
+              <button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || !pasteUrl.trim()}
+                className="w-full py-3 bg-[#4A7CC7] text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Fetching and analyzing...
+                  </>
+                ) : 'Fetch & Analyze'}
+              </button>
+
+              {aiError && <p className="text-xs text-red-500 font-medium">{aiError}</p>}
+
+              {aiResult && (
+                <AiFields result={aiResult} form={form} onChange={patchForm} images={extractedImages} />
               )}
             </div>
           )}
@@ -688,7 +483,7 @@ export function MobilePostScreen() {
           {step === 3 && (
             <div className="space-y-4">
               <p className="text-sm font-bold text-slate-500">Review before publishing</p>
-              <PreviewCard form={form} aiResult={aiResult} photos={photos} user={user} />
+              <PreviewCard form={form} aiResult={aiResult} user={user} />
 
               {/* Confirmation checkbox */}
               <label className="flex items-start gap-3 cursor-pointer select-none bg-slate-50 rounded-2xl p-4">

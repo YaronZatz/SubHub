@@ -292,8 +292,23 @@ export async function POST(req: NextRequest) {
 
     // Priority 1: explicit payloadTemplate format → { eventType, datasetId, runId }
     // This is what the updated startApifyRun sends via payloadTemplate.
-    const explicitDatasetId = typeof p?.datasetId === 'string' ? p.datasetId.trim() : null;
-    const explicitEventType = typeof p?.eventType === 'string' ? p.eventType : null;
+    const explicitDatasetId =
+      typeof p?.datasetId === 'string' && !p.datasetId.includes('{{')
+        ? p.datasetId.trim()
+        : null;
+    const explicitEventType =
+      typeof p?.eventType === 'string' && !p.eventType.includes('{{')
+        ? p.eventType
+        : null;
+
+    // Guard: Apify failed to substitute template variables
+    if (p?.datasetId && String(p.datasetId).includes('{{')) {
+      console.error(`${logPrefix} Unsubstituted template variables — webhook misconfigured`);
+      return NextResponse.json(
+        { received: true, error: 'Unsubstituted template variables', processed: 0 },
+        { status: 200 }
+      );
+    }
 
     // Priority 2: legacy/default Apify webhook format → resourceId at top level
     const resourceId = p?.resourceId != null ? String(p.resourceId).trim()

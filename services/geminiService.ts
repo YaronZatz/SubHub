@@ -1,6 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { Sublet, SubletType, ListingStatus } from "../types";
+import type { ScrapedContent } from "./scrapingService";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,9 @@ function parseJsonResponse(raw: string, sources: any[] = []): GeminiResult {
     extractedBedrooms:     typeof parsed.bedrooms === 'number' ? parsed.bedrooms : null,
     extractedContactPhone: parsed.contactPhone ?? null,
     extractedContactEmail: parsed.contactEmail ?? null,
+    imageUrls: Array.isArray(parsed.images)
+      ? (parsed.images as unknown[]).filter((u): u is string => typeof u === 'string' && u.startsWith('http'))
+      : [],
 
     sources,
     confidence: {
@@ -176,6 +180,77 @@ export const parsePostWithGemini = async (input: string): Promise<GeminiResult> 
 
   const text = response.text || '';
   return parseJsonResponse(text);
+};
+
+/**
+ * Parse scraped webpage content with Gemini.
+ * Uses structured extraction prompt; images from the scrape take priority
+ * over any image URLs Gemini might hallucinate.
+ */
+export const parseScrapedContentWithGemini = async (scraped: ScrapedContent): Promise<GeminiResult> => {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error('GEMINI_API_KEY or API_KEY is not configured. Add it to .env.local');
+  const ai = new GoogleGenAI({ apiKey });
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const prompt = `You are a real estate data extractor.
+Extract structured data from the following scraped webpage content. Return ONLY valid JSON,
+no markdown, no code blocks, no extra text.
+
+Today's date: ${today}
+Source URL: ${scraped.sourceUrl}${scraped.title ? `\nPage title: ${scraped.title}` : ''}${scraped.description ? `\nPage description: ${scraped.description}` : ''}
+
+If a field is not found, return null.
+For confidence scores, return 0-100 based on how certain you are about each extracted value.
+For currency: NIS and ₪ = "NIS", $ = "USD", € = "EUR".
+For dates: use YYYY-MM-DD format. If only month/day given, pick nearest upcoming date from today.
+For propertyType use exactly one of: "sublet", "short-term", "long-term", "room", "apartment", "studio", "house".
+
+Scraped content:
+${scraped.text}
+
+Required JSON structure:
+{
+  "title": null,
+  "description": null,
+  "location": null,
+  "city": null,
+  "price": null,
+  "currency": null,
+  "priceUnit": null,
+  "dateFrom": null,
+  "dateTo": null,
+  "propertyType": null,
+  "bedrooms": null,
+  "amenities": [],
+  "contactPhone": null,
+  "contactEmail": null,
+  "images": [],
+  "confidence": {
+    "title": 0,
+    "location": 0,
+    "price": 0,
+    "dates": 0,
+    "propertyType": 0
+  }
+}`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+  });
+
+  const text = response.text || '';
+  const result = parseJsonResponse(text);
+
+  // Scraped images are more reliable than anything Gemini might hallucinate —
+  // only override if Gemini found nothing and we have scraped images.
+  if ((!result.imageUrls || result.imageUrls.length === 0) && scraped.images.length > 0) {
+    result.imageUrls = scraped.images;
+  }
+
+  return result;
 };
 
 export const parseImageListingWithGemini = async (base64Image: string, mimeType: string): Promise<GeminiResult> => {
