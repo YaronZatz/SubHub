@@ -92,7 +92,7 @@ export default function ListingDetailPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<AuthModalReason>('general');
   const [pendingAction, setPendingAction] = useState<'save' | 'contact' | null>(null);
-  const [showOriginal, setShowOriginal] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(true);
   const [shareCopied, setShareCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
