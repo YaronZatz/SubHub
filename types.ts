@@ -160,6 +160,7 @@ export interface Sublet {
   datesFlexible?: boolean;
   immediateAvailability?: boolean;
   rentTerm?: RentTerm;
+  postedAt?: string | null;
 }
 
 export interface Filters {
@@ -173,6 +174,7 @@ export interface Filters {
   city: string;
   neighborhood: string;
   petsAllowed: boolean;
+  onlyWithPrice: boolean;
   rentTerm?: RentTerm;
   minRooms?: number;
   maxRooms?: number;
