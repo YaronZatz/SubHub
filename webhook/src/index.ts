@@ -464,7 +464,11 @@ Respond ONLY with valid JSON (no markdown, no backticks):
       return null;
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    // Thinking models return thought parts before the actual content — skip them
+    const parts: Array<{ text?: string; thought?: boolean }> =
+      data?.candidates?.[0]?.content?.parts ?? [];
+    const textPart = parts.find((p) => !p.thought && p.text) ?? parts[0];
+    const text = textPart?.text;
 
     if (!text) {
       console.error("Gemini returned no text. Response:", JSON.stringify(data).substring(0, 500));

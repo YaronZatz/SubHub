@@ -7,7 +7,7 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { RentTerm } from '@/types';
 
-const GEMINI_MODEL = 'gemini-3-pro-preview';
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
 export interface GeminiLocation {
   country?: string;
@@ -249,7 +249,14 @@ POST TEXT:
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await ai.models.generateContent(generateArgs);
-      const text = response.text || '{}';
+      // Thinking models include thought parts in response.text — extract only non-thought parts
+      const parts: Array<{ text?: string; thought?: boolean }> =
+        (response.candidates?.[0]?.content?.parts as Array<{ text?: string; thought?: boolean }>) ?? [];
+      const nonThoughtText = parts
+        .filter((p) => !p.thought && p.text)
+        .map((p) => p.text)
+        .join('');
+      const text = nonThoughtText || response.text || '{}';
       return JSON.parse(text) as GeminiResponse;
     } catch (err: unknown) {
       const isRateLimit =
