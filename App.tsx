@@ -74,6 +74,7 @@ const AppContent: React.FC = () => {
     endDate: '',
     dateMode: DateMode.FLEXIBLE,
     petsAllowed: false,
+    onlyWithPrice: true,
     rentTerm: RentTerm.ALL,
     postedWithin: 'all',
   });
@@ -253,7 +254,9 @@ const AppContent: React.FC = () => {
         }
       }
 
-      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms && matchesRentTerm && matchesPostedWithin;
+      const matchesPrice2 = !filters.onlyWithPrice || (s.price && s.price > 0);
+
+      return matchesSearch && matchesPrice && matchesType && matchesStatus && matchesCity && matchesNeighborhood && matchesDates && matchesPets && matchesAmenities && matchesRooms && matchesRentTerm && matchesPostedWithin && matchesPrice2;
     });
   }, [sublets, filters, searchQuery, viewMode, savedListingIds]);
 
@@ -324,19 +327,24 @@ const AppContent: React.FC = () => {
     setEditingSubletId(id);
   };
 
-  const isNew = (createdAt: number) => {
-    const oneDay = 24 * 60 * 60 * 1000;
-    return (Date.now() - createdAt) < oneDay;
+  const getPostTimestamp = (sublet: { createdAt: number; postedAt?: string | null }) => {
+    if (sublet.postedAt) {
+      const ms = new Date(sublet.postedAt).getTime();
+      if (!isNaN(ms)) return ms;
+    }
+    return sublet.createdAt;
   };
 
-  const getHoursAgo = (createdAt: number) => {
-    const diff = Date.now() - createdAt;
-    return Math.max(0, Math.floor(diff / (60 * 60 * 1000)));
+  const isNew = (sublet: { createdAt: number; postedAt?: string | null }) => {
+    return (Date.now() - getPostTimestamp(sublet)) < 24 * 60 * 60 * 1000;
   };
 
-  const getDaysAgo = (createdAt: number) => {
-    const diff = Date.now() - createdAt;
-    return Math.max(1, Math.floor(diff / (24 * 60 * 60 * 1000)));
+  const getHoursAgo = (sublet: { createdAt: number; postedAt?: string | null }) => {
+    return Math.max(0, Math.floor((Date.now() - getPostTimestamp(sublet)) / (60 * 60 * 1000)));
+  };
+
+  const getDaysAgo = (sublet: { createdAt: number; postedAt?: string | null }) => {
+    return Math.max(1, Math.floor((Date.now() - getPostTimestamp(sublet)) / (24 * 60 * 60 * 1000)));
   };
 
   return (
@@ -556,6 +564,18 @@ const AppContent: React.FC = () => {
                      {t.petsAllowed}
                    </button>
                  </div>
+                 <div className="space-y-1.5">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.onlyWithPrice}</label>
+                   <button
+                     onClick={() => setFilters({ ...filters, onlyWithPrice: !filters.onlyWithPrice })}
+                     className={`w-full p-3 rounded-xl text-xs font-bold transition-all border flex items-center justify-center gap-2
+                       ${filters.onlyWithPrice ? 'bg-cyan-600 border-cyan-600 text-white shadow-md' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}
+                     `}
+                   >
+                     <span>💰</span>
+                     {t.onlyWithPrice}
+                   </button>
+                 </div>
                  <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.postedWithin}</label>
                    <div className="flex flex-wrap gap-2">
@@ -624,16 +644,16 @@ const AppContent: React.FC = () => {
                     <ListingCarousel id={sublet.id} images={sublet.images} sourceUrl={sublet.sourceUrl} photoCount={sublet.photoCount} aspectRatio="aspect-square" className="w-full" />
 
                     <div className="p-5">
-                      {isNew(sublet.createdAt) ? (
+                      {isNew(sublet) ? (
                         <div className={`absolute top-3 ${isRTL ? 'right-3' : 'left-3'} bg-cyan-600 text-white text-[9px] font-black px-2.5 py-1 rounded-full shadow-lg animate-pulse ring-4 ring-cyan-100 z-10 flex items-center gap-1.5`}>
                           <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
-                          {t.addedXhAgo.replace('{x}', getHoursAgo(sublet.createdAt).toString())}
+                          {t.addedXhAgo.replace('{x}', getHoursAgo(sublet).toString())}
                         </div>
                       ) : (
                         <div className={`absolute top-3 ${isRTL ? 'right-3' : 'left-3'} bg-slate-500/80 text-white text-[9px] font-bold px-2.5 py-1 rounded-full z-10`}>
-                          {getDaysAgo(sublet.createdAt) > 30
+                          {getDaysAgo(sublet) > 30
                             ? t.addedXdAgo.replace('{x}', '30+')
-                            : t.addedXdAgo.replace('{x}', getDaysAgo(sublet.createdAt).toString())}
+                            : t.addedXdAgo.replace('{x}', getDaysAgo(sublet).toString())}
                         </div>
                       )}
 
@@ -726,16 +746,16 @@ const AppContent: React.FC = () => {
               className="bg-white rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] border border-slate-200 overflow-hidden cursor-pointer active:scale-[0.98] transition-all"
             >
              <div className="flex p-3 relative">
-               {isNew(selectedSublet.createdAt) ? (
+               {isNew(selectedSublet) ? (
                   <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} bg-cyan-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg z-20 flex items-center gap-1`}>
                     <span className="w-1 h-1 bg-white rounded-full"></span>
-                    {t.addedXhAgo.replace('{x}', getHoursAgo(selectedSublet.createdAt).toString())}
+                    {t.addedXhAgo.replace('{x}', getHoursAgo(selectedSublet).toString())}
                   </div>
                ) : (
                   <div className={`absolute top-4 ${isRTL ? 'right-4' : 'left-4'} bg-slate-500/80 text-white text-[8px] font-bold px-2 py-0.5 rounded-full z-20`}>
-                    {getDaysAgo(selectedSublet.createdAt) > 30
+                    {getDaysAgo(selectedSublet) > 30
                       ? t.addedXdAgo.replace('{x}', '30+')
-                      : t.addedXdAgo.replace('{x}', getDaysAgo(selectedSublet.createdAt).toString())}
+                      : t.addedXdAgo.replace('{x}', getDaysAgo(selectedSublet).toString())}
                   </div>
                )}
                
