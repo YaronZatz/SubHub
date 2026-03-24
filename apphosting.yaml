@@ -64,9 +64,3 @@ env:
     secret: FACEBOOK_APP_SECRET
     availability:
       - RUNTIME
-
-  # 5. Cron job auth secret
-  - variable: CRON_SECRET
-    secret: CRON_SECRET
-    availability:
-      - RUNTIME

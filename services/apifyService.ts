@@ -107,17 +107,18 @@ export async function startApifyRun(
   const runInput = buildRunInput(input);
   const runOptions: { webhooks?: readonly WebhookUpdateData[] } = {};
   if (options?.webhookUrl) {
-    const eventTypes: WebhookEventType[] = ['ACTOR.RUN.SUCCEEDED'];
+    const eventTypes: WebhookEventType[] = ['ACTOR.RUN.SUCCEEDED', 'ACTOR.RUN.FAILED'];
     runOptions.webhooks = [
       {
         eventTypes,
         requestUrl: options.webhookUrl,
-        payloadTemplate: `{
-        "eventType": "{{eventType}}",
-        "datasetId": "{{resource.defaultDatasetId}}",
-        "runId": "{{resource.id}}",
-        "status": "{{resource.status}}"
-      }`,
+        // Explicit payload so the webhook route always gets datasetId directly
+        payloadTemplate: JSON.stringify({
+          eventType: '{{eventType}}',
+          datasetId: '{{resource.defaultDatasetId}}',
+          runId: '{{resource.id}}',
+          status: '{{resource.status}}',
+        }),
       } satisfies WebhookUpdateData,
     ];
   }
