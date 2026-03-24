@@ -35,9 +35,9 @@ async function extractListings(rawText: string): Promise<ExtractedListing[]> {
   
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  // Fix: Using gemini-3-pro-preview for complex extraction task from multiple unstructured posts
+  // Using gemini-2.5-flash for complex extraction task from multiple unstructured posts
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-2.5-flash',
     contents: `
       Analyze the following text block containing multiple unstructured Facebook sublet posts.
       Extract each individual listing into a structured object.

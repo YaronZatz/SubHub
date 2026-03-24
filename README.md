@@ -5,7 +5,7 @@ A high-performance aggregator that uses **Google Gemini AI** to parse messy Face
 
 ## Features
 
--   **AI-Powered Extraction**: Paste a Facebook post URL or text, and Gemini 3 extracts price, dates, location, amenities, and images.
+-   **AI-Powered Extraction**: Paste a Facebook post URL or text, and Gemini 2.5 Flash extracts price, dates, location, amenities, and images.
 -   **Interactive Map**: Visualize listings on a Leaflet map.
 -   **Local Persistence**: Listings and user sessions are stored locally using IndexedDB and LocalStorage (Serverless MVP).
 -   **Authentication**: Firebase Auth when configured; otherwise a **development-only mock** (localStorage). Mock auth is disabled in production—configure Firebase for real deployments.
@@ -16,7 +16,7 @@ A high-performance aggregator that uses **Google Gemini AI** to parse messy Face
 -   **Frontend**: React 19, TypeScript
 -   **Styling**: Tailwind CSS
 -   **Maps**: Leaflet / React-Leaflet
--   **AI**: Google GenAI SDK (Gemini 3 Flash/Pro)
+-   **AI**: Google GenAI SDK (Gemini 2.5 Flash)
 -   **Storage**: IndexedDB (via native API)
 
 ## Setup
