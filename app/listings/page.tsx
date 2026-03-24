@@ -11,7 +11,7 @@ import { HeartIcon } from '@/components/Icons';
 import ListingCarousel from '@/components/ListingCarousel';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
-import AuthModal from '@/components/AuthModal';
+import AuthModal from '@/components/shared/AuthModal';
 import AddListingModal from '@/components/AddListingModal';
 import { useSaved } from '@/contexts/SavedContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
@@ -45,6 +45,7 @@ const INITIAL_FILTERS: Filters = {
   endDate: '',
   dateMode: DateMode.FLEXIBLE,
   petsAllowed: false,
+  onlyWithPrice: true,
   rentTerm: RentTerm.ALL,
   postedWithin: 'all',
 };

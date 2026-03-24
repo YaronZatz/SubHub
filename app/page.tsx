@@ -66,6 +66,7 @@ const INITIAL_FILTERS: Filters = {
   endDate: '',
   dateMode: DateMode.FLEXIBLE,
   petsAllowed: false,
+  onlyWithPrice: true,
   rentTerm: RentTerm.ALL,
   postedWithin: 'all',
 };

@@ -10,7 +10,7 @@ import { persistenceService } from '@/services/persistenceService';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { HeartIcon } from '@/components/Icons';
-import { Sublet } from '@/types';
+import { Sublet, CurrencyCode } from '@/types';
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
@@ -87,7 +87,7 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
           </div>
           {sublet.price > 0 && (
             <p className="shrink-0 text-sm font-black text-slate-900">
-              {formatPrice(sublet.price, sublet.currency ?? currency)}
+              {formatPrice(sublet.price, (sublet.currency ?? currency) as CurrencyCode)}
               <span className="text-xs font-normal text-slate-400">/mo</span>
             </p>
           )}
