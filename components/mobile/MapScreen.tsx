@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import ListingCarousel from '@/components/ListingCarousel';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import AuthModal from '@/components/shared/AuthModal';
+import { useSaved } from '@/contexts/SavedContext';
 import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ const INITIAL_FILTERS: Filters = {
   minPrice: 0, maxPrice: PRICE_MAX, showTaken: false, type: undefined,
   city: '', neighborhood: '', startDate: '', endDate: '',
   dateMode: DateMode.FLEXIBLE, petsAllowed: false,
+  onlyWithPrice: true,
   rentTerm: RentTerm.ALL, postedWithin: 'all',
   minRooms: undefined, maxRooms: undefined,
 };
@@ -259,6 +261,15 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
                 </button>
               ))}
             </div>
+          </section>
+
+          {/* Post Quality */}
+          <section className="space-y-4">
+            <span className={sLabel}>Post Quality</span>
+            <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600'}`}>
+              <span>💰</span> With Price
+            </button>
           </section>
 
           {/* Amenities */}
@@ -489,6 +500,10 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
 }) {
   const isTaken   = s.status === ListingStatus.TAKEN;
   const dateRange = getDateRange(s);
+  const postTs    = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
+  const hoursAgo  = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
+  const daysAgo   = Math.max(1, Math.floor(hoursAgo / 24));
+  const isNew     = hoursAgo < 24;
 
   return (
     <div
@@ -507,6 +522,17 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
               <span className="text-slate-400 font-normal text-[10px] ml-0.5">/mo</span>
             </span>
           </div>
+          {/* Time-ago badge — top left */}
+          {isNew ? (
+            <div className="absolute top-2 left-2 z-20 flex items-center gap-1 bg-cyan-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100 pointer-events-none">
+              <span className="w-1 h-1 bg-white rounded-full" />
+              {hoursAgo}h ago
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 z-20 bg-slate-500/80 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
+              {daysAgo > 30 ? '30+' : daysAgo}d ago
+            </div>
+          )}
           {isTaken && (
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30 pointer-events-none">
               <span className="text-white text-[10px] font-bold border border-white/40 rounded-full px-3 py-1">Taken</span>
@@ -549,9 +575,8 @@ export default function MapScreen() {
   const [searchQuery,    setSearchQuery]    = useState('');
   const [selectedId,     setSelectedId]     = useState<string | undefined>();
   const [cityFlyTo,      setCityFlyTo]      = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
-  const [savedIds,       setSavedIds]       = useState<Set<string>>(new Set());
+  const { savedIds, toggle: toggleSavedById, showSignInModal, closeSignInModal } = useSaved();
   const [authModalOpen,  setAuthModalOpen]  = useState(false);
-  const [pendingSaveId,  setPendingSaveId]  = useState<string | null>(null);
   const [toastMessage,   setToastMessage]   = useState<string | null>(null);
   const [drawerOpen,     setDrawerOpen]     = useState(false);
   const [profileOpen,    setProfileOpen]    = useState(false);
@@ -778,9 +803,11 @@ export default function MapScreen() {
         matchesPostedWithin = s.createdAt >= cutoff;
       }
 
+      const matchesPrice2 = !filters.onlyWithPrice || (s.price && s.price > 0);
+
       return matchesSearch && matchesPrice && matchesStatus && matchesType
         && matchesCity && matchesNbhd && matchesDates && matchesRentTerm
-        && matchesBeds && matchesFurnished && matchesPostedWithin;
+        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2;
     });
   }, [sublets, filters, searchQuery]);
 
@@ -821,15 +848,10 @@ export default function MapScreen() {
   const handleSave = useCallback((e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) { setPendingSaveId(id); setAuthModalOpen(true); return; }
-    setSavedIds(prev => {
-      const next     = new Set(prev);
-      const willSave = !next.has(id);
-      if (willSave) { next.add(id); setToastMessage('Saved ♡'); }
-      else next.delete(id);
-      return next;
-    });
-  }, [user]);
+    const willSave = !savedIds.has(id);
+    toggleSavedById(id);
+    if (willSave && user) setToastMessage('Saved ♡');
+  }, [savedIds, toggleSavedById, user]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(INITIAL_FILTERS);
@@ -1142,16 +1164,12 @@ export default function MapScreen() {
       />
 
       {/* Auth modal — save flow */}
-      {authModalOpen && pendingSaveId && (
+      {showSignInModal && (
         <AuthModal
           reason="save"
           initialMode="signup"
-          onSuccess={() => {
-            setSavedIds(prev => { const next = new Set(prev); next.add(pendingSaveId!); return next; });
-            setToastMessage('Saved ♡');
-            setPendingSaveId(null);
-          }}
-          onClose={() => { setAuthModalOpen(false); setPendingSaveId(null); }}
+          onSuccess={() => setToastMessage('Saved ♡')}
+          onClose={closeSignInModal}
         />
       )}
 

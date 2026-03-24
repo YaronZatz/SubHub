@@ -6,6 +6,8 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import WebNavbar from '@/components/web/WebNavbar';
 import ListingCarousel from '@/components/ListingCarousel';
+import PhotoGallery from '@/components/PhotoGallery';
+import { isDirectImageUrl, enhanceImageUrl } from '@/utils/imageUtils';
 import AuthModal, { type AuthModalReason } from '@/components/shared/AuthModal';
 import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
@@ -14,6 +16,8 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
 import { Sublet, ListingStatus, CurrencyCode } from '@/types';
+
+const LANG_STORAGE_KEY = 'subhub_lang';
 
 // Google Maps mini-map (client-only, uses window)
 const MiniMap = dynamic(() => import('@/components/listing/MiniMap'), { ssr: false });
@@ -36,6 +40,19 @@ function getDateRange(s: Sublet): string {
 
 function getBeds(s: Sublet): number | null {
   return s.parsedRooms?.bedrooms ?? s.rooms?.bedrooms ?? null;
+}
+
+/** Direction for user-generated text so Hebrew posts read RTL while the UI stays English/LTR. */
+function contentTextDir(text: string | undefined | null): 'rtl' | 'ltr' {
+  if (!text?.trim()) return 'ltr';
+  const he = (text.match(/[\u0590-\u05FF]/g) || []).length;
+  const lat = (text.match(/[A-Za-zÀ-ÿ]/g) || []).length;
+  if (he === 0 && lat === 0) return 'ltr';
+  return he > lat ? 'rtl' : 'ltr';
+}
+
+function contentBodyClass(dir: 'rtl' | 'ltr', base: string): string {
+  return dir === 'rtl' ? `${base} font-sans` : base;
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
@@ -92,9 +109,29 @@ export default function ListingDetailPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<AuthModalReason>('general');
   const [pendingAction, setPendingAction] = useState<'save' | 'contact' | null>(null);
-  const [showOriginal, setShowOriginal] = useState(true);
   const [shareCopied, setShareCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [lang, setLang] = useState('en');
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // UI language (navbar): drives page chrome direction & price locale, not post body direction
+  useEffect(() => {
+    const sync = () => {
+      try {
+        setLang(localStorage.getItem(LANG_STORAGE_KEY) || 'en');
+      } catch {
+        setLang('en');
+      }
+    };
+    sync();
+    window.addEventListener('storage', sync);
+    window.addEventListener('subhub_lang_change', sync);
+    return () => {
+      window.removeEventListener('storage', sync);
+      window.removeEventListener('subhub_lang_change', sync);
+    };
+  }, []);
 
   // Fetch listing
   useEffect(() => {
@@ -167,9 +204,21 @@ export default function ListingDetailPage() {
   const beds = sublet ? getBeds(sublet) : null;
   const dateRange = sublet ? getDateRange(sublet) : '';
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
+  const pageTitleText = sublet ? getPageTitle(sublet) : '';
+  const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
+  const addressLine = sublet ? (sublet.fullAddress || sublet.location || '') : '';
+  const addressDir = contentTextDir(addressLine || null);
+  const summaryDir = contentTextDir(sublet?.ai_summary ?? null);
+  const originalDir = contentTextDir(sublet?.originalText ?? null);
+  const isUiRTL = lang === 'he';
+  const priceLocale = isUiRTL ? 'he-IL' : 'en-US';
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className={`min-h-screen bg-white ${isUiRTL ? 'font-sans' : ''}`}
+      dir={isUiRTL ? 'rtl' : 'ltr'}
+      lang={isUiRTL ? 'he' : 'en'}
+    >
       {/* ── Navbar ── */}
       <WebNavbar />
 
@@ -179,7 +228,13 @@ export default function ListingDetailPage() {
           href="/map"
           className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors group"
         >
-          <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg
+            className={`w-4 h-4 transition-transform ${isUiRTL ? 'rotate-180 group-hover:translate-x-0.5' : 'group-hover:-translate-x-0.5'}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Back to map
@@ -227,7 +282,11 @@ export default function ListingDetailPage() {
             {/* Title */}
             <div className="mb-4">
               <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-2xl md:text-3xl font-black text-slate-900">
+                <h1
+                  className={contentBodyClass(pageTitleDir, 'text-2xl md:text-3xl font-black text-slate-900')}
+                  dir={pageTitleDir}
+                  {...(pageTitleDir === 'rtl' ? { lang: 'he' as const } : {})}
+                >
                   {getPageTitle(sublet)}
                 </h1>
                 {hasAI && (
@@ -242,22 +301,40 @@ export default function ListingDetailPage() {
                 )}
               </div>
               {sublet.fullAddress || sublet.location ? (
-                <p className="text-slate-500 mt-1 text-sm">
+                <p
+                  className={contentBodyClass(addressDir, 'text-slate-500 mt-1 text-sm')}
+                  dir={addressDir}
+                  {...(addressDir === 'rtl' ? { lang: 'he' as const } : {})}
+                >
                   {sublet.fullAddress || sublet.location}
                 </p>
               ) : null}
             </div>
 
             {/* Photo Gallery */}
-            <div className="mb-8 rounded-2xl overflow-hidden">
-              <ListingCarousel
-                id={sublet.id}
-                images={sublet.images}
-                sourceUrl={sublet.sourceUrl}
-                photoCount={sublet.photoCount}
-                aspectRatio="aspect-[16/9] md:aspect-[21/8]"
-              />
-            </div>
+            {(() => {
+              const galleryImages = (sublet.images ?? []).filter(isDirectImageUrl).map(enhanceImageUrl);
+              return galleryImages.length > 0 ? (
+                <div className="mb-8">
+                  <PhotoGallery
+                    images={galleryImages}
+                    alt={sublet.location}
+                    onShowAll={() => { setLightboxIndex(0); setShowLightbox(true); }}
+                    onImageClick={(i) => { setLightboxIndex(i); setShowLightbox(true); }}
+                  />
+                </div>
+              ) : (
+                <div className="mb-8 rounded-2xl overflow-hidden">
+                  <ListingCarousel
+                    id={sublet.id}
+                    images={sublet.images}
+                    sourceUrl={sublet.sourceUrl}
+                    photoCount={sublet.photoCount}
+                    aspectRatio="aspect-[16/9] md:aspect-[21/8]"
+                  />
+                </div>
+              );
+            })()}
 
             {/* Two-column layout */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -311,37 +388,38 @@ export default function ListingDetailPage() {
                 <div className="space-y-4">
                   <h2 className="text-lg font-bold text-slate-900">About this place</h2>
                   {sublet.ai_summary ? (
-                    <>
-                      <p className="text-slate-600 leading-relaxed whitespace-pre-line text-sm">
+                    <div className="space-y-5">
+                      <p
+                        className={contentBodyClass(summaryDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
+                        dir={summaryDir}
+                        {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
+                      >
                         {sublet.ai_summary}
                       </p>
-                      {/* Collapsible original post */}
-                      <div className="border border-slate-200 rounded-xl overflow-hidden">
-                        <button
-                          onClick={() => setShowOriginal(v => !v)}
-                          className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                        >
-                          <span className="flex items-center gap-2">
-                            <svg className="w-4 h-4 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24">
+                      {sublet.originalText?.trim() ? (
+                        <aside className="pt-5 mt-1 border-t border-slate-100">
+                          <div className="flex items-center gap-2 mb-3" dir="ltr" lang="en">
+                            <svg className="w-4 h-4 text-[#1877F2] shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
-                            Show original post
-                          </span>
-                          <svg className={`w-4 h-4 transition-transform ${showOriginal ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
-                        {showOriginal && (
-                          <div className="px-4 pb-4 pt-2 border-t border-slate-100 bg-slate-50">
-                            <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-line">
-                              {sublet.originalText}
-                            </p>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">Original post</span>
                           </div>
-                        )}
-                      </div>
-                    </>
+                          <p
+                            className={contentBodyClass(originalDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
+                            dir={originalDir}
+                            {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}
+                          >
+                            {sublet.originalText}
+                          </p>
+                        </aside>
+                      ) : null}
+                    </div>
                   ) : (
-                    <p className="text-slate-600 leading-relaxed whitespace-pre-line text-sm">
+                    <p
+                      className={contentBodyClass(originalDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
+                      dir={originalDir}
+                      {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}
+                    >
                       {sublet.originalText}
                     </p>
                   )}
@@ -418,7 +496,7 @@ export default function ListingDetailPage() {
                           href={sublet.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ml-auto text-xs font-semibold text-[#1877F2] hover:underline"
+                          className="ms-auto text-xs font-semibold text-[#1877F2] hover:underline"
                         >
                           View post →
                         </a>
@@ -435,7 +513,7 @@ export default function ListingDetailPage() {
                   <div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-3xl font-black text-slate-900">
-                        {formatPrice(sublet.price, currency as CurrencyCode, 'en-US', sublet.currency)}
+                        {formatPrice(sublet.price, currency as CurrencyCode, priceLocale, sublet.currency)}
                       </span>
                       <span className="text-slate-500 font-medium">/mo</span>
                     </div>
@@ -448,7 +526,7 @@ export default function ListingDetailPage() {
                   {(sublet.startDate || sublet.endDate) && (
                     <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
                       <div className="grid grid-cols-2">
-                        <div className="p-3 border-r border-slate-200">
+                        <div className="p-3 border-e border-slate-200">
                           <div className="font-black uppercase text-slate-400 text-[9px] tracking-widest mb-1">From</div>
                           <div className="text-slate-900 font-bold">{formatDate(sublet.startDate) || '—'}</div>
                         </div>
@@ -503,7 +581,7 @@ export default function ListingDetailPage() {
         <div className="lg:hidden fixed bottom-16 inset-x-0 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3 z-40">
           <div className="flex-1">
             <p className="font-black text-slate-900">
-              {formatPrice(sublet.price, currency as CurrencyCode, 'en-US', sublet.currency)}
+              {formatPrice(sublet.price, currency as CurrencyCode, priceLocale, sublet.currency)}
               <span className="text-slate-500 font-medium text-sm"> /mo</span>
             </p>
             {dateRange && <p className="text-xs text-slate-500">{dateRange}</p>}
@@ -521,13 +599,77 @@ export default function ListingDetailPage() {
       {/* ── Floating "Back to map" button (mobile, visible after scrolling) ── */}
       <Link
         href="/map"
-        className="lg:hidden fixed bottom-36 left-4 z-40 flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+        className="lg:hidden fixed bottom-36 start-4 z-40 flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
       >
-        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <svg
+          className={`w-3.5 h-3.5 ${isUiRTL ? 'rotate-180' : ''}`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
         </svg>
         Map
       </Link>
+
+      {/* ── Lightbox ── */}
+      {showLightbox && (() => {
+        const imgs = (sublet?.images ?? []).filter(isDirectImageUrl).map(enhanceImageUrl);
+        if (!imgs.length) return null;
+        return (
+          <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
+            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+              <button
+                onClick={() => setShowLightbox(false)}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <span className="text-white/70 text-sm font-medium">{lightboxIndex + 1} / {imgs.length}</span>
+              <div className="w-9" />
+            </div>
+            <div className="flex-1 flex items-center justify-center relative overflow-hidden px-12">
+              <img
+                src={imgs[lightboxIndex]}
+                alt={`${sublet?.location} ${lightboxIndex + 1}`}
+                className="max-h-full max-w-full object-contain select-none"
+                referrerPolicy="no-referrer"
+                draggable={false}
+              />
+              {imgs.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setLightboxIndex(i => (i - 1 + imgs.length) % imgs.length)}
+                    className="absolute left-2 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+                  <button
+                    onClick={() => setLightboxIndex(i => (i + 1) % imgs.length)}
+                    className="absolute right-2 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="flex gap-2 overflow-x-auto px-4 py-3 shrink-0 snap-x">
+              {imgs.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLightboxIndex(i)}
+                  className={`relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all snap-start ${lightboxIndex === i ? 'border-white' : 'border-transparent opacity-50 hover:opacity-80'}`}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Auth Modal ── */}
       {authModalOpen && (

@@ -10,6 +10,7 @@ import { ExternalLinkIcon, InfoIcon, ChevronLeftIcon, ChevronRightIcon } from '.
 import { TranslatedText } from './TranslatedText';
 import LanguageSwitcher from './LanguageSwitcher';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
+import PhotoGallery from './PhotoGallery';
 
 const SWIPE_THRESHOLD = 50;
 
@@ -41,6 +42,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const [showLightbox, setShowLightbox] = useState(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
@@ -329,94 +331,113 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
           );
         })()}
 
-        {/* Responsive Image Gallery */}
-        <div className="mb-8 space-y-3">
-          {images.length === 0 && (
+        {/* Airbnb-style Photo Gallery */}
+        <div className="mb-8">
+          {images.length === 0 ? (
             <div className="aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-400">
               <svg className="w-12 h-12 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="text-xs font-semibold uppercase tracking-widest opacity-50">No photos</span>
             </div>
+          ) : (
+            <PhotoGallery
+              images={images}
+              alt={sublet.location}
+              onShowAll={() => { setActiveImgIndex(0); setShowLightbox(true); }}
+            />
           )}
-          {/* Main Viewer + Thumbnail Strip — hidden when no images */}
-          {images.length > 0 && <>
-          <div
-            ref={galleryRef}
-            className="relative aspect-[16/9] md:aspect-[21/9] w-full rounded-2xl overflow-hidden bg-slate-100 group shadow-lg select-none touch-pan-y"
-            style={{ touchAction: 'pan-y' }}
-          >
+        </div>
+
+        {/* Lightbox — fullscreen swipe carousel */}
+        {showLightbox && images.length > 0 && (
+          <div className="fixed inset-0 z-[200] bg-black/95 flex flex-col">
+            {/* Lightbox header */}
+            <div className="flex items-center justify-between px-4 py-3 shrink-0">
+              <button
+                onClick={() => setShowLightbox(false)}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <span className="text-white/70 text-sm font-medium">{activeImgIndex + 1} / {images.length}</span>
+              <div className="w-9" />
+            </div>
+
+            {/* Main image */}
             <div
-              className="flex h-full w-full"
-              style={{
-                width: `${images.length * 100}%`,
-                transform: `translateX(calc(-${activeImgIndex * (100 / images.length)}% + ${touchDelta}px))`,
-                transition: touchDelta !== 0 ? 'none' : 'transform 0.3s ease-out',
-              }}
+              ref={galleryRef}
+              className="flex-1 relative overflow-hidden select-none"
+              style={{ touchAction: 'pan-y' }}
             >
-              {images.map((src, i) => (
-                <div key={i} className="shrink-0 w-full h-full" style={{ flex: `0 0 ${100 / images.length}%` }}>
-                  {failedImages.has(i) ? (
-                    <div className="w-full h-full bg-slate-100 flex items-center justify-center">
-                      <svg className="w-10 h-10 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                  ) : (
-                    <img
-                      src={src}
-                      className="w-full h-full object-cover select-none"
-                      alt={`View ${i + 1}`}
-                      loading={i === 0 ? 'eager' : 'lazy'}
-                      draggable={false}
-                      referrerPolicy="no-referrer"
-                      onError={() => handleImageError(i)}
-                    />
-                  )}
-                </div>
+              <div
+                className="flex h-full"
+                style={{
+                  width: `${images.length * 100}%`,
+                  transform: `translateX(calc(-${activeImgIndex * (100 / images.length)}% + ${touchDelta}px))`,
+                  transition: touchDelta !== 0 ? 'none' : 'transform 0.3s ease-out',
+                }}
+              >
+                {images.map((src, i) => (
+                  <div key={i} className="shrink-0 h-full flex items-center justify-center" style={{ flex: `0 0 ${100 / images.length}%` }}>
+                    {failedImages.has(i) ? (
+                      <div className="flex items-center justify-center text-white/30">
+                        <svg className="w-16 h-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <img
+                        src={src}
+                        className="max-h-full max-w-full object-contain select-none"
+                        alt={`${sublet.location} ${i + 1}`}
+                        loading={i === 0 ? 'eager' : 'lazy'}
+                        draggable={false}
+                        referrerPolicy="no-referrer"
+                        onError={() => handleImageError(i)}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Prev/Next arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute top-1/2 -translate-y-1/2 left-4 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                  >
+                    <ChevronLeftIcon className="w-6 h-6" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute top-1/2 -translate-y-1/2 right-4 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+                  >
+                    <ChevronRightIcon className="w-6 h-6" />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnail strip */}
+            <div className="flex gap-2 overflow-x-auto px-4 py-3 shrink-0 no-scrollbar snap-x">
+              {images.map((img, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActiveImgIndex(i)}
+                  className={`relative shrink-0 w-16 h-12 rounded-lg overflow-hidden border-2 transition-all snap-start
+                    ${activeImgIndex === i ? 'border-white shadow-md' : 'border-transparent opacity-50 hover:opacity-80'}
+                  `}
+                >
+                  <img src={img} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.closest('button')?.classList.add('hidden'); }} />
+                </button>
               ))}
             </div>
-
-            {/* Nav Arrows */}
-            {images.length > 1 && (
-              <>
-                <button 
-                  onClick={prevImage}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'right-4' : 'left-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-10`}
-                >
-                  <ChevronLeftIcon className="w-6 h-6" />
-                </button>
-                <button 
-                  onClick={nextImage}
-                  className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? 'left-4' : 'right-4'} p-2 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/40 transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-10`}
-                >
-                  <ChevronRightIcon className="w-6 h-6" />
-                </button>
-              </>
-            )}
-
-            {/* Counter Overlay */}
-            <div className="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest z-10">
-              {activeImgIndex + 1} / {images.length}
-            </div>
           </div>
-
-          {/* Thumbnail Strip */}
-          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar snap-x no-scrollbar md:justify-center">
-            {images.map((img, i) => (
-              <button 
-                key={i} 
-                onClick={() => setActiveImgIndex(i)}
-                className={`relative shrink-0 w-20 h-14 md:w-28 md:h-20 rounded-xl overflow-hidden border-2 transition-all snap-start
-                  ${activeImgIndex === i ? 'border-cyan-600 ring-2 ring-cyan-600/20 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'}
-                `}
-              >
-                <img src={img.includes('base64') ? img : img.replace('1200/800', '300/200')} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.closest('button')?.classList.add('hidden'); }} />
-              </button>
-            ))}
-          </div>
-          </>}
-        </div>
+        )}
 
         {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

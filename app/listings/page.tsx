@@ -13,6 +13,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
 import AuthModal from '@/components/AuthModal';
 import AddListingModal from '@/components/AddListingModal';
+import { useSaved } from '@/contexts/SavedContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '@/constants';
 
@@ -56,7 +57,7 @@ export default function ListingsPage() {
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [language, setLanguage] = useState<Language>(Language.EN);
-  const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
+  const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal, closeSignInModal } = useSaved();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -143,18 +144,14 @@ export default function ListingsPage() {
 
   const toggleSaved = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setSavedListingIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+    toggleSavedById(id);
   };
 
-  const addedAgo = (createdAt: number) => {
-    const h = Math.max(0, Math.floor((Date.now() - createdAt) / (60 * 60 * 1000)));
-    if (h < 24) return `${h}h`;
-    const d = Math.floor(h / 24);
-    return d <= 1 ? '1d' : `${d}d`;
+  const getTimeAgo = (sublet: { createdAt: number; postedAt?: string | null }) => {
+    const postTs = sublet.postedAt ? (new Date(sublet.postedAt).getTime() || sublet.createdAt) : sublet.createdAt;
+    const h = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
+    const d = Math.max(1, Math.floor(h / 24));
+    return { h, d, isNew: h < 24 };
   };
 
   return (
@@ -379,9 +376,16 @@ export default function ListingsPage() {
                         savedListingIds.has(sublet.id) ? 'fill-red-500 text-red-500' : 'text-slate-600'
                       }`} />
                     </button>
-                    <div className="absolute top-3 left-3 z-10 bg-black/50 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                      {addedAgo(sublet.createdAt)} ago
-                    </div>
+                    {(() => { const { h, d, isNew } = getTimeAgo(sublet); return isNew ? (
+                      <div className="absolute top-3 left-3 z-10 flex items-center gap-1 bg-cyan-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100">
+                        <span className="w-1 h-1 bg-white rounded-full" />
+                        Added {h}h ago
+                      </div>
+                    ) : (
+                      <div className="absolute top-3 left-3 z-10 bg-slate-500/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                        Added {d > 30 ? '30+' : d}d ago
+                      </div>
+                    ); })()}
                     {sublet.status === ListingStatus.TAKEN && (
                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                         <span className="bg-red-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase">Taken</span>
@@ -687,6 +691,11 @@ export default function ListingsPage() {
       {/* Auth Modal */}
       {isAuthModalOpen && (
         <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+      )}
+
+      {/* Sign-in-to-save modal */}
+      {showSignInModal && (
+        <AuthModal reason="save" initialMode="signup" onClose={closeSignInModal} />
       )}
 
       {/* Add Listing Modal */}
