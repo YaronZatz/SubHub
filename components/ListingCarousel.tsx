@@ -148,9 +148,9 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       <div
         ref={containerRef}
         className={`relative overflow-hidden ${aspectRatio} ${className}`}
-        style={{
-          background: `linear-gradient(135deg, ${color1}, ${color2})`,
-        }}
+        style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
       >
         <div className="absolute inset-0 flex flex-col items-center justify-center text-white/80">
           <svg className="w-12 h-12 mb-2 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -199,6 +199,8 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       ref={containerRef}
       className={`relative group overflow-hidden touch-pan-y ${aspectRatio} ${className}`}
       style={{ touchAction: 'pan-y' }}
+      onClick={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
     >
       {/* Image Slider */}
       <div 
@@ -233,14 +235,16 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
       {/* Navigation Controls */}
       {images.length > 1 && (
         <>
-          <button 
+          <button
             onClick={prev}
+            onDoubleClick={(e) => e.stopPropagation()}
             className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/70 backdrop-blur-md text-slate-800 opacity-0 group-hover:opacity-100 transition-all hover:bg-white active:scale-90 z-10 shadow-sm"
           >
             <ChevronLeftIcon className="w-4 h-4" />
           </button>
-          <button 
+          <button
             onClick={next}
+            onDoubleClick={(e) => e.stopPropagation()}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/70 backdrop-blur-md text-slate-800 opacity-0 group-hover:opacity-100 transition-all hover:bg-white active:scale-90 z-10 shadow-sm"
           >
             <ChevronRightIcon className="w-4 h-4" />

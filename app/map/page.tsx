@@ -42,6 +42,7 @@ const INITIAL_FILTERS: Filters = {
   endDate: '',
   dateMode: DateMode.FLEXIBLE,
   petsAllowed: false,
+  onlyWithPrice: true,
   rentTerm: RentTerm.ALL,
   postedWithin: 'all',
   minRooms: undefined,
@@ -254,6 +255,15 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             </div>
           </section>
 
+          {/* Post Quality */}
+          <section className="space-y-4">
+            <span className={sLabel}>Post Quality</span>
+            <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+              <span>💰</span> With Price
+            </button>
+          </section>
+
           {/* Amenities */}
           <section className="space-y-4">
             <span className={sLabel}>Amenities</span>
@@ -308,6 +318,10 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
     const dateRange = getDateRange(s);
     const hasAI = !!(s.ai_summary || s.parsedAmenities || s.parsedRooms || s.rooms);
     const isTaken = s.status === ListingStatus.TAKEN;
+    const postTs = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
+    const hoursAgo = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
+    const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
+    const isNew = hoursAgo < 24;
 
     return (
       <div
@@ -341,6 +355,18 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
               <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1 bg-[#F5831F] text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow pointer-events-none">
                 <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z"/></svg>
                 AI Parsed
+              </div>
+            )}
+
+            {/* Time-ago badge — bottom left */}
+            {isNew ? (
+              <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1 bg-cyan-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100 pointer-events-none">
+                <span className="w-1 h-1 bg-white rounded-full" />
+                Added {hoursAgo}h ago
+              </div>
+            ) : (
+              <div className="absolute bottom-2.5 left-2.5 z-20 bg-slate-500/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
+                Added {daysAgo > 30 ? '30+' : daysAgo}d ago
               </div>
             )}
 
@@ -516,9 +542,11 @@ function WebMapPage() {
         matchesPostedWithin = s.createdAt >= cutoff;
       }
 
+      const matchesPrice2 = !filters.onlyWithPrice || (s.price && s.price > 0);
+
       return matchesSearch && matchesPrice && matchesStatus && matchesType
         && matchesCity && matchesNeighborhood && matchesDates && matchesRentTerm
-        && matchesBeds && matchesFurnished && matchesPostedWithin;
+        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2;
     });
   }, [sublets, filters, searchQuery]);
 

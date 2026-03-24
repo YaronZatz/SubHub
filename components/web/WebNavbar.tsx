@@ -188,6 +188,7 @@ export default function WebNavbar() {
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem('subhub_lang', lang);
+    window.dispatchEvent(new Event('subhub_lang_change'));
     const matched = LANG_CURRENCY[lang];
     if (matched) setCurrency(matched);
   };
