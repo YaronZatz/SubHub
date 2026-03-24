@@ -119,6 +119,7 @@ export async function startApifyRun(
           runId: '{{resource.id}}',
           status: '{{resource.status}}',
         }),
+        shouldInterpolateStrings: true,
       } satisfies WebhookUpdateData,
     ];
   }
