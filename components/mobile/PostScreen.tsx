@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { extractListingFromText } from '@/actions/gemini';
+import { extractListingFromText, extractListingFromImage } from '@/actions/gemini';
 import { geocodeAddress } from '@/services/geocodingService';
 import { persistenceService } from '@/services/persistenceService';
 import { auth } from '@/lib/firebase';
@@ -72,9 +72,9 @@ function ProgressDots({ step }: { step: number }) {
           key={s}
           className={`rounded-full transition-all duration-300 ${
             s === step
-              ? 'w-6 h-2 bg-[#4A7CC7]'
+              ? 'w-6 h-2 bg-gradient-to-r from-[#2F6EA8] to-[#F97316]'
               : s < step
-              ? 'w-2 h-2 bg-[#4A7CC7]/40'
+              ? 'w-2 h-2 bg-[#2F6EA8]/40'
               : 'w-2 h-2 bg-slate-200'
           }`}
         />
@@ -153,10 +153,12 @@ function PreviewCard({
   form,
   aiResult,
   user,
+  images,
 }: {
   form: FormState;
   aiResult: GeminiResult | null;
   user: { name: string; email: string } | null;
+  images?: string[];
 }) {
   const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
   const sym = currencySymbol[form.currency] ?? form.currency;
@@ -167,18 +169,29 @@ function PreviewCard({
     [SubletType.STUDIO]: 'Studio',
   };
 
+  const hasPhotos = images && images.length > 0;
+
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
       {/* Image */}
       <div className="w-full h-44 relative" style={{ backgroundColor: '#d0dff5' }}>
-        <div className="w-full h-full flex items-center justify-center">
-          <svg className="w-10 h-10 text-[#4A7CC7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-        </div>
+        {hasPhotos ? (
+          <img src={images[0]} alt="Listing preview" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <svg className="w-10 h-10 text-[#4A7CC7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        )}
         {aiResult && (
           <span className="absolute top-2 left-2 px-2 py-0.5 text-[10px] font-black text-white rounded-full" style={{ backgroundColor: '#F5831F' }}>
             AI PARSED
+          </span>
+        )}
+        {hasPhotos && images.length > 1 && (
+          <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+            +{images.length - 1} more
           </span>
         )}
       </div>
@@ -250,6 +263,79 @@ export function MobilePostScreen() {
   const [publishError, setPublishError] = useState('');
   const [published, setPublished] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+
+  const processImage = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          const MAX = 1000;
+          if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+          else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  const handlePhotoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const max = 10 - extractedImages.length;
+    const toProcess = Array.from(files).slice(0, max);
+    const newImages: string[] = [];
+    for (const file of toProcess) {
+      try {
+        newImages.push(await processImage(file));
+      } catch { /* skip failed */ }
+    }
+    setExtractedImages(prev => [...prev, ...newImages]);
+    e.target.value = '';
+  }, [extractedImages.length, processImage]);
+
+  const handleScanUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsAnalyzing(true);
+    setAiError('');
+    try {
+      const base64 = await processImage(file);
+      const result = await extractListingFromImage(base64, 'image/jpeg');
+      setAiResult(result);
+      setExtractedImages(prev => [...prev, base64]);
+      setForm(f => ({
+        ...f,
+        type: result.type ?? f.type,
+        title: result.extractedTitle ?? result.location ?? f.title,
+        location: result.location ?? f.location,
+        price: result.price ? String(result.price) : f.price,
+        currency: result.currency ?? f.currency,
+        startDate: result.startDate ?? f.startDate,
+        endDate: result.endDate ?? f.endDate,
+        description: result.extractedDescription ?? f.description,
+      }));
+    } catch {
+      setAiError('Failed to extract from image. Fill details manually.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+    e.target.value = '';
+  }, [processImage]);
+
+  const removeImage = useCallback((idx: number) => {
+    setExtractedImages(prev => prev.filter((_, i) => i !== idx));
+  }, []);
 
   // ── AI analyze ─────────────────────────────────────────────────────────────
 
@@ -378,11 +464,11 @@ export function MobilePostScreen() {
 
       {/* ── Header ── */}
       <div className="bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0 flex items-center justify-between">
-        <div className="w-8">
+        <div className="w-11">
           {step === 1 ? (
             <button
               onClick={() => router.back()}
-              className="w-8 h-8 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors"
+              className="w-11 h-11 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors -ml-1.5"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -391,7 +477,7 @@ export function MobilePostScreen() {
           ) : (
             <button
               onClick={() => setStep(s => (s - 1) as 1 | 2 | 3)}
-              className="w-8 h-8 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 transition-colors"
+              className="w-11 h-11 flex items-center justify-center text-slate-500 rounded-full hover:bg-slate-100 active:bg-slate-200 transition-colors -ml-1.5"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -438,7 +524,7 @@ export function MobilePostScreen() {
 
           {/* ════════════════ STEP 2 ════════════════ */}
           {step === 2 && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 bg-[#4A7CC7]/10 text-[#4A7CC7] text-xs font-black rounded-full">✨ Gemini AI</span>
                 <span className="text-xs text-slate-400">powered extraction</span>
@@ -461,7 +547,7 @@ export function MobilePostScreen() {
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || !pasteUrl.trim()}
-                className="w-full py-3 bg-[#4A7CC7] text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full min-h-[44px] py-3 bg-[#4A7CC7] text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 active:scale-[0.97]"
               >
                 {isAnalyzing ? (
                   <>
@@ -470,6 +556,67 @@ export function MobilePostScreen() {
                   </>
                 ) : 'Fetch & Analyze'}
               </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 py-1">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-xs font-bold text-slate-400 uppercase">or upload photos</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              {/* Photo upload section */}
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => scanInputRef.current?.click()}
+                    disabled={isAnalyzing}
+                    className="flex-1 min-h-[48px] py-3 bg-[#F97316] text-white text-sm font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-all disabled:opacity-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {isAnalyzing ? 'Scanning...' : 'Scan Screenshot'}
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 min-h-[48px] py-3 bg-white border-2 border-slate-200 text-slate-700 text-sm font-bold rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-all"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Add Photos
+                  </button>
+                </div>
+                <input type="file" ref={scanInputRef} onChange={handleScanUpload} accept="image/*" capture="environment" className="hidden" />
+                <input type="file" ref={fileInputRef} onChange={handlePhotoUpload} accept="image/*" multiple className="hidden" />
+
+                {extractedImages.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x" style={{ scrollbarWidth: 'none' }}>
+                    {extractedImages.map((url, i) => (
+                      <div key={i} className="relative shrink-0 w-20 h-20 rounded-xl overflow-hidden snap-start">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => removeImage(i)}
+                          className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-6 h-6 min-w-[24px] min-h-[24px] flex items-center justify-center text-xs"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                    {extractedImages.length < 10 && (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="shrink-0 w-20 h-20 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-400 active:bg-slate-50"
+                      >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
 
               {aiError && <p className="text-xs text-red-500 font-medium">{aiError}</p>}
 
@@ -483,7 +630,7 @@ export function MobilePostScreen() {
           {step === 3 && (
             <div className="space-y-4">
               <p className="text-sm font-bold text-slate-500">Review before publishing</p>
-              <PreviewCard form={form} aiResult={aiResult} user={user} />
+              <PreviewCard form={form} aiResult={aiResult} user={user} images={extractedImages} />
 
               {/* Confirmation checkbox */}
               <label className="flex items-start gap-3 cursor-pointer select-none bg-slate-50 rounded-2xl p-4">
@@ -517,11 +664,11 @@ export function MobilePostScreen() {
       </div>
 
       {/* ── Sticky footer ── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 pt-3 pb-6 flex gap-3 shrink-0">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 pt-3 pb-6 flex gap-3 shrink-0 safe-area-bottom">
         {step === 1 && (
           <button
             onClick={() => setStep(2)}
-            className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors hover:bg-[#3b66a6]"
+            className="flex-1 min-h-[48px] py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors active:scale-[0.97]"
           >
             Next →
           </button>
@@ -531,13 +678,13 @@ export function MobilePostScreen() {
           <>
             <button
               onClick={() => setStep(1)}
-              className="px-6 py-3.5 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+              className="px-6 min-h-[48px] py-3.5 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold active:bg-slate-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors hover:bg-[#3b66a6]"
+              className="flex-1 min-h-[48px] py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors active:scale-[0.97]"
             >
               Preview →
             </button>
@@ -548,14 +695,14 @@ export function MobilePostScreen() {
           <>
             <button
               onClick={() => setStep(2)}
-              className="px-6 py-3.5 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50 transition-colors"
+              className="px-6 min-h-[48px] py-3.5 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold active:bg-slate-50 transition-colors"
             >
               Back
             </button>
             <button
               onClick={handlePublish}
               disabled={isPublishing || !confirmed}
-              className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 min-h-[48px] py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 active:scale-[0.97]"
             >
               {isPublishing ? (
                 <>

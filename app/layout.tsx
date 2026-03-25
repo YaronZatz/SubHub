@@ -60,12 +60,13 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{
           __html: `window.process = window.process || { env: {} };`
         }} />
       </head>
-      <body className="antialiased" style={{ margin: 0, minHeight: '100vh' }}>
+      <body className="antialiased overflow-x-hidden" style={{ margin: 0, minHeight: '100vh' }}>
         <AuthProvider>
           <CurrencyProvider>
             <LanguageProvider>
