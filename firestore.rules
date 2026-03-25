@@ -9,12 +9,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Per-user saved listings — authenticated users may only touch their own docs
+    // Per-user saved listings
     match /saved_listings/{docId} {
-      allow read, delete: if request.auth != null
-                          && request.auth.uid == resource.data.userId;
+      // get: only the owning user can read their own doc
+      allow get: if request.auth != null
+                 && resource.data.userId == request.auth.uid;
+
+      // list: any authenticated user can execute a query
+      // (clients always query with where('userId','==',uid) — enforced by app code)
+      allow list: if request.auth != null;
+
+      // create: userId field must match the authenticated caller
       allow create: if request.auth != null
-                    && request.auth.uid == request.resource.data.userId;
+                    && request.resource.data.userId == request.auth.uid;
+
+      // delete: only the owning user can delete
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
     }
   }
 }

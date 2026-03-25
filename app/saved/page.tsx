@@ -106,18 +106,26 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
 
 function SavedContent() {
   const { savedIds, toggle, isLoading: savedLoading } = useSaved();
-  const [allListings, setAllListings] = useState<Sublet[]>([]);
-  const [listingsLoading, setListingsLoading] = useState(true);
+  const [savedListings, setSavedListings] = useState<Sublet[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(false);
 
-  // Fetch all listings once so we can filter by savedIds.
+  // Fetch each saved listing by its specific ID whenever savedIds changes.
   useEffect(() => {
-    persistenceService.fetchListings().then((data) => {
-      setAllListings(data);
+    if (savedLoading) return; // wait until saved IDs are known
+    if (savedIds.size === 0) {
+      setSavedListings([]);
       setListingsLoading(false);
-    });
-  }, []);
+      return;
+    }
+    setListingsLoading(true);
+    Promise.all(Array.from(savedIds).map((id) => persistenceService.fetchListingById(id)))
+      .then((results) => {
+        setSavedListings(results.filter((s): s is Sublet => s !== null));
+        setListingsLoading(false);
+      })
+      .catch(() => setListingsLoading(false));
+  }, [savedIds, savedLoading]);
 
-  const savedListings = allListings.filter((s) => savedIds.has(s.id));
   const isLoading = savedLoading || listingsLoading;
 
   return (
