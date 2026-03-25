@@ -434,7 +434,7 @@ export function MobilePostScreen() {
 
   if (published) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-white px-6 pb-24 text-center">
+      <div className="min-h-full flex flex-col items-center justify-center bg-white px-6 pb-24 text-center">
         <div className="w-16 h-16 rounded-full bg-[#4A7CC7] flex items-center justify-center mb-5">
           <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -460,7 +460,7 @@ export function MobilePostScreen() {
   // ── Layout ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+    <div className="h-full flex flex-col bg-slate-50 overflow-hidden">
 
       {/* ── Header ── */}
       <div className="bg-white border-b border-slate-100 px-4 pt-4 pb-3 shrink-0 flex items-center justify-between">

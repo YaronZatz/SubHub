@@ -872,7 +872,7 @@ export default function MapScreen() {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white">
+    <div className="h-full flex flex-col overflow-hidden bg-white">
 
       {/* ── Header ── */}
       <div className="bg-white shrink-0 px-4 pt-4 pb-3 space-y-3 border-b border-slate-100">

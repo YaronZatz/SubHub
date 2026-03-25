@@ -67,14 +67,20 @@ export default function RootLayout({
           __html: `window.process = window.process || { env: {} };`
         }} />
       </head>
-      <body className="antialiased overflow-x-hidden" style={{ margin: 0, minHeight: '100vh' }}>
+      <body className="antialiased overflow-x-hidden" style={{ margin: 0 }}>
         <AuthProvider>
           <CurrencyProvider>
             <LanguageProvider>
             <SavedProvider>
               <PlatformWrapper
                 web={children}
-                mobile={<div className="pb-20">{children}</div>}
+                mobile={
+                  <div className="fixed inset-0 flex flex-col overflow-hidden">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden pb-20 overscroll-contain">
+                      {children}
+                    </div>
+                  </div>
+                }
               />
             </SavedProvider>
             </LanguageProvider>
