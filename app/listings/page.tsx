@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Sublet, Filters, ListingStatus, Language, DateMode, RentTerm, SubletType } from '@/types';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { persistenceService } from '@/services/persistenceService';
 import { formatPrice } from '@/utils/formatters';
@@ -57,7 +58,7 @@ export default function ListingsPage() {
   const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [language, setLanguage] = useState<Language>(Language.EN);
+  const { language, setLanguage } = useLanguage();
   const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal, closeSignInModal } = useSaved();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);

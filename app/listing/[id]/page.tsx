@@ -12,12 +12,12 @@ import AuthModal, { type AuthModalReason } from '@/components/shared/AuthModal';
 import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
 import { Sublet, ListingStatus, CurrencyCode } from '@/types';
-
-const LANG_STORAGE_KEY = 'subhub_lang';
 
 // Google Maps mini-map (client-only, uses window)
 const MiniMap = dynamic(() => import('@/components/listing/MiniMap'), { ssr: false });
@@ -102,36 +102,21 @@ export default function ListingDetailPage() {
   const { user } = useAuth();
   const { currency } = useCurrency();
 
+  const { savedIds, toggle: toggleSavedById, showSignInModal: savedAuthModal, closeSignInModal: closeSavedAuthModal } = useSaved();
+
   const [sublet, setSublet] = useState<Sublet | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authReason, setAuthReason] = useState<AuthModalReason>('general');
-  const [pendingAction, setPendingAction] = useState<'save' | 'contact' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'contact' | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [lang, setLang] = useState('en');
+
+  const isSaved = id ? savedIds.has(id) : false;
+  const { language: lang } = useLanguage();
   const [showLightbox, setShowLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  // UI language (navbar): drives page chrome direction & price locale, not post body direction
-  useEffect(() => {
-    const sync = () => {
-      try {
-        setLang(localStorage.getItem(LANG_STORAGE_KEY) || 'en');
-      } catch {
-        setLang('en');
-      }
-    };
-    sync();
-    window.addEventListener('storage', sync);
-    window.addEventListener('subhub_lang_change', sync);
-    return () => {
-      window.removeEventListener('storage', sync);
-      window.removeEventListener('subhub_lang_change', sync);
-    };
-  }, []);
 
   // Fetch listing
   useEffect(() => {
@@ -148,12 +133,8 @@ export default function ListingDetailPage() {
     })();
   }, [id]);
 
-  // Called by AuthModal after successful sign-in — complete the pending action
   const handleAuthSuccess = useCallback(() => {
-    if (pendingAction === 'save') {
-      setIsSaved(true);
-      setToastMessage('Saved ♡');
-    } else if (pendingAction === 'contact') {
+    if (pendingAction === 'contact') {
       if (sublet?.sourceUrl) window.open(sublet.sourceUrl, '_blank', 'noopener');
     }
     setPendingAction(null);
@@ -161,16 +142,11 @@ export default function ListingDetailPage() {
 
   const handleSave = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    if (!user) {
-      setPendingAction('save');
-      setAuthReason('save');
-      setAuthModalOpen(true);
-      return;
-    }
-    const willSave = !isSaved;
-    setIsSaved(willSave);
-    if (willSave) setToastMessage('Saved ♡');
-  }, [user, isSaved]);
+    if (!id) return;
+    const wasSaved = savedIds.has(id);
+    toggleSavedById(id);
+    if (!wasSaved && user) setToastMessage('Saved ♡');
+  }, [id, user, savedIds, toggleSavedById]);
 
   const handleContact = useCallback(() => {
     if (!user) {
@@ -671,7 +647,7 @@ export default function ListingDetailPage() {
         );
       })()}
 
-      {/* ── Auth Modal ── */}
+      {/* ── Auth Modal (contact flow) ── */}
       {authModalOpen && (
         <AuthModal
           reason={authReason}
@@ -681,6 +657,16 @@ export default function ListingDetailPage() {
             setAuthModalOpen(false);
             setPendingAction(null);
           }}
+        />
+      )}
+
+      {/* ── Auth Modal (save flow — triggered by SavedContext) ── */}
+      {savedAuthModal && !authModalOpen && (
+        <AuthModal
+          reason="save"
+          initialMode="signup"
+          onSuccess={closeSavedAuthModal}
+          onClose={closeSavedAuthModal}
         />
       )}
 

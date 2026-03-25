@@ -14,7 +14,10 @@ import AuthModal from '@/components/shared/AuthModal';
 import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import {
   Sublet, Filters, ListingStatus, SubletType,
@@ -123,6 +126,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
   open: boolean; onClose: () => void; filters: Filters;
   onFiltersChange: (f: Filters) => void; onClear: () => void; resultCount: number;
 }) {
+  const { language } = useLanguage();
+  const t = translations[language];
   const set = useCallback(
     (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch }),
     [filters, onFiltersChange],
@@ -150,7 +155,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Refine Your Search</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t.filters}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -162,7 +167,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           {/* Price Range */}
           <section className="space-y-4">
             <div className="flex justify-between items-end">
-              <span className={sLabel}>Price Range</span>
+              <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold text-[#4A7CC7]">
                 ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪20k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
@@ -172,15 +177,15 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Rental Duration */}
           <section className="space-y-4">
-            <span className={sLabel}>Rental Duration</span>
+            <span className={sLabel}>{t.rentTermLabel}</span>
             <div className="grid grid-cols-3 gap-3">
               {([
-                { label: 'Sublet', value: RentTerm.ALL, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-                { label: 'Short Term', value: RentTerm.SHORT_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-                { label: 'Long Term', value: RentTerm.LONG_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+                { value: RentTerm.ALL, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
+                { value: RentTerm.SHORT_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+                { value: RentTerm.LONG_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
               ] as const).map(opt => (
                 <button key={opt.value} onClick={() => set({ rentTerm: opt.value })} className={iconBtnCls((filters.rentTerm ?? RentTerm.ALL) === opt.value)}>
-                  {opt.icon}<span className="text-xs font-semibold">{opt.label}</span>
+                  {opt.icon}<span className="text-xs font-semibold">{t.rentTerms[opt.value]}</span>
                 </button>
               ))}
             </div>
@@ -188,15 +193,15 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Property Type */}
           <section className="space-y-4">
-            <span className={sLabel}>Property Type</span>
+            <span className={sLabel}>{t.type}</span>
             <div className="grid grid-cols-3 gap-3">
               {([
-                { label: 'Entire Place', value: SubletType.ENTIRE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
-                { label: 'Roommate', value: SubletType.ROOMMATE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-                { label: 'Studio', value: SubletType.STUDIO, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg> },
+                { value: SubletType.ENTIRE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+                { value: SubletType.ROOMMATE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+                { value: SubletType.STUDIO, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg> },
               ] as const).map(opt => (
                 <button key={opt.value} onClick={() => set({ type: filters.type === opt.value ? undefined : opt.value })} className={iconBtnCls(filters.type === opt.value)}>
-                  {opt.icon}<span className="text-xs font-semibold">{opt.label}</span>
+                  {opt.icon}<span className="text-xs font-semibold">{t.subletTypes[opt.value]}</span>
                 </button>
               ))}
             </div>
@@ -218,9 +223,9 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           {/* Move-in Date */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className={sLabel}>Move-in Date</span>
+              <span className={sLabel}>{t.dates}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">Flexible dates</span>
+                <span className="text-xs text-slate-400 font-medium">{t.flexible}</span>
                 <button
                   onClick={() => set({ dateMode: filters.dateMode === DateMode.FLEXIBLE ? DateMode.EXACT : DateMode.FLEXIBLE })}
                   className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-[#4A7CC7]' : 'bg-slate-200'}`}
@@ -231,12 +236,12 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Start Date</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.startDate}</p>
                 <input type="date" value={filters.startDate || ''} onChange={e => set({ startDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
               </div>
               <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">End Date</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.endDate}</p>
                 <input type="date" value={filters.endDate || ''} onChange={e => set({ endDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
               </div>
@@ -245,9 +250,9 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Posted Within */}
           <section className="space-y-4">
-            <span className={sLabel}>Posted Within</span>
+            <span className={sLabel}>{t.postedWithin}</span>
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {([{ label: 'Any time', value: 'all' }, { label: 'Last hour', value: '1h' }, { label: 'Last 24h', value: '24h' }, { label: 'Last 7 days', value: '7d' }, { label: 'Last 30 days', value: '30d' }]).map(opt => (
+              {([{ label: t.postedWithinAll, value: 'all' }, { label: t.postedWithin1h, value: '1h' }, { label: t.postedWithin24h, value: '24h' }, { label: t.postedWithin7d, value: '7d' }, { label: t.postedWithin30d, value: '30d' }]).map(opt => (
                 <button key={opt.value} onClick={() => set({ postedWithin: opt.value })} className={pillCls((filters.postedWithin ?? 'all') === opt.value)}>
                   {opt.label}
                 </button>
@@ -260,13 +265,13 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <span className={sLabel}>Post Quality</span>
             <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
               className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
-              <span>💰</span> With Price
+              <span>💰</span> {t.onlyWithPrice}
             </button>
           </section>
 
           {/* Amenities */}
           <section className="space-y-4">
-            <span className={sLabel}>Amenities</span>
+            <span className={sLabel}>{t.amenities}</span>
             <div className="grid grid-cols-2 gap-y-3.5 gap-x-6">
               {([
                 { key: 'furnished', label: 'Furnished' }, { key: 'wifi', label: 'WiFi' },
@@ -287,10 +292,10 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <button onClick={onClear} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
-            Clear All
+            {t.clearFilters}
           </button>
           <button onClick={onClose} className="flex items-center gap-2 px-7 py-3.5 bg-[#4A7CC7] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#4A7CC7]/25 hover:bg-[#3b66a6] transition-all active:scale-95">
-            Show {resultCount.toLocaleString()} Result{resultCount !== 1 ? 's' : ''}
+            {resultCount.toLocaleString()} {t.results}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </button>
         </div>
@@ -466,6 +471,8 @@ function SkeletonCard() {
 function WebMapPage() {
   const { user } = useAuth();
   const { currency } = useCurrency();
+  const { language } = useLanguage();
+  const t = translations[language];
 
   const [sublets, setSublets] = useState<Sublet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -473,9 +480,7 @@ function WebMapPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>();
   const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
-  const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [pendingSaveId, setPendingSaveId] = useState<string | null>(null);
+  const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal: savedAuthModal, closeSignInModal: closeSavedAuthModal } = useSaved();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -575,19 +580,10 @@ function WebMapPage() {
   const handleSave = useCallback((e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!user) {
-      setPendingSaveId(id);
-      setAuthModalOpen(true);
-      return;
-    }
-    setSavedListingIds(prev => {
-      const next = new Set(prev);
-      const willSave = !next.has(id);
-      if (willSave) { next.add(id); setToastMessage('Saved ♡'); }
-      else next.delete(id);
-      return next;
-    });
-  }, [user]);
+    const wasSaved = savedListingIds.has(id);
+    toggleSavedById(id);
+    if (!wasSaved && user) setToastMessage('Saved ♡');
+  }, [user, savedListingIds, toggleSavedById]);
 
   const handleClearFilters = useCallback(() => {
     setFilters(INITIAL_FILTERS);
@@ -630,7 +626,7 @@ function WebMapPage() {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h10a1 1 0 010 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h4a1 1 0 010 2H4a1 1 0 01-1-1z" />
           </svg>
-          Filters
+          {t.filters}
           {activeFilterCount > 0 && (
             <span className="w-5 h-5 bg-[#4A7CC7] text-white text-[10px] font-black rounded-full flex items-center justify-center">
               {activeFilterCount}
@@ -654,7 +650,7 @@ function WebMapPage() {
               <div className="h-4 bg-slate-200 rounded w-32 animate-pulse" />
             ) : (
               <p className="text-sm font-bold text-slate-700">
-                {filteredSublets.length.toLocaleString()} rental{filteredSublets.length !== 1 ? 's' : ''} found
+                {filteredSublets.length.toLocaleString()} {t.results}
               </p>
             )}
           </div>
@@ -704,7 +700,7 @@ function WebMapPage() {
             onMarkerClick={handleMarkerClick}
             onDeselect={() => setSelectedSubletId(undefined)}
             selectedSubletId={selectedSubletId}
-            language={Language.EN}
+            language={language}
             flyToCity={cityFlyTo}
           />
         </div>
@@ -720,24 +716,13 @@ function WebMapPage() {
         resultCount={filteredSublets.length}
       />
 
-      {/* ── Auth Modal ── */}
-      {authModalOpen && pendingSaveId && (
+      {/* ── Auth Modal (triggered by SavedContext when guest tries to save) ── */}
+      {savedAuthModal && (
         <AuthModal
           reason="save"
           initialMode="signup"
-          onSuccess={() => {
-            setSavedListingIds(prev => {
-              const next = new Set(prev);
-              next.add(pendingSaveId!);
-              return next;
-            });
-            setToastMessage('Saved ♡');
-            setPendingSaveId(null);
-          }}
-          onClose={() => {
-            setAuthModalOpen(false);
-            setPendingSaveId(null);
-          }}
+          onSuccess={closeSavedAuthModal}
+          onClose={closeSavedAuthModal}
         />
       )}
 

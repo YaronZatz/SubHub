@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 
@@ -169,26 +170,19 @@ const LANG_CURRENCY: Record<string, CurrencyCode> = {
 export default function WebNavbar() {
   const { user, logout } = useAuth();
   const { currency, setCurrency } = useCurrency();
+  const { language, setLanguage } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [language, setLanguage] = useState('en');
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const isOnMap = pathname === '/map';
   const isOnHome = pathname === '/';
 
-  // Persist language preference
-  useEffect(() => {
-    const saved = localStorage.getItem('subhub_lang');
-    if (saved) setLanguage(saved);
-  }, []);
   const handleLanguageChange = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem('subhub_lang', lang);
-    window.dispatchEvent(new Event('subhub_lang_change'));
+    setLanguage(lang as import('@/types').Language);
     const matched = LANG_CURRENCY[lang];
     if (matched) setCurrency(matched);
   };

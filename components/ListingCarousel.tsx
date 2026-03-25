@@ -60,12 +60,14 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   const hasImages = images.length > 0;
 
   const next = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!hasImages) return;
     setIndex((prev) => (prev + 1) % images.length);
   };
 
   const prev = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     if (!hasImages) return;
     setIndex((prev) => (prev - 1 + images.length) % images.length);

@@ -10,6 +10,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol, formatPrice } from '../utils/formatters';
 import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
+import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 
 interface MapVisualizerProps {
   sublets: Sublet[];
@@ -253,6 +254,9 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
   const popupBeds = selectedSublet
     ? (selectedSublet as any).parsedRooms?.bedrooms ?? (selectedSublet as any).rooms?.bedrooms ?? null
     : null;
+  const popupImage = selectedSublet?.images
+    ?.filter(isDirectImageUrl)
+    .map(enhanceImageUrl)?.[0] ?? null;
 
   return (
     <div className="relative w-full h-full overflow-hidden border border-slate-200 bg-slate-50">
@@ -305,11 +309,13 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
 
               {/* Photo */}
               <div className="w-28 h-28 shrink-0 bg-slate-100 overflow-hidden">
-                {selectedSublet.images?.[0] ? (
+                {popupImage ? (
                   <img
-                    src={selectedSublet.images[0]}
+                    src={popupImage}
                     alt={popupTitle}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-slate-300">

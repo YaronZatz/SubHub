@@ -6,7 +6,9 @@ import { Sublet, Filters, ListingStatus, SubletType, Language, DateMode, ViewMod
 import { translations } from '../translations';
 import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '../constants';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useSaved } from '../contexts/SavedContext';
 import { persistenceService } from '../services/persistenceService';
 import { formatPrice, formatDate } from '../utils/formatters';
 import {
@@ -80,11 +82,11 @@ export default function Home() {
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BROWSE);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAddAuthModalOpen, setIsAddAuthModalOpen] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [language, setLanguageState] = useState<Language>(Language.EN);
-  const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
+  const { language } = useLanguage();
+  const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal: isAuthModalOpen, closeSignInModal } = useSaved();
   const [showMapView, setShowMapView] = useState(true);
   
   const { currency } = useCurrency();
@@ -182,7 +184,7 @@ export default function Home() {
     if (user) {
       setIsAddModalOpen(true);
     } else {
-      setIsAuthModalOpen(true);
+      setIsAddAuthModalOpen(true);
     }
   };
 
@@ -195,11 +197,7 @@ export default function Home() {
 
   const toggleSaved = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    setSavedListingIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+    toggleSavedById(id);
   };
 
   const handleCityFlyTo = (city: string) => {
@@ -258,8 +256,12 @@ export default function Home() {
         />
       )}
 
+      {isAddAuthModalOpen && (
+        <AuthModal onClose={() => setIsAddAuthModalOpen(false)} />
+      )}
+
       {isAuthModalOpen && (
-        <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+        <AuthModal onClose={closeSignInModal} />
       )}
     </>
   );
