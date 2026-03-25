@@ -48,6 +48,7 @@ export const viewport = {
   width: 'device-width' as const,
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover' as const,
 };
 
 // Fix: Added React import above to resolve 'Cannot find namespace React' error for React.ReactNode
@@ -60,7 +61,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{
           __html: `window.process = window.process || { env: {} };`

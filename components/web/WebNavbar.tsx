@@ -103,7 +103,7 @@ function MobileTabBar({ pathname, isLoggedIn, onAuthRequired, onPostClick }: Tab
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200 flex md:hidden safe-area-bottom">
+    <nav className="fixed bottom-0 inset-x-0 z-[9999] bg-white border-t border-slate-200 flex md:hidden safe-area-bottom">
       {tab('/map', 'Explore', false, <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" /></svg>)}
       {tab('/saved', 'Saved', true, <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>)}
       <button onClick={handlePost} className="flex flex-col items-center gap-0.5 flex-1 min-h-[44px] py-2 text-[10px] font-bold text-slate-500">

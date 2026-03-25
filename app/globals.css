@@ -9,6 +9,12 @@
   --background-end-rgb: 248, 250, 252;
 }
 
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -25,6 +31,12 @@ html,
 body {
   height: 100%;
   min-height: 100vh;
+}
+
+@supports (min-height: 100dvh) {
+  html, body {
+    min-height: 100dvh;
+  }
 }
 [data-root] {
   display: flex;
