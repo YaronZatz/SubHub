@@ -162,7 +162,7 @@ export default function ListingsPage() {
       <div className="shrink-0 bg-white z-30 border-b border-slate-200">
         <div className="flex items-center gap-4 px-4 py-2">
           <a href="/" className="shrink-0">
-            <img src="/logo.png" alt="SubHub" className="h-14 w-auto mix-blend-multiply" />
+            <img src="/logo.png" alt="SubHub" className="h-18 w-auto mix-blend-multiply" />
           </a>
           <div className="flex-1 max-w-xl">
             <SearchAutocomplete

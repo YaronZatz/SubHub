@@ -9,12 +9,6 @@
   --background-end-rgb: 248, 250, 252;
 }
 
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
 body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(
@@ -26,18 +20,24 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+@media (max-width: 767px) {
+  body {
+    background: #fff;
+  }
+}
+
 /* Critical layout fallbacks so main content shows in production if Tailwind is delayed or purged */
 html,
 body {
   height: 100%;
   min-height: 100vh;
-  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
-@supports (height: 100dvh) {
+@media (max-width: 767px) {
   html, body {
-    height: 100dvh;
-    min-height: 100dvh;
+    overflow: hidden;
   }
 }
 

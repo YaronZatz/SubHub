@@ -32,8 +32,8 @@ const SHORT_TERM_DAYS = 183;
 const PRICE_MAX = 20000;
 const PRICE_STEP = 500;
 const SNAP_HANDLE = 32;
-const SNAP_CARD   = 220;
-const SNAP_LIST_RATIO = 0.50;
+const SNAP_CARD   = 230;
+const SNAP_LIST_RATIO = 0.55;
 
 const INITIAL_FILTERS: Filters = {
   minPrice: 0, maxPrice: PRICE_MAX, showTaken: false, type: undefined,
@@ -430,10 +430,10 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
   const dateRange = getDateRange(s);
 
   return (
-    <div className="px-3 pt-1 pb-3">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex gap-3 p-3">
+    <div className="px-3 pt-0 pb-2">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex gap-3 p-2.5">
         {/* Photo */}
-        <div className="relative w-[120px] aspect-square rounded-xl overflow-hidden shrink-0">
+        <div className="relative w-[100px] aspect-square rounded-xl overflow-hidden shrink-0">
           <ListingCarousel id={s.id} images={s.images} sourceUrl={s.sourceUrl}
             photoCount={s.photoCount} aspectRatio="aspect-square" />
           {hasAI && (
@@ -630,7 +630,8 @@ export default function MapScreen() {
   useEffect(() => {
     const measure = () => {
       if (containerRef.current) {
-        const h = Math.round(containerRef.current.clientHeight * SNAP_LIST_RATIO);
+        const raw = Math.round(containerRef.current.clientHeight * SNAP_LIST_RATIO);
+        const h = Math.max(raw, SNAP_CARD + 80);
         setSnapListH(h);
         snapListHRef.current = h;
       }
