@@ -1,131 +1,15 @@
 
 import { collection, getDocs, getDoc, doc, updateDoc, addDoc, query, where, orderBy, limit, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '../types';
+import { listingDocumentToSublet } from '../lib/listingMap';
+import type { Sublet } from '../types';
 
 const COLLECTION = 'listings';
 
-/**
- * Infer rent term from listing dates.
- * < 90 days between start and end → short-term sublet.
- * >= 90 days (or no end date) → long-term rent.
- * If neither date is known, return undefined (shown under all terms).
- */
-function computeRentTerm(startDate: string, endDate: string, immediateAvail: boolean): RentTerm | undefined {
-  if (endDate && startDate) {
-    const start = new Date(startDate).getTime();
-    const end = new Date(endDate).getTime();
-    if (!isNaN(start) && !isNaN(end) && end > start) {
-      const days = (end - start) / (1000 * 60 * 60 * 24);
-      return days < 90 ? RentTerm.SHORT_TERM : RentTerm.LONG_TERM;
-    }
-  }
-  // Has end date but no start (or vice versa) — treat as short if end date exists without start
-  if (endDate && !startDate && !immediateAvail) return RentTerm.SHORT_TERM;
-  // Immediate availability with no end date → likely long-term
-  if (immediateAvail && !endDate) return RentTerm.LONG_TERM;
-  return undefined;
-}
-
-/** Map a Firestore document from the listings collection to a Sublet. */
-function firestoreDocToSublet(docId: string, data: Record<string, unknown>): Sublet {
-  const createdAt =
-    typeof data.createdAt === 'number'
-      ? data.createdAt
-      : (data.createdAt as { toMillis?: () => number })?.toMillis?.() ?? Date.now();
-
-  const status =
-    data.status === 'active' ||
-    data.status === 'Available' ||
-    data.status === 'AVAILABLE'
-      ? ListingStatus.AVAILABLE
-      : data.status === 'Taken' || data.status === 'TAKEN'
-      ? ListingStatus.TAKEN
-      : ListingStatus.AVAILABLE;
-
-  // Coordinates: treat null / missing as 0 (filtered out upstream)
-  const lat = data.lat != null ? Number(data.lat) : 0;
-  const lng = data.lng != null ? Number(data.lng) : 0;
-
-  // Amenities: Cloud Function writes an object; legacy data may have string[]; parsedAmenities is our own format
-  const rawAmenities = data.amenities as Record<string, unknown> | string[] | null | undefined;
-  const parsedAmenities: ParsedAmenities | undefined =
-    rawAmenities && !Array.isArray(rawAmenities)
-      ? (rawAmenities as ParsedAmenities)
-      : (data.parsedAmenities as ParsedAmenities | undefined);
-
-  // Rooms: Cloud Function writes data.rooms; our webhook writes data.parsedRooms
-  const rawRooms = (data.rooms ?? data.parsedRooms) as ParsedRooms | null | undefined;
-
-  // Flexibility / immediate availability — handle both field name conventions
-  const isFlexible =
-    (data.datesFlexible as boolean | undefined) ??
-    (data.is_flexible as boolean | undefined) ??
-    false;
-
-  const immediateAvailability =
-    (data.immediateAvailability as boolean | undefined) ??
-    (data.parsedDates as ParsedDates | undefined)?.immediateAvailability ??
-    false;
-
-  // Build a unified parsedDates, merging stored parsedDates with top-level fields
-  const storedParsedDates = data.parsedDates as ParsedDates | undefined;
-  const parsedDates: ParsedDates = {
-    startDate: (data.startDate as string) || null,
-    endDate: (data.endDate as string) || null,
-    isFlexible,
-    immediateAvailability,
-    ...storedParsedDates,
-  };
-
-  return {
-    id: docId,
-    sourceUrl: (data.sourceUrl as string) || '',
-    originalText: (data.originalText as string) || '',
-    price: Number(data.price) || 0,
-    currency: (data.currency as string) || 'ILS',
-    startDate: (data.startDate as string) || '',
-    endDate: (data.endDate as string) || '',
-    location: (data.location as string) || '',
-    lat,
-    lng,
-    type: (data.type as Sublet['type']) || ('Entire Place' as Sublet['type']),
-    status,
-    createdAt,
-    authorName: (data.authorName ?? data.posterName) as string | undefined,
-    neighborhood: data.neighborhood as string | undefined,
-    city: data.city as string | undefined,
-    amenities: rawAmenities as Sublet['amenities'],
-    ownerId: data.ownerId as string | undefined,
-    images: data.images as string[] | undefined,
-    photoCount: data.photoCount as number | undefined,
-    ai_summary: data.ai_summary as string | undefined,
-    apartment_details: data.apartment_details as Sublet['apartment_details'] | undefined,
-    needs_review: data.needs_review as boolean | undefined,
-    is_flexible: isFlexible,
-    parsedAmenities,
-    parsedRooms: rawRooms ?? undefined,
-    parsedDates,
-    rooms: rawRooms ?? undefined,
-    country: data.country as string | undefined,
-    countryCode: data.countryCode as string | undefined,
-    street: data.street as string | undefined,
-    fullAddress: (data.fullAddress ?? data.displayAddress) as string | undefined,
-    locationConfidence: data.locationConfidence as string | undefined,
-    contentHash: data.contentHash as string | undefined,
-    partialData: data.partialData as boolean | undefined,
-    lastParsedAt: data.lastParsedAt as number | undefined,
-    parserVersion: data.parserVersion as string | undefined,
-    sourceGroupName: data.sourceGroupName as string | undefined,
-    datesFlexible: isFlexible,
-    immediateAvailability,
-    rentTerm: computeRentTerm(
-      (data.startDate as string) || '',
-      (data.endDate as string) || '',
-      immediateAvailability
-    ),
-  };
-}
+/** Result of fetching a single listing — distinguishes missing doc from errors / offline client. */
+export type FetchListingByIdResult =
+  | { ok: true; listing: Sublet }
+  | { ok: false; reason: 'missing' | 'no_db' | 'error'; error?: unknown };
 
 function buildQuery() {
   return query(
@@ -180,7 +64,7 @@ export const persistenceService = {
       const snapshot = await getDocs(buildQuery());
       console.log(`🔥 Firestore returned ${snapshot.docs.length} documents`);
       const docs = snapshot.docs.map((d) =>
-        firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
+        listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
       );
       const deduped = deduplicateListings(docs);
       const withCoords = deduped.filter(hasValidCoords);
@@ -206,7 +90,7 @@ export const persistenceService = {
       buildQuery(),
       (snapshot) => {
         const docs = snapshot.docs.map((d) =>
-          firestoreDocToSublet(d.id, d.data() as Record<string, unknown>)
+          listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
         );
         const deduped = deduplicateListings(docs);
         const withCoords = deduped.filter(hasValidCoords);
@@ -263,17 +147,24 @@ export const persistenceService = {
 
   /**
    * Fetch a single listing by Firestore document ID.
-   * Returns null if the document does not exist or Firestore is unavailable.
+   * Use `ok` / `reason` so callers can tell missing documents from network or SDK errors.
    */
-  async fetchListingById(id: string): Promise<Sublet | null> {
-    if (!db) return null;
+  async fetchListingById(id: string): Promise<FetchListingByIdResult> {
+    if (!id) return { ok: false, reason: 'missing' };
+    if (!db) {
+      console.warn('⚠️ fetchListingById: Firestore db undefined');
+      return { ok: false, reason: 'no_db' };
+    }
     try {
       const docSnap = await getDoc(doc(db, COLLECTION, id));
-      if (!docSnap.exists()) return null;
-      return firestoreDocToSublet(docSnap.id, docSnap.data() as Record<string, unknown>);
+      if (!docSnap.exists()) return { ok: false, reason: 'missing' };
+      return {
+        ok: true,
+        listing: listingDocumentToSublet(docSnap.id, docSnap.data() as Record<string, unknown>),
+      };
     } catch (e) {
-      console.error('❌ Failed to fetch listing by ID:', e);
-      return null;
+      console.error('❌ Failed to fetch listing by ID:', id, e);
+      return { ok: false, reason: 'error', error: e };
     }
   },
 

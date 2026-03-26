@@ -120,7 +120,9 @@ function SavedContent() {
     setListingsLoading(true);
     Promise.all(Array.from(savedIds).map((id) => persistenceService.fetchListingById(id)))
       .then((results) => {
-        setSavedListings(results.filter((s): s is Sublet => s !== null));
+        setSavedListings(
+          results.filter((r): r is { ok: true; listing: Sublet } => r.ok).map((r) => r.listing),
+        );
         setListingsLoading(false);
       })
       .catch(() => setListingsLoading(false));
