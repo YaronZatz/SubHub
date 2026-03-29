@@ -12,15 +12,15 @@ export function TranslatedText({ text, language }: Props) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!text || language === 'en') {
+    if (!text) {
       setTranslation(null);
       return;
     }
     setLoading(true);
     translateText(text, language)
       .then((result) => {
-        console.log('[TranslatedText] result:', result, 'lang:', language);
-        setTranslation(result);
+        // Don't show translation if identical to original (post already in target language)
+        setTranslation(result && result.trim() !== text.trim() ? result : null);
       })
       .catch((err) => console.error('[TranslatedText] error:', err))
       .finally(() => setLoading(false));

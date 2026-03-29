@@ -15,7 +15,7 @@ export async function translateText(
   text: string,
   targetLanguage: string,
 ): Promise<string | null> {
-  if (!text || targetLanguage === 'en') return null;
+  if (!text) return null;
 
   try {
     const response = await fetch('/api/translate', {
