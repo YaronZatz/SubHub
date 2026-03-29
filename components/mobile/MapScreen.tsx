@@ -5,10 +5,10 @@ import React, {
 } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
 import ListingCarousel from '@/components/ListingCarousel';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import AuthModal from '@/components/shared/AuthModal';
+import MobileTabBar from '@/components/shared/MobileTabBar';
 import { useSaved } from '@/contexts/SavedContext';
 import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
@@ -355,71 +355,6 @@ function MiniPicker({ value, options, onChange }: {
   );
 }
 
-// ─── Mobile Tab Bar ───────────────────────────────────────────────────────────
-
-function MobileTabBar() {
-  const router   = useRouter();
-  const pathname = usePathname();
-  const { user } = useAuth();
-  const [tabAuthOpen, setTabAuthOpen] = useState(false);
-
-  const tab = (href: string, label: string, requiresAuth: boolean, icon: React.ReactNode) => {
-    const isActive = pathname === href || pathname.startsWith(href + '/');
-    return (
-      <button key={href}
-        onClick={() => {
-          if (requiresAuth && !user) { setTabAuthOpen(true); return; }
-          router.push(href);
-        }}
-        className={`flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] font-bold transition-colors ${
-          isActive ? 'text-[#4A7CC7]' : 'text-slate-400'
-        }`}>
-        {icon}{label}
-      </button>
-    );
-  };
-
-  return (
-    <>
-      <nav className="bg-white/95 backdrop-blur-md border-t border-slate-200 flex shrink-0">
-        {tab('/map', 'Explore', false,
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>)}
-        {tab('/saved', 'Saved', true,
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>)}
-        <button
-          onClick={() => {
-            if (!user) { setTabAuthOpen(true); return; }
-            router.push('/post');
-          }}
-          className="flex flex-col items-center gap-0.5 flex-1 py-2 text-[10px] font-bold text-slate-400">
-          <div className="w-8 h-8 rounded-full bg-[#4A7CC7] flex items-center justify-center shadow-md">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
-          Post
-        </button>
-        {tab('/messages', 'Messages', true,
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-          </svg>)}
-        {tab('/profile', 'Profile', true,
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>)}
-      </nav>
-
-      {tabAuthOpen && (
-        <AuthModal reason="general" initialMode="signup" onClose={() => setTabAuthOpen(false)} />
-      )}
-    </>
-  );
-}
-
 // ─── Selected Listing Card ────────────────────────────────────────────────────
 
 function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
@@ -583,7 +518,7 @@ export default function MapScreen() {
   const [headerAuthOpen, setHeaderAuthOpen] = useState(false);
 
   // ── Sheet drag state ────────────────────────────────────────────────────────
-  const [sheetHeight,  setSheetHeight]  = useState(SNAP_HANDLE);
+  const [sheetHeight,  setSheetHeight]  = useState(SNAP_CARD);
   const [snapListH,    setSnapListH]    = useState(380);
   const [isDragging,   setIsDragging]   = useState(false);
 
@@ -592,7 +527,7 @@ export default function MapScreen() {
   const cardListRef     = useRef<HTMLDivElement>(null);
   const mapInstanceRef  = useRef<google.maps.Map | null>(null);
   const cardRefs      = useRef<Record<string, HTMLDivElement | null>>({});
-  const sheetHRef     = useRef(SNAP_HANDLE);
+  const sheetHRef     = useRef(SNAP_CARD);
   const snapListHRef  = useRef(380);
   const dragStartY    = useRef(0);
   const dragStartH    = useRef(0);
@@ -864,6 +799,8 @@ export default function MapScreen() {
   const midCardList   = (SNAP_CARD + snapListH)   / 2;
   const showCard = sheetHeight >= midHandleCard && sheetHeight < midCardList;
   const showList = sheetHeight >= midCardList;
+  // Defer strip in card band until drag ends — mounting listings during touchmove janks the sheet.
+  const showListingStrip = showList || (showCard && !selectedSublet && !isDragging);
 
   // ── Filter chip active states ────────────────────────────────────────────────
   const typeActive  = !!filters.type;
@@ -881,7 +818,7 @@ export default function MapScreen() {
         {/* Row 1: Logo + Pickers + Avatar */}
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center shrink-0">
-            <img src="/logo.png" alt="SubHub" className="h-9 w-auto mix-blend-multiply" />
+            <img src="/logo.png" alt="SubHub" className="h-16 w-auto mix-blend-multiply" />
           </Link>
 
           <div className="flex-1" />
@@ -1080,7 +1017,7 @@ export default function MapScreen() {
           )}
 
           {/* List zone */}
-          {showList && (
+          {showListingStrip && (
             <>
               <div className="px-4 pb-2 shrink-0 flex items-center justify-between">
                 <p className="text-sm font-bold text-slate-800">
@@ -1152,7 +1089,7 @@ export default function MapScreen() {
       </div>
 
       {/* ── Tab Bar ── */}
-      <MobileTabBar />
+      <MobileTabBar variant="embedded" />
 
       {/* ── Filters Drawer ── */}
       <FiltersDrawer
