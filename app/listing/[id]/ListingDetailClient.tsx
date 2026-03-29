@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { TranslatedText } from '@/components/TranslatedText';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
 import { Sublet, ListingStatus, CurrencyCode } from '@/types';
@@ -403,7 +404,7 @@ export default function ListingDetailClient({
                       </span>
                     </div>
                   )}
-                  {sublet.parsedRooms?.bathrooms && (
+                  {!!sublet.parsedRooms?.bathrooms && (
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
                       <span className="text-base">🚿</span>
                       <span className="text-sm font-semibold text-slate-700">
@@ -411,7 +412,7 @@ export default function ListingDetailClient({
                       </span>
                     </div>
                   )}
-                  {sublet.parsedRooms?.floorArea && (
+                  {!!sublet.parsedRooms?.floorArea && (
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
                       <span className="text-base">📐</span>
                       <span className="text-sm font-semibold text-slate-700">
@@ -445,24 +446,16 @@ export default function ListingDetailClient({
                             </svg>
                             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">Original post</span>
                           </div>
-                          <p
-                            className={contentBodyClass(originalDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
-                            dir={originalDir}
-                            {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}
-                          >
-                            {sublet.originalText}
-                          </p>
+                          <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
+                            <TranslatedText text={sublet.originalText} language={lang} />
+                          </div>
                         </aside>
                       ) : null}
                     </div>
                   ) : (
-                    <p
-                      className={contentBodyClass(originalDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
-                      dir={originalDir}
-                      {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}
-                    >
-                      {sublet.originalText}
-                    </p>
+                    <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
+                      <TranslatedText text={sublet.originalText} language={lang} />
+                    </div>
                   )}
                 </div>
 
