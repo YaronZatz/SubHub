@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { translateText } from '@/lib/translationService';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 
 interface Props {
   text: string;
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export function TranslatedText({ text, language }: Props) {
+  const { language: uiLang } = useLanguage();
+  const t = translations[uiLang];
   const [translation, setTranslation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -30,11 +34,11 @@ export function TranslatedText({ text, language }: Props) {
     <div>
       <p className="text-sm text-slate-700 whitespace-pre-wrap">{text}</p>
       {loading && (
-        <p className="text-xs text-slate-400 mt-2 italic">Translating...</p>
+        <p className="text-xs text-slate-400 mt-2 italic">{t.parsing}</p>
       )}
       {translation && !loading && (
         <div className="mt-2 pt-2 border-t border-slate-200">
-          <p className="text-xs text-slate-400 mb-1">Translation</p>
+          <p className="text-xs text-slate-400 mb-1">{t.translationLabel}</p>
           <p className="text-sm text-slate-600 whitespace-pre-wrap">{translation}</p>
         </div>
       )}

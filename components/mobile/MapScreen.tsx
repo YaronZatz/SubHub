@@ -14,6 +14,8 @@ import Toast from '@/components/shared/Toast';
 import { persistenceService } from '@/services/persistenceService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import {
   Sublet, Filters, ListingStatus, SubletType,
@@ -64,17 +66,17 @@ function getBedroomCount(s: Sublet): number | null {
   return s.parsedRooms?.bedrooms ?? s.rooms?.bedrooms ?? null;
 }
 
-function getCardTitle(s: Sublet): string {
+function getCardTitle(s: Sublet, unknownLocation: string): string {
   const parts = [s.neighborhood, s.city].filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : (s.location || 'Unknown location');
+  return parts.length > 0 ? parts.join(', ') : (s.location || unknownLocation);
 }
 
-function getDateRange(s: Sublet): string {
+function getDateRange(s: Sublet, t: { fromDate: string; availableNow: string }): string {
   const start = s.startDate ? formatDate(s.startDate) : '';
   const end   = s.endDate   ? formatDate(s.endDate)   : '';
   if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (s.immediateAvailability) return 'Available now';
+  if (start) return t.fromDate.replace('{date}', start);
+  if (s.immediateAvailability) return t.availableNow;
   return '';
 }
 
@@ -361,8 +363,10 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
   sublet: Sublet; currency: string; isSaved: boolean;
   onSave: (e: React.MouseEvent) => void;
 }) {
+  const { language } = useLanguage();
+  const t = translations[language];
   const hasAI    = !!(s.ai_summary || s.parsedAmenities || s.parsedRooms || s.rooms);
-  const dateRange = getDateRange(s);
+  const dateRange = getDateRange(s, t);
 
   return (
     <div className="px-3 pt-0 pb-2">
@@ -384,7 +388,7 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
         {/* Info */}
         <div className="flex-1 min-w-0 flex flex-col justify-between">
           <div className="flex items-start justify-between gap-1">
-            <p className="font-black text-slate-900 text-sm leading-snug">{getCardTitle(s)}</p>
+            <p className="font-black text-slate-900 text-sm leading-snug">{getCardTitle(s, t.unknownLocation)}</p>
             <button onClick={onSave}
               className={`w-7 h-7 shrink-0 flex items-center justify-center transition-colors ${
                 isSaved ? 'text-red-500' : 'text-slate-300'
@@ -433,8 +437,10 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
   sublet: Sublet; isSelected: boolean; isSaved: boolean; currency: string;
   onTap: () => void; onSave: (e: React.MouseEvent) => void;
 }) {
+  const { language } = useLanguage();
+  const t = translations[language];
   const isTaken   = s.status === ListingStatus.TAKEN;
-  const dateRange = getDateRange(s);
+  const dateRange = getDateRange(s, t);
   const postTs    = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
   const hoursAgo  = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
   const daysAgo   = Math.max(1, Math.floor(hoursAgo / 24));
@@ -475,7 +481,7 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
           )}
         </div>
         <div className="p-2.5 bg-white">
-          <p className="font-bold text-slate-900 text-xs truncate">{getCardTitle(s)}</p>
+          <p className="font-bold text-slate-900 text-xs truncate">{getCardTitle(s, t.unknownLocation)}</p>
           {dateRange && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{dateRange}</p>}
         </div>
       </Link>
@@ -497,7 +503,7 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
 export default function MapScreen() {
   const { user, logout }       = useAuth();
   const { currency, setCurrency } = useCurrency();
-  const [language, setLanguage]   = useState<Language>(Language.EN);
+  const { language, setLanguage } = useLanguage();
 
   const firebaseUser  = user as (typeof user & { photoURL?: string; displayName?: string }) | null;
   const displayName   = firebaseUser?.displayName || (user as any)?.name || 'User';
@@ -532,12 +538,8 @@ export default function MapScreen() {
   const dragStartY    = useRef(0);
   const dragStartH    = useRef(0);
 
-  // Persist language preference (mirrors WebNavbar)
-  useEffect(() => {
-    const saved = localStorage.getItem('subhub_lang');
-    if (saved && Object.values(Language).includes(saved as Language))
-      setLanguage(saved as Language);
-  }, []);
+  const t = translations[language];
+
   const LANG_CURRENCY: Partial<Record<Language, CurrencyCode>> = {
     [Language.HE]: CurrencyCode.ILS,
     [Language.EN]: CurrencyCode.USD,
@@ -552,7 +554,6 @@ export default function MapScreen() {
   };
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang as Language);
-    localStorage.setItem('subhub_lang', lang);
     const matched = LANG_CURRENCY[lang as Language];
     if (matched) setCurrency(matched);
   };

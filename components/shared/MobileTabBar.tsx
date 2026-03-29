@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/shared/AuthModal';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 
 export type MobileTabBarVariant = 'fixed' | 'embedded';
 
@@ -20,6 +22,8 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [authOpen, setAuthOpen] = useState(false);
 
   const requireAuth = () => {
@@ -72,7 +76,7 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
       >
         {tab(
           '/map',
-          'Explore',
+          t.explore,
           false,
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -84,7 +88,7 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
         )}
         {tab(
           '/saved',
-          'Saved',
+          t.saved,
           true,
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -104,11 +108,11 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           </div>
-          Post
+          {t.post}
         </button>
         {tab(
           '/messages',
-          'Messages',
+          t.messages,
           true,
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -120,7 +124,7 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
         )}
         {tab(
           '/profile',
-          'Profile',
+          t.profile,
           true,
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path

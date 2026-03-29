@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 import { TranslatedText } from '@/components/TranslatedText';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
@@ -38,12 +39,12 @@ function getPageTitle(s: Sublet): string {
   return parts.length > 0 ? parts.join(', ') : (s.location || 'Listing');
 }
 
-function getDateRange(s: Sublet): string {
+function getDateRange(s: Sublet, t: { fromDate: string; availableNow: string }): string {
   const start = s.startDate ? formatDate(s.startDate) : '';
   const end = s.endDate ? formatDate(s.endDate) : '';
   if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (s.immediateAvailability) return 'Available now';
+  if (start) return t.fromDate.replace('{date}', start);
+  if (s.immediateAvailability) return t.availableNow;
   return '';
 }
 
@@ -86,28 +87,32 @@ function DetailSkeleton() {
 // ─── Not Found ────────────────────────────────────────────────────────────────
 
 function NotFound() {
+  const { language } = useLanguage();
+  const t = translations[language];
   return (
     <div className="flex flex-col items-center justify-center py-32 text-center px-4">
       <div className="text-6xl mb-6">🏠</div>
       <h1 className="text-2xl font-black text-slate-900 mb-2">
-        Looks like this listing moved out
+        {t.listingNotFound}
       </h1>
       <p className="text-slate-500 mb-8">This listing may no longer be available.</p>
       <Link
         href="/map"
         className="px-6 py-3 bg-[#4A7CC7] text-white font-bold rounded-xl hover:bg-[#3b66a6] transition-colors"
       >
-        Browse available listings →
+        {t.browse} →
       </Link>
     </div>
   );
 }
 
 function FetchErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { language } = useLanguage();
+  const t = translations[language];
   return (
     <div className="flex flex-col items-center justify-center py-32 text-center px-4">
       <div className="text-6xl mb-6">⚠️</div>
-      <h1 className="text-2xl font-black text-slate-900 mb-2">Could not load this listing</h1>
+      <h1 className="text-2xl font-black text-slate-900 mb-2">{t.listingLoadError}</h1>
       <p className="text-slate-500 mb-2 max-w-md">{message}</p>
       <p className="text-slate-400 text-sm mb-8">Check your connection or try again.</p>
       <button
@@ -115,10 +120,10 @@ function FetchErrorState({ message, onRetry }: { message: string; onRetry: () =>
         onClick={onRetry}
         className="px-6 py-3 bg-[#4A7CC7] text-white font-bold rounded-xl hover:bg-[#3b66a6] transition-colors"
       >
-        Retry
+        {t.tryAgain}
       </button>
       <Link href="/map" className="mt-6 text-sm font-semibold text-slate-600 hover:text-[#4A7CC7]">
-        Browse available listings →
+        {t.browse} →
       </Link>
     </div>
   );
@@ -153,6 +158,7 @@ export default function ListingDetailClient({
 
   const isSaved = listingId ? savedIds.has(listingId) : false;
   const { language: lang } = useLanguage();
+  const t = translations[lang];
   const [showLightbox, setShowLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -242,7 +248,7 @@ export default function ListingDetailClient({
   const isTaken = sublet?.status === ListingStatus.TAKEN;
   const amenities = sublet ? getActiveAmenities(sublet) : [];
   const beds = sublet ? getBeds(sublet) : null;
-  const dateRange = sublet ? getDateRange(sublet) : '';
+  const dateRange = sublet ? getDateRange(sublet, t) : '';
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
   const pageTitleText = sublet ? getPageTitle(sublet) : '';
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
@@ -428,7 +434,7 @@ export default function ListingDetailClient({
 
                 {/* Description */}
                 <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-slate-900">About this place</h2>
+                  <h2 className="text-lg font-bold text-slate-900">{t.aboutThisPlace}</h2>
                   {sublet.ai_summary ? (
                     <div className="space-y-5">
                       <p
@@ -444,7 +450,7 @@ export default function ListingDetailClient({
                             <svg className="w-4 h-4 text-[#1877F2] shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                               <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                             </svg>
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">Original post</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">{t.originalPost}</span>
                           </div>
                           <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
                             <TranslatedText text={sublet.originalText} language={lang} />

@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 import MobileTabBar from '@/components/shared/MobileTabBar';
@@ -125,6 +126,7 @@ export default function WebNavbar() {
   const { user, logout } = useAuth();
   const { currency, setCurrency } = useCurrency();
   const { language, setLanguage } = useLanguage();
+  const t = translations[language];
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -202,7 +204,7 @@ export default function WebNavbar() {
                 href="/how-it-works"
                 className="hidden lg:block text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors px-3 py-2 whitespace-nowrap"
               >
-                How it Works
+                {t.howItWorks}
               </Link>
 
               {/* Post a Listing */}
@@ -213,7 +215,7 @@ export default function WebNavbar() {
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                Post a Listing
+                {t.postListing}
               </Link>
 
               {/* Saved Listings — always visible in header */}
@@ -224,7 +226,7 @@ export default function WebNavbar() {
                 <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-                Saved Listings
+                {t.savedListings}
               </Link>
 
               {/* Currency picker */}
@@ -277,12 +279,12 @@ export default function WebNavbar() {
 
                       <Link href="/messages" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                         <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-                        Messages
+                        {t.messages}
                       </Link>
 
                       <Link href="/profile" onClick={() => setIsUserMenuOpen(false)} className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
                         <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        Profile
+                        {t.profile}
                       </Link>
 
                       <div className="border-t border-slate-100 mt-1">
@@ -291,7 +293,7 @@ export default function WebNavbar() {
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                          Sign Out
+                          {t.signOut}
                         </button>
                       </div>
                     </div>
@@ -303,7 +305,7 @@ export default function WebNavbar() {
                   onClick={() => setIsAuthModalOpen(true)}
                   className="px-5 py-2.5 text-sm font-black text-white bg-gradient-to-r from-[#4A7CC7] to-[#3a63a8] hover:from-[#3b66a6] hover:to-[#2d5090] rounded-xl shadow-sm transition-all"
                 >
-                  Sign In
+                  {t.signIn}
                 </button>
               )}
             </div>
