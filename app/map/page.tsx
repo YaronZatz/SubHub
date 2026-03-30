@@ -306,6 +306,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
 // ─── Listing Card ─────────────────────────────────────────────────────────────
 
+let _pendingWebMapState: WebMapSavedState | null = null;
+
 interface WebMapSavedState {
   filters: Filters;
   searchQuery: string;
@@ -482,22 +484,12 @@ function WebMapPage() {
   const { language } = useLanguage();
   const t = translations[language];
 
-  // Read saved state during render — survives React Strict Mode's double-mount
-  // (reading in a useEffect would delete the key before the second mount reads it)
-  const _saved = useMemo<Partial<WebMapSavedState> | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = sessionStorage.getItem('subhub_map_state');
-      return raw ? (JSON.parse(raw) as Partial<WebMapSavedState>) : null;
-    } catch { return null; }
-  }, []);
-
   const [sublets, setSublets] = useState<Sublet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>(_saved?.filters ?? INITIAL_FILTERS);
-  const [searchQuery, setSearchQuery] = useState(_saved?.searchQuery ?? '');
-  const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>(_saved?.selectedSubletId);
-  const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(_saved?.cityFlyTo ?? null);
+  const [filters, setFilters] = useState<Filters>(() => _pendingWebMapState?.filters ?? INITIAL_FILTERS);
+  const [searchQuery, setSearchQuery] = useState(() => _pendingWebMapState?.searchQuery ?? '');
+  const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>(() => _pendingWebMapState?.selectedSubletId);
+  const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(() => _pendingWebMapState?.cityFlyTo ?? null);
   const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal: savedAuthModal, closeSignInModal: closeSavedAuthModal } = useSaved();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -505,8 +497,11 @@ function WebMapPage() {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Clean up the saved state key — idempotent, safe to run twice in Strict Mode
-  useEffect(() => { sessionStorage.removeItem('subhub_map_state'); }, []);
+  // Clear pending state after mount — timeout survives Strict Mode's unmount/remount
+  useEffect(() => {
+    const t = setTimeout(() => { _pendingWebMapState = null; }, 200);
+    return () => clearTimeout(t);
+  }, []);
 
   // Load listings
   useEffect(() => {
@@ -612,11 +607,7 @@ function WebMapPage() {
   }, []);
 
   const handleNavigateToListing = useCallback(() => {
-    try {
-      sessionStorage.setItem('subhub_map_state', JSON.stringify({
-        filters, searchQuery, selectedSubletId, cityFlyTo,
-      } satisfies WebMapSavedState));
-    } catch {}
+    _pendingWebMapState = { filters, searchQuery, selectedSubletId, cityFlyTo };
   }, [filters, searchQuery, selectedSubletId, cityFlyTo]);
 
   return (

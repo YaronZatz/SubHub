@@ -361,6 +361,8 @@ function MiniPicker({ value, options, onChange }: {
 
 // ─── Selected Listing Card ────────────────────────────────────────────────────
 
+let _pendingMobileMapState: MobileMapSavedState | null = null;
+
 interface MobileMapSavedState {
   filters: Filters;
   searchQuery: string;
@@ -520,22 +522,13 @@ export default function MapScreen() {
   const displayName   = firebaseUser?.displayName || (user as any)?.name || 'User';
   const initials      = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
 
-  // Read saved state during render — survives React Strict Mode's double-mount
-  const _saved = useMemo<Partial<MobileMapSavedState> | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = sessionStorage.getItem('subhub_map_state');
-      return raw ? (JSON.parse(raw) as Partial<MobileMapSavedState>) : null;
-    } catch { return null; }
-  }, []);
-
   // ── Data state ──────────────────────────────────────────────────────────────
   const [sublets,        setSublets]        = useState<Sublet[]>([]);
   const [isLoading,      setIsLoading]      = useState(true);
-  const [filters,        setFilters]        = useState<Filters>(_saved?.filters ?? INITIAL_FILTERS);
-  const [searchQuery,    setSearchQuery]    = useState(_saved?.searchQuery ?? '');
-  const [selectedId,     setSelectedId]     = useState<string | undefined>(_saved?.selectedId);
-  const [cityFlyTo,      setCityFlyTo]      = useState<{ lat: number; lng: number; zoom?: number } | null>(_saved?.cityFlyTo ?? null);
+  const [filters,        setFilters]        = useState<Filters>(() => _pendingMobileMapState?.filters ?? INITIAL_FILTERS);
+  const [searchQuery,    setSearchQuery]    = useState(() => _pendingMobileMapState?.searchQuery ?? '');
+  const [selectedId,     setSelectedId]     = useState<string | undefined>(() => _pendingMobileMapState?.selectedId);
+  const [cityFlyTo,      setCityFlyTo]      = useState<{ lat: number; lng: number; zoom?: number } | null>(() => _pendingMobileMapState?.cityFlyTo ?? null);
   const { savedIds, toggle: toggleSavedById, showSignInModal, closeSignInModal } = useSaved();
   const [authModalOpen,  setAuthModalOpen]  = useState(false);
   const [toastMessage,   setToastMessage]   = useState<string | null>(null);
@@ -544,7 +537,7 @@ export default function MapScreen() {
   const [headerAuthOpen, setHeaderAuthOpen] = useState(false);
 
   // ── Sheet drag state ────────────────────────────────────────────────────────
-  const [sheetHeight,  setSheetHeight]  = useState(_saved?.sheetHeight ?? SNAP_CARD);
+  const [sheetHeight,  setSheetHeight]  = useState(() => _pendingMobileMapState?.sheetHeight ?? SNAP_CARD);
   const [snapListH,    setSnapListH]    = useState(380);
   const [isDragging,   setIsDragging]   = useState(false);
 
@@ -553,7 +546,7 @@ export default function MapScreen() {
   const cardListRef     = useRef<HTMLDivElement>(null);
   const mapInstanceRef  = useRef<google.maps.Map | null>(null);
   const cardRefs      = useRef<Record<string, HTMLDivElement | null>>({});
-  const sheetHRef     = useRef(_saved?.sheetHeight ?? SNAP_CARD);
+  const sheetHRef     = useRef(_pendingMobileMapState?.sheetHeight ?? SNAP_CARD);
   const snapListHRef  = useRef(380);
   const dragStartY    = useRef(0);
   const dragStartH    = useRef(0);
@@ -578,8 +571,11 @@ export default function MapScreen() {
     if (matched) setCurrency(matched);
   };
 
-  // Clean up the saved state key — idempotent, safe to run twice in Strict Mode
-  useEffect(() => { sessionStorage.removeItem('subhub_map_state'); }, []);
+  // Clear pending state after mount — timeout survives Strict Mode's unmount/remount
+  useEffect(() => {
+    const t = setTimeout(() => { _pendingMobileMapState = null; }, 200);
+    return () => clearTimeout(t);
+  }, []);
 
   // Keep refs in sync
   useEffect(() => { sheetHRef.current = sheetHeight; }, [sheetHeight]);
@@ -819,12 +815,10 @@ export default function MapScreen() {
   }, []);
 
   const handleNavigateToListing = useCallback(() => {
-    try {
-      sessionStorage.setItem('subhub_map_state', JSON.stringify({
-        filters, searchQuery, selectedId, cityFlyTo,
-        sheetHeight: sheetHRef.current,
-      } satisfies MobileMapSavedState));
-    } catch {}
+    _pendingMobileMapState = {
+      filters, searchQuery, selectedId, cityFlyTo,
+      sheetHeight: sheetHRef.current,
+    };
   }, [filters, searchQuery, selectedId, cityFlyTo]);
 
   // ── Derived sheet zones ──────────────────────────────────────────────────────
