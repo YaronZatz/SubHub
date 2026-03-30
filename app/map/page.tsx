@@ -36,7 +36,7 @@ const SHORT_TERM_DAYS = 183;
 
 const INITIAL_FILTERS: Filters = {
   minPrice: 0,
-  maxPrice: 20000,
+  maxPrice: 30000,
   showTaken: false,
   type: undefined,
   city: '',
@@ -84,8 +84,8 @@ function getDateRange(s: Sublet): string {
 
 // ─── Price Slider (dual-thumb) ────────────────────────────────────────────────
 
-const PRICE_MAX = 20000;
-const PRICE_STEP = 500;
+const PRICE_MAX = 30000;
+const PRICE_STEP = 1000;
 const AMENITY_FILTER_KEYS: Array<keyof NonNullable<Filters['amenities']>> = [
   'furnished', 'wifi', 'ac', 'washer', 'petFriendly', 'parking', 'kitchen', 'balcony',
 ];
@@ -169,7 +169,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold text-[#4A7CC7]">
-                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪20k+' : `₪${filters.maxPrice.toLocaleString()}`}
+                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
             </div>
             <PriceSlider minVal={filters.minPrice} maxVal={filters.maxPrice} onChange={(min, max) => set({ minPrice: min, maxPrice: max })} />
