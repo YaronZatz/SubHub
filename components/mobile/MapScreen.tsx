@@ -34,7 +34,7 @@ const SHORT_TERM_DAYS = 183;
 const PRICE_MAX = 30000;
 const PRICE_STEP = 1000;
 const SNAP_HANDLE = 32;
-const SNAP_CARD   = 230;
+const SNAP_CARD   = 270;
 const SNAP_LIST_RATIO = 0.55;
 
 const INITIAL_FILTERS: Filters = {
