@@ -482,12 +482,22 @@ function WebMapPage() {
   const { language } = useLanguage();
   const t = translations[language];
 
+  // Read saved state during render — survives React Strict Mode's double-mount
+  // (reading in a useEffect would delete the key before the second mount reads it)
+  const _saved = useMemo<Partial<WebMapSavedState> | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem('subhub_map_state');
+      return raw ? (JSON.parse(raw) as Partial<WebMapSavedState>) : null;
+    } catch { return null; }
+  }, []);
+
   const [sublets, setSublets] = useState<Sublet[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>();
-  const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
+  const [filters, setFilters] = useState<Filters>(_saved?.filters ?? INITIAL_FILTERS);
+  const [searchQuery, setSearchQuery] = useState(_saved?.searchQuery ?? '');
+  const [selectedSubletId, setSelectedSubletId] = useState<string | undefined>(_saved?.selectedSubletId);
+  const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(_saved?.cityFlyTo ?? null);
   const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal: savedAuthModal, closeSignInModal: closeSavedAuthModal } = useSaved();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -495,19 +505,8 @@ function WebMapPage() {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const panelRef = useRef<HTMLDivElement>(null);
 
-  // Restore map state saved before navigating to a listing detail
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('subhub_map_state');
-      if (!raw) return;
-      sessionStorage.removeItem('subhub_map_state');
-      const saved = JSON.parse(raw) as Partial<WebMapSavedState>;
-      if (saved.filters) setFilters(saved.filters);
-      if (saved.searchQuery !== undefined) setSearchQuery(saved.searchQuery);
-      if (saved.selectedSubletId !== undefined) setSelectedSubletId(saved.selectedSubletId);
-      if (saved.cityFlyTo) setCityFlyTo(saved.cityFlyTo);
-    } catch {}
-  }, []);
+  // Clean up the saved state key — idempotent, safe to run twice in Strict Mode
+  useEffect(() => { sessionStorage.removeItem('subhub_map_state'); }, []);
 
   // Load listings
   useEffect(() => {
