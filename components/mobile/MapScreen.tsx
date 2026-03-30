@@ -361,9 +361,18 @@ function MiniPicker({ value, options, onChange }: {
 
 // ─── Selected Listing Card ────────────────────────────────────────────────────
 
-function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
+interface MobileMapSavedState {
+  filters: Filters;
+  searchQuery: string;
+  selectedId: string | undefined;
+  cityFlyTo: { lat: number; lng: number; zoom?: number } | null;
+  sheetHeight: number;
+}
+
+function SelectedCard({ sublet: s, currency, isSaved, onSave, onNavigate }: {
   sublet: Sublet; currency: string; isSaved: boolean;
   onSave: (e: React.MouseEvent) => void;
+  onNavigate: () => void;
 }) {
   const { language } = useLanguage();
   const t = translations[language];
@@ -422,7 +431,7 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
               </span>
               <span className="text-slate-400 text-xs ml-1">/mo</span>
             </div>
-            <Link href={`/listing/${s.id}`}
+            <Link href={`/listing/${s.id}`} onClick={onNavigate}
               className="block text-center py-1.5 bg-[#F5831F] text-white text-xs font-black rounded-full shadow-sm active:opacity-80 transition-opacity">
               View Details
             </Link>
@@ -435,9 +444,9 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave }: {
 
 // ─── Mini Card (list view) ────────────────────────────────────────────────────
 
-function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
+function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave, onNavigate }: {
   sublet: Sublet; isSelected: boolean; isSaved: boolean; currency: string;
-  onTap: () => void; onSave: (e: React.MouseEvent) => void;
+  onTap: () => void; onSave: (e: React.MouseEvent) => void; onNavigate: () => void;
 }) {
   const { language } = useLanguage();
   const t = translations[language];
@@ -454,7 +463,7 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave }: {
         ${isSelected ? 'ring-2 ring-[#4A7CC7] shadow-xl shadow-[#4A7CC7]/25 scale-[1.02]' : ''}
         ${isTaken ? 'opacity-55' : ''}`}
       onClick={onTap}>
-      <Link href={`/listing/${s.id}`} className="block" onClick={e => e.stopPropagation()}>
+      <Link href={`/listing/${s.id}`} className="block" onClick={e => { e.stopPropagation(); onNavigate(); }}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <ListingCarousel id={s.id} images={s.images} sourceUrl={s.sourceUrl}
             photoCount={s.photoCount} aspectRatio="aspect-[4/3]" />
@@ -559,6 +568,24 @@ export default function MapScreen() {
     const matched = LANG_CURRENCY[lang as Language];
     if (matched) setCurrency(matched);
   };
+
+  // Restore map state saved before navigating to a listing detail
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('subhub_map_state');
+      if (!raw) return;
+      sessionStorage.removeItem('subhub_map_state');
+      const saved = JSON.parse(raw) as Partial<MobileMapSavedState>;
+      if (saved.filters) setFilters(saved.filters);
+      if (saved.searchQuery !== undefined) setSearchQuery(saved.searchQuery);
+      if (saved.selectedId !== undefined) setSelectedId(saved.selectedId);
+      if (saved.cityFlyTo) setCityFlyTo(saved.cityFlyTo);
+      if (typeof saved.sheetHeight === 'number') {
+        setSheetHeight(saved.sheetHeight);
+        sheetHRef.current = saved.sheetHeight;
+      }
+    } catch {}
+  }, []);
 
   // Keep refs in sync
   useEffect(() => { sheetHRef.current = sheetHeight; }, [sheetHeight]);
@@ -797,6 +824,15 @@ export default function MapScreen() {
     setSearchQuery('');
   }, []);
 
+  const handleNavigateToListing = useCallback(() => {
+    try {
+      sessionStorage.setItem('subhub_map_state', JSON.stringify({
+        filters, searchQuery, selectedId, cityFlyTo,
+        sheetHeight: sheetHRef.current,
+      } satisfies MobileMapSavedState));
+    } catch {}
+  }, [filters, searchQuery, selectedId, cityFlyTo]);
+
   // ── Derived sheet zones ──────────────────────────────────────────────────────
   const midHandleCard = (SNAP_HANDLE + SNAP_CARD) / 2;
   const midCardList   = (SNAP_CARD + snapListH)   / 2;
@@ -1015,6 +1051,7 @@ export default function MapScreen() {
                 currency={currency}
                 isSaved={savedIds.has(selectedSublet.id)}
                 onSave={e => handleSave(e, selectedSublet.id)}
+                onNavigate={handleNavigateToListing}
               />
             </div>
           )}
@@ -1080,6 +1117,7 @@ export default function MapScreen() {
                               sheetHRef.current = SNAP_CARD;
                             }}
                             onSave={e => handleSave(e, s.id)}
+                            onNavigate={handleNavigateToListing}
                           />
                         </div>
                       ))

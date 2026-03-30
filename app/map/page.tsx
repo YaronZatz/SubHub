@@ -306,6 +306,13 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
 // ─── Listing Card ─────────────────────────────────────────────────────────────
 
+interface WebMapSavedState {
+  filters: Filters;
+  searchQuery: string;
+  selectedSubletId: string | undefined;
+  cityFlyTo: { lat: number; lng: number; zoom?: number } | null;
+}
+
 interface ListingCardProps {
   sublet: Sublet;
   isSelected: boolean;
@@ -314,10 +321,11 @@ interface ListingCardProps {
   onMouseEnter: () => void;
   onMouseLeave: () => void;
   onSave: (e: React.MouseEvent) => void;
+  onNavigate: () => void;
 }
 
 const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
-  ({ sublet: s, isSelected, isSaved, currency, onMouseEnter, onMouseLeave, onSave }, ref) => {
+  ({ sublet: s, isSelected, isSaved, currency, onMouseEnter, onMouseLeave, onSave, onNavigate }, ref) => {
     const beds = getBedroomCount(s);
     const baths = (s as any).parsedRooms?.bathrooms ?? (s as any).rooms?.bathrooms ?? null;
     const dateRange = getDateRange(s);
@@ -340,7 +348,7 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
-        <Link href={`/listing/${s.id}`} className="block">
+        <Link href={`/listing/${s.id}`} className="block" onClick={onNavigate}>
 
           {/* Photo with gradient overlay */}
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
@@ -487,6 +495,20 @@ function WebMapPage() {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // Restore map state saved before navigating to a listing detail
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('subhub_map_state');
+      if (!raw) return;
+      sessionStorage.removeItem('subhub_map_state');
+      const saved = JSON.parse(raw) as Partial<WebMapSavedState>;
+      if (saved.filters) setFilters(saved.filters);
+      if (saved.searchQuery !== undefined) setSearchQuery(saved.searchQuery);
+      if (saved.selectedSubletId !== undefined) setSelectedSubletId(saved.selectedSubletId);
+      if (saved.cityFlyTo) setCityFlyTo(saved.cityFlyTo);
+    } catch {}
+  }, []);
+
   // Load listings
   useEffect(() => {
     (async () => {
@@ -590,6 +612,14 @@ function WebMapPage() {
     setSearchQuery('');
   }, []);
 
+  const handleNavigateToListing = useCallback(() => {
+    try {
+      sessionStorage.setItem('subhub_map_state', JSON.stringify({
+        filters, searchQuery, selectedSubletId, cityFlyTo,
+      } satisfies WebMapSavedState));
+    } catch {}
+  }, [filters, searchQuery, selectedSubletId, cityFlyTo]);
+
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-[#f6f7f8]">
 
@@ -687,6 +717,7 @@ function WebMapPage() {
                   onMouseEnter={() => setSelectedSubletId(s.id)}
                   onMouseLeave={() => setSelectedSubletId(undefined)}
                   onSave={e => handleSave(e, s.id)}
+                  onNavigate={handleNavigateToListing}
                 />
               ))
             )}
