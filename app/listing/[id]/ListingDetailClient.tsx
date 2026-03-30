@@ -476,7 +476,7 @@ export default function ListingDetailClient({
                           className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
                         >
                           <span className="text-xl">{item.icon}</span>
-                          <span className="text-sm font-medium text-slate-700">{(t as Record<string, string>)[item.tKey] || item.labelEn}</span>
+                          <span className="text-sm font-medium text-slate-700">{(t as unknown as Record<string, string>)[item.tKey] || item.labelEn}</span>
                         </div>
                       ))}
                     </div>
