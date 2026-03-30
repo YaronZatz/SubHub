@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
 const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
   he: 'Hebrew', es: 'Spanish', fr: 'French', it: 'Italian',
   ru: 'Russian', uk: 'Ukrainian', pt: 'Portuguese', de: 'German', zh: 'Chinese',
 };
