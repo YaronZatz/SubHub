@@ -209,9 +209,9 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Bedrooms */}
           <section className="space-y-4">
-            <span className={sLabel}>Bedrooms</span>
+            <span className={sLabel}>{t.bedrooms}</span>
             <div className="flex gap-2 flex-wrap">
-              {([{ label: 'Any', value: undefined as number | undefined }, { label: '1+', value: 1 }, { label: '2+', value: 2 }, { label: '3+', value: 3 }, { label: '4+', value: 4 }]).map(opt => (
+              {([{ label: t.anyRooms, value: undefined as number | undefined }, { label: '1+', value: 1 }, { label: '2+', value: 2 }, { label: '3+', value: 3 }, { label: '4+', value: 4 }]).map(opt => (
                 <button key={opt.label} onClick={() => set({ minRooms: opt.value })}
                   className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all ${filters.minRooms === opt.value ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {opt.label}
@@ -223,7 +223,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           {/* Move-in Date */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className={sLabel}>{t.dates}</span>
+              <span className={sLabel}>{t.moveInDate}</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-400 font-medium">{t.flexible}</span>
                 <button
@@ -236,12 +236,12 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.startDate}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.start}</p>
                 <input type="date" value={filters.startDate || ''} onChange={e => set({ startDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
               </div>
               <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.endDate}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.end}</p>
                 <input type="date" value={filters.endDate || ''} onChange={e => set({ endDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
               </div>
@@ -262,7 +262,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Post Quality */}
           <section className="space-y-4">
-            <span className={sLabel}>Post Quality</span>
+            <span className={sLabel}>{t.postQuality}</span>
             <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
               className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
               <span>💰</span> {t.onlyWithPrice}
@@ -274,10 +274,10 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <span className={sLabel}>{t.amenities}</span>
             <div className="grid grid-cols-2 gap-y-3.5 gap-x-6">
               {([
-                { key: 'furnished', label: 'Furnished' }, { key: 'wifi', label: 'WiFi' },
-                { key: 'washer', label: 'Washer' }, { key: 'ac', label: 'Air Conditioning' },
-                { key: 'petFriendly', label: 'Pet Friendly' }, { key: 'parking', label: 'Free Parking' },
-                { key: 'kitchen', label: 'Kitchen' }, { key: 'balcony', label: 'Balcony' },
+                { key: 'furnished', label: t.amenityFurnished }, { key: 'wifi', label: t.amenityWifi },
+                { key: 'washer', label: t.amenityWasher }, { key: 'ac', label: t.amenityAC },
+                { key: 'petFriendly', label: t.amenityPetFriendly }, { key: 'parking', label: t.amenityParking },
+                { key: 'kitchen', label: t.amenityKitchen }, { key: 'balcony', label: t.amenityBalcony },
               ] as Array<{ key: keyof NonNullable<Filters['amenities']>; label: string }>).map(opt => (
                 <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
                   <input type="checkbox" checked={!!(filters.amenities?.[opt.key])} onChange={e => setAmenity(opt.key, e.target.checked)}
@@ -292,10 +292,10 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <button onClick={onClear} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
-            {t.clearFilters}
+            {t.clearAll}
           </button>
           <button onClick={onClose} className="flex items-center gap-2 px-7 py-3.5 bg-[#4A7CC7] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#4A7CC7]/25 hover:bg-[#3b66a6] transition-all active:scale-95">
-            {resultCount.toLocaleString()} {t.results}
+            {t.showResults.replace('{n}', resultCount.toLocaleString())}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </button>
         </div>
@@ -605,7 +605,7 @@ function WebMapPage() {
           value={searchQuery}
           onChange={setSearchQuery}
           sublets={sublets}
-          placeholder="City, neighborhood..."
+          placeholder={t.searchPlaceholder}
           className="flex-1 max-w-xs"
           inputClassName="w-full py-2 pl-10 pr-8 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4A7CC7]/20 focus:border-[#4A7CC7] focus:bg-white transition-all"
           onCitySelect={city => {

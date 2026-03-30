@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 
 interface PhotoGalleryProps {
   images: string[];
@@ -39,6 +41,8 @@ const ImagePlaceholder = ({ size = 32 }: { size?: number }) => (
 );
 
 export default function PhotoGallery({ images, alt = "Photo", onShowAll, onImageClick }: PhotoGalleryProps) {
+  const { language } = useLanguage();
+  const t = translations[language];
   const handleClick = (index: number) => {
     if (onImageClick) onImageClick(index);
     else onShowAll?.();
@@ -96,7 +100,7 @@ export default function PhotoGallery({ images, alt = "Photo", onShowAll, onImage
                   className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-white/60 bg-white/70 px-3 py-1.5 text-sm font-medium text-gray-900 backdrop-blur-sm transition-colors hover:bg-white/90 z-10"
                 >
                   <GridIcon />
-                  Show all photos
+                  {t.showAllPhotos}
                 </button>
               )}
             </div>
@@ -130,7 +134,7 @@ export default function PhotoGallery({ images, alt = "Photo", onShowAll, onImage
                   className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-lg border border-white/60 bg-white/70 px-3 py-1.5 text-sm font-medium text-gray-900 backdrop-blur-sm transition-colors hover:bg-white/90 z-10"
                 >
                   <GridIcon />
-                  Show all photos
+                  {t.showAllPhotos}
                 </button>
               )}
             </div>

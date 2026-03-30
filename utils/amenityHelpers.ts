@@ -5,29 +5,30 @@ export interface AmenityDef {
   key: keyof ParsedAmenities;
   icon: string;
   labelEn: string;
+  tKey: string;
 }
 
 export const AMENITY_DEFS: AmenityDef[] = [
-  { key: 'furnished',         icon: '🛋️',  labelEn: 'Furnished' },
-  { key: 'wifi',              icon: '📶',  labelEn: 'Wi-Fi' },
-  { key: 'ac',                icon: '❄️',  labelEn: 'Air conditioning' },
-  { key: 'heating',           icon: '🔥',  labelEn: 'Heating' },
-  { key: 'washer',            icon: '🧺',  labelEn: 'Washer' },
-  { key: 'dryer',             icon: '♨️',  labelEn: 'Dryer' },
-  { key: 'dishwasher',        icon: '🍽️',  labelEn: 'Dishwasher' },
-  { key: 'parking',           icon: '🅿️',  labelEn: 'Parking' },
-  { key: 'balcony',           icon: '🌅',  labelEn: 'Balcony' },
-  { key: 'rooftop',           icon: '🏙️',  labelEn: 'Rooftop' },
-  { key: 'elevator',          icon: '🛗',  labelEn: 'Elevator' },
-  { key: 'petFriendly',       icon: '🐾',  labelEn: 'Pet friendly' },
-  { key: 'smokingAllowed',    icon: '🚬',  labelEn: 'Smoking allowed' },
-  { key: 'workspace',         icon: '💼',  labelEn: 'Workspace' },
-  { key: 'gym',               icon: '🏋️',  labelEn: 'Gym' },
-  { key: 'pool',              icon: '🏊',  labelEn: 'Pool' },
-  { key: 'storage',           icon: '📦',  labelEn: 'Storage' },
-  { key: 'kitchen',           icon: '🍳',  labelEn: 'Kitchen' },
-  { key: 'privateBathroom',   icon: '🚿',  labelEn: 'Private bathroom' },
-  { key: 'utilitiesIncluded', icon: '💡',  labelEn: 'Utilities included' },
+  { key: 'furnished',         icon: '🛋️',  labelEn: 'Furnished',           tKey: 'amenityFurnished' },
+  { key: 'wifi',              icon: '📶',  labelEn: 'Wi-Fi',               tKey: 'amenityWifi' },
+  { key: 'ac',                icon: '❄️',  labelEn: 'Air conditioning',    tKey: 'amenityAC' },
+  { key: 'heating',           icon: '🔥',  labelEn: 'Heating',             tKey: 'amenityHeating' },
+  { key: 'washer',            icon: '🧺',  labelEn: 'Washer',              tKey: 'amenityWasher' },
+  { key: 'dryer',             icon: '♨️',  labelEn: 'Dryer',               tKey: 'amenityDryer' },
+  { key: 'dishwasher',        icon: '🍽️',  labelEn: 'Dishwasher',          tKey: 'amenityDishwasher' },
+  { key: 'parking',           icon: '🅿️',  labelEn: 'Parking',             tKey: 'amenityParking' },
+  { key: 'balcony',           icon: '🌅',  labelEn: 'Balcony',             tKey: 'amenityBalcony' },
+  { key: 'rooftop',           icon: '🏙️',  labelEn: 'Rooftop',             tKey: 'amenityRooftop' },
+  { key: 'elevator',          icon: '🛗',  labelEn: 'Elevator',            tKey: 'amenityElevator' },
+  { key: 'petFriendly',       icon: '🐾',  labelEn: 'Pet friendly',        tKey: 'amenityPetFriendly' },
+  { key: 'smokingAllowed',    icon: '🚬',  labelEn: 'Smoking allowed',     tKey: 'amenitySmokingAllowed' },
+  { key: 'workspace',         icon: '💼',  labelEn: 'Workspace',           tKey: 'amenityWorkspace' },
+  { key: 'gym',               icon: '🏋️',  labelEn: 'Gym',                 tKey: 'amenityGym' },
+  { key: 'pool',              icon: '🏊',  labelEn: 'Pool',                tKey: 'amenityPool' },
+  { key: 'storage',           icon: '📦',  labelEn: 'Storage',             tKey: 'amenityStorage' },
+  { key: 'kitchen',           icon: '🍳',  labelEn: 'Kitchen',             tKey: 'amenityKitchen' },
+  { key: 'privateBathroom',   icon: '🚿',  labelEn: 'Private bathroom',    tKey: 'amenityPrivateBathroom' },
+  { key: 'utilitiesIncluded', icon: '💡',  labelEn: 'Utilities included',  tKey: 'amenityUtilitiesIncluded' },
 ];
 
 type AmenitiesSource = Pick<Sublet, 'amenities' | 'parsedAmenities'>;

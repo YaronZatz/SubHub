@@ -339,12 +339,12 @@ export default function ListingDetailClient({
                 </h1>
                 {hasAI && (
                   <span className="bg-[#F5831F] text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">
-                    AI Parsed
+                    {t.aiParsed}
                   </span>
                 )}
                 {isTaken && (
                   <span className="bg-red-100 text-red-600 text-xs font-black px-3 py-1 rounded-full uppercase">
-                    Taken
+                    {t.taken}
                   </span>
                 )}
               </div>
@@ -406,7 +406,7 @@ export default function ListingDetailClient({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                       <span className="text-sm font-semibold text-slate-700">
-                        {beds} bedroom{beds !== 1 ? 's' : ''}
+                        {beds} {t.bedroom}{beds !== 1 ? 's' : ''}
                       </span>
                     </div>
                   )}
@@ -414,7 +414,7 @@ export default function ListingDetailClient({
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
                       <span className="text-base">🚿</span>
                       <span className="text-sm font-semibold text-slate-700">
-                        {sublet.parsedRooms.bathrooms} bath{sublet.parsedRooms.bathrooms !== 1 ? 's' : ''}
+                        {sublet.parsedRooms.bathrooms} {t.bath}{sublet.parsedRooms.bathrooms !== 1 ? 's' : ''}
                       </span>
                     </div>
                   )}
@@ -422,7 +422,7 @@ export default function ListingDetailClient({
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
                       <span className="text-base">📐</span>
                       <span className="text-sm font-semibold text-slate-700">
-                        {sublet.parsedRooms.floorArea} {sublet.parsedRooms.floorAreaUnit || 'sqm'}
+                        {sublet.parsedRooms.floorArea} {sublet.parsedRooms.floorAreaUnit || t.sqm}
                       </span>
                     </div>
                   )}
@@ -476,7 +476,7 @@ export default function ListingDetailClient({
                           className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
                         >
                           <span className="text-xl">{item.icon}</span>
-                          <span className="text-sm font-medium text-slate-700">{item.labelEn}</span>
+                          <span className="text-sm font-medium text-slate-700">{(t as Record<string, string>)[item.tKey] || item.labelEn}</span>
                         </div>
                       ))}
                     </div>
