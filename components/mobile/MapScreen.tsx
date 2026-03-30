@@ -31,8 +31,8 @@ const MapVisualizer = dynamic(
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SHORT_TERM_DAYS = 183;
-const PRICE_MAX = 50000;
-const PRICE_STEP = 1000;
+const PRICE_MAX = 20000;
+const PRICE_STEP = 500;
 const SNAP_HANDLE = 32;
 const SNAP_CARD   = 230;
 const SNAP_LIST_RATIO = 0.55;
@@ -41,7 +41,7 @@ const INITIAL_FILTERS: Filters = {
   minPrice: 0, maxPrice: PRICE_MAX, showTaken: false, type: undefined,
   city: '', neighborhood: '', startDate: '', endDate: '',
   dateMode: DateMode.FLEXIBLE, petsAllowed: false,
-  onlyWithPrice: false,
+  onlyWithPrice: true,
   rentTerm: RentTerm.ALL, postedWithin: 'all',
   minRooms: undefined, maxRooms: undefined,
 };
@@ -160,7 +160,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold text-[#4A7CC7]">
-                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪50k+' : `₪${filters.maxPrice.toLocaleString()}`}
+                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪20k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
             </div>
             <PriceSlider minVal={filters.minPrice} maxVal={filters.maxPrice}
