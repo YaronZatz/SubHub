@@ -37,7 +37,7 @@ function getListingDurationDays(s: Sublet): number | null {
 
 const INITIAL_FILTERS: Filters = {
   minPrice: 0,
-  maxPrice: 20000,
+  maxPrice: 50000,
   showTaken: false,
   type: undefined,
   city: '',
@@ -46,7 +46,7 @@ const INITIAL_FILTERS: Filters = {
   endDate: '',
   dateMode: DateMode.FLEXIBLE,
   petsAllowed: false,
-  onlyWithPrice: true,
+  onlyWithPrice: false,
   rentTerm: RentTerm.ALL,
   postedWithin: 'all',
 };
@@ -134,7 +134,7 @@ export default function ListingsPage() {
 
   const activeFilterCount = [
     filters.minPrice !== 0,
-    filters.maxPrice !== 20000,
+    filters.maxPrice !== 50000,
     !!filters.type,
     !!filters.city,
     !!filters.neighborhood,
@@ -244,8 +244,8 @@ export default function ListingsPage() {
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            {filters.minPrice !== 0 || filters.maxPrice !== 20000
-              ? `$${filters.minPrice.toLocaleString()} – $${filters.maxPrice >= 20000 ? '20k+' : filters.maxPrice.toLocaleString()}`
+            {filters.minPrice !== 0 || filters.maxPrice !== 50000
+              ? `$${filters.minPrice.toLocaleString()} – $${filters.maxPrice >= 50000 ? '50k+' : filters.maxPrice.toLocaleString()}`
               : 'Price'}
           </button>
 
@@ -460,7 +460,7 @@ export default function ListingsPage() {
                 <div className="flex justify-between items-end">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Price Range</label>
                   <span className="text-sm font-medium text-[#2F6EA8]">
-                    ${filters.minPrice.toLocaleString()} — ${filters.maxPrice >= 20000 ? '20,000+' : filters.maxPrice.toLocaleString()}
+                    ${filters.minPrice.toLocaleString()} — ${filters.maxPrice >= 50000 ? '50,000+' : filters.maxPrice.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex gap-3">
@@ -475,7 +475,7 @@ export default function ListingsPage() {
                   <input
                     type="number"
                     value={filters.maxPrice}
-                    onChange={e => setFilters(f => ({ ...f, maxPrice: Number(e.target.value) || 20000 }))}
+                    onChange={e => setFilters(f => ({ ...f, maxPrice: Number(e.target.value) || 50000 }))}
                     placeholder="Max"
                     className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#2F6EA8]/20 focus:border-[#2F6EA8] outline-none"
                   />
