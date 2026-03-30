@@ -128,6 +128,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
       onFiltersChange({ ...filters, amenities: { ...filters.amenities, [key]: val } }),
     [filters, onFiltersChange],
   );
+  const { language } = useLanguage();
+  const t = translations[language];
 
   const sLabel = 'text-xs font-bold uppercase tracking-widest text-slate-500';
   const iconBtnCls = (active: boolean) =>
@@ -144,7 +146,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
       {open && <div className="fixed inset-0 bg-slate-900/40 z-[55] backdrop-blur-[2px]" onClick={onClose} />}
       <aside className={`fixed top-0 right-0 bottom-0 z-[60] w-full max-w-[480px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Refine Your Search</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t.refineSearch}</h2>
           <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -156,7 +158,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           {/* Price Range */}
           <section className="space-y-4">
             <div className="flex justify-between items-end">
-              <span className={sLabel}>Price Range</span>
+              <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold text-[#4A7CC7]">
                 ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪20k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
@@ -167,13 +169,13 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Rental Duration */}
           <section className="space-y-4">
-            <span className={sLabel}>Rental Duration</span>
+            <span className={sLabel}>{t.rentalDuration}</span>
             <div className="grid grid-cols-3 gap-3">
               {([
-                { label: 'Sublet', value: RentTerm.ALL, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-                { label: 'Short Term', value: RentTerm.SHORT_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
-                { label: 'Long Term', value: RentTerm.LONG_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-              ] as const).map(opt => (
+                { label: t.rentTerms[RentTerm.ALL], value: RentTerm.ALL, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
+                { label: t.rentTerms[RentTerm.SHORT_TERM], value: RentTerm.SHORT_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> },
+                { label: t.rentTerms[RentTerm.LONG_TERM], value: RentTerm.LONG_TERM, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+              ]).map(opt => (
                 <button key={opt.value} onClick={() => set({ rentTerm: opt.value })}
                   className={iconBtnCls((filters.rentTerm ?? RentTerm.ALL) === opt.value)}>
                   {opt.icon}<span className="text-xs font-semibold">{opt.label}</span>
@@ -184,13 +186,13 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Property Type */}
           <section className="space-y-4">
-            <span className={sLabel}>Property Type</span>
+            <span className={sLabel}>{t.propertyType}</span>
             <div className="grid grid-cols-3 gap-3">
               {([
-                { label: 'Entire Place', value: SubletType.ENTIRE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
-                { label: 'Roommate', value: SubletType.ROOMMATE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-                { label: 'Studio', value: SubletType.STUDIO, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg> },
-              ] as const).map(opt => (
+                { label: t.subletTypes[SubletType.ENTIRE], value: SubletType.ENTIRE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+                { label: t.subletTypes[SubletType.ROOMMATE], value: SubletType.ROOMMATE, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+                { label: t.subletTypes[SubletType.STUDIO], value: SubletType.STUDIO, icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg> },
+              ]).map(opt => (
                 <button key={opt.value}
                   onClick={() => set({ type: filters.type === opt.value ? undefined : opt.value })}
                   className={iconBtnCls(filters.type === opt.value)}>
@@ -202,10 +204,10 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
           {/* Bedrooms */}
           <section className="space-y-4">
-            <span className={sLabel}>Bedrooms</span>
+            <span className={sLabel}>{t.bedrooms}</span>
             <div className="flex gap-2 flex-wrap">
               {([
-                { label: 'Any', value: undefined as number | undefined },
+                { label: t.anyRooms, value: undefined as number | undefined },
                 { label: '1+', value: 1 }, { label: '2+', value: 2 },
                 { label: '3+', value: 3 }, { label: '4+', value: 4 },
               ]).map(opt => (

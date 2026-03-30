@@ -10,11 +10,15 @@ import { persistenceService } from '@/services/persistenceService';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { HeartIcon } from '@/components/Icons';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 import { Sublet, CurrencyCode } from '@/types';
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 function EmptyState() {
+  const { language } = useLanguage();
+  const t = translations[language];
   return (
     <div className="bg-white rounded-2xl border border-slate-200 py-20 flex flex-col items-center text-center px-4">
       <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-5">
@@ -22,10 +26,8 @@ function EmptyState() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
       </div>
-      <h2 className="text-lg font-bold text-slate-900 mb-2">Your Shortlist is Empty</h2>
-      <p className="text-sm text-slate-500 max-w-xs mb-8">
-        Tap the ♡ on any listing to save it here. We'll keep your shortlist ready whenever you come back.
-      </p>
+      <h2 className="text-lg font-bold text-slate-900 mb-2">{t.shortlistEmpty}</h2>
+      <p className="text-sm text-slate-500 max-w-xs mb-8">{t.shortlistEmptyDesc}</p>
       <Link
         href="/map"
         className="inline-flex items-center gap-2 px-6 py-3 bg-[#2F6EA8] text-white font-bold rounded-xl hover:bg-[#2F6EA8]/90 transition-colors shadow-sm"
@@ -34,7 +36,7 @@ function EmptyState() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
-        Browse the map
+        {t.browseMap}
       </Link>
     </div>
   );
@@ -44,14 +46,16 @@ function EmptyState() {
 
 function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void }) {
   const { currency } = useCurrency();
+  const { language } = useLanguage();
+  const t = translations[language];
 
-  const title = [sublet.neighborhood, sublet.city].filter(Boolean).join(', ') || sublet.location || 'Unknown location';
+  const title = [sublet.neighborhood, sublet.city].filter(Boolean).join(', ') || sublet.location || t.unknownLocation;
   const dateRange = (() => {
     const s = sublet.startDate ? formatDate(sublet.startDate) : '';
     const e = sublet.endDate ? formatDate(sublet.endDate) : '';
     if (s && e) return `${s} – ${e}`;
-    if (s) return `From ${s}`;
-    if (sublet.immediateAvailability) return 'Available now';
+    if (s) return t.fromDate.replace('{date}', s);
+    if (sublet.immediateAvailability) return t.availableNow;
     return '';
   })();
 
@@ -106,6 +110,8 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
 
 function SavedContent() {
   const { savedIds, toggle, isLoading: savedLoading } = useSaved();
+  const { language } = useLanguage();
+  const t = translations[language];
   const [savedListings, setSavedListings] = useState<Sublet[]>([]);
   const [listingsLoading, setListingsLoading] = useState(false);
 
@@ -139,8 +145,8 @@ function SavedContent() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-slate-900">Saved Listings</h1>
-            <p className="text-slate-500 text-sm mt-1">Your shortlist — all in one place.</p>
+            <h1 className="text-2xl font-black text-slate-900">{t.savedListings}</h1>
+            <p className="text-slate-500 text-sm mt-1">{t.shortlistSubtitle}</p>
           </div>
           {!isLoading && savedIds.size > 0 && (
             <span className="text-sm font-semibold text-slate-500">
