@@ -110,5 +110,7 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
       (data.endDate as string) || '',
       immediateAvailability
     ),
+    summaryTranslations: data.summaryTranslations as Record<string, string> | undefined,
+    postedAt: data.postedAt as string | null | undefined,
   };
 }

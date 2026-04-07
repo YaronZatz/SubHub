@@ -3,6 +3,7 @@ import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
 import ListingCarousel from './ListingCarousel';
+import { translations } from '../translations';
 
 interface MapPreviewCardProps {
   sublet: Sublet;
@@ -23,6 +24,7 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
   currency,
   language,
 }) => {
+  const t = translations[language];
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
 
   return (
@@ -66,7 +68,7 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
         <div className="p-3">
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-              {String(sublet.type).toUpperCase()}
+              {t.subletTypes[sublet.type]}
             </span>
             <span className="text-base font-black text-cyan-600">
               {formatPrice(sublet.price, currency, language, sublet.currency)}
@@ -79,7 +81,7 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
             </p>
           )}
           {rooms != null && (
-            <p className="text-xs text-slate-500 mt-1">{rooms} bedroom{rooms !== 1 ? 's' : ''}</p>
+            <p className="text-xs text-slate-500 mt-1">{rooms} {rooms !== 1 ? t.bedrooms : t.bedroom}</p>
           )}
         </div>
       </div>

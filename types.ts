@@ -161,6 +161,7 @@ export interface Sublet {
   immediateAvailability?: boolean;
   rentTerm?: RentTerm;
   postedAt?: string | null;
+  summaryTranslations?: Record<string, string>;
 }
 
 export interface Filters {

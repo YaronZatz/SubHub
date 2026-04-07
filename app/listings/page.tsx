@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { persistenceService } from '@/services/persistenceService';
 import { formatPrice } from '@/utils/formatters';
+import { translations } from '@/translations';
 import { HeartIcon } from '@/components/Icons';
 import ListingCarousel from '@/components/ListingCarousel';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -59,6 +60,7 @@ export default function ListingsPage() {
   const [detailSublet, setDetailSublet] = useState<Sublet | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const { language, setLanguage } = useLanguage();
+  const t = translations[language];
   const { savedIds: savedListingIds, toggle: toggleSavedById, showSignInModal, closeSignInModal } = useSaved();
   const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -404,7 +406,7 @@ export default function ListingsPage() {
                     <p className="text-xs text-slate-500 mb-2 truncate">{sublet.neighborhood || sublet.city}</p>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#4A7CC7]/10 text-[#4A7CC7]">
-                        {sublet.type}
+                        {t.subletTypes[sublet.type]}
                       </span>
                       {sublet.startDate && (
                         <span className="text-[10px] text-slate-400 font-medium">From {sublet.startDate}</span>

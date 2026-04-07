@@ -64,6 +64,9 @@ export function WebHomePage({
     return () => document.removeEventListener('mousedown', handler);
   }, [isUserMenuOpen]);
 
+  // Don't render anything while checking auth or if user is logged in (avoids flash)
+  if (isLoading || user) return null;
+
   const handlePostClick = () => {
     if (onPostClick) {
       onPostClick();

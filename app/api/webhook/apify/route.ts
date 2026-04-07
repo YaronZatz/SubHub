@@ -8,6 +8,7 @@ import { SubletType, RentTerm } from '@/types';
 import { fetchDatasetItems, fetchDatasetItemsWithClient, fetchDatasetItemsByDatasetId } from '@/services/apifyService';
 import { geocodeAddress } from '@/services/geocodingService';
 import { contentHash } from '@/utils/contentHash';
+import { GoogleGenAI } from '@google/genai';
 
 const PARSER_VERSION = '2.0.0';
 
@@ -257,6 +258,39 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
     } as ApifyPayload;
   }
   return {} as ApifyPayload;
+}
+
+const TRANSLATE_LANGUAGES: Record<string, string> = {
+  he: 'Hebrew', ru: 'Russian', fr: 'French', es: 'Spanish',
+  uk: 'Ukrainian', de: 'German', zh: 'Chinese', pt: 'Portuguese', it: 'Italian',
+};
+
+/** Fire-and-forget: translate ai_summary to all languages in one Gemini call and cache in Firestore. */
+async function translateAndCacheSummary(listingId: string, summary: string): Promise<void> {
+  if (!summary || !process.env.GEMINI_API_KEY) return;
+  const langs = Object.keys(TRANSLATE_LANGUAGES);
+  const langList = langs.map(l => `${l} (${TRANSLATE_LANGUAGES[l]})`).join(', ');
+  const prompt = `Translate the following text to these languages. Return ONLY a valid JSON object mapping language codes to translated strings. Include all listed languages.\n\nLanguages: ${langList}\n\nText:\n${summary.slice(0, 1000)}`;
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    const raw = response.text?.trim() ?? '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+    const translations = JSON.parse(jsonMatch[0]) as Record<string, string>;
+    const updates: Record<string, string> = {};
+    for (const lang of langs) {
+      if (typeof translations[lang] === 'string' && translations[lang].trim()) {
+        updates[`summaryTranslations.${lang}`] = translations[lang].trim();
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      await adminDb.collection('listings').doc(listingId).update(updates);
+      console.log(`[Apify Webhook] Pre-translated summary for ${listingId} to ${Object.keys(updates).length} languages`);
+    }
+  } catch (err) {
+    console.warn(`[Apify Webhook] Summary pre-translation failed for ${listingId}:`, err);
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -539,6 +573,10 @@ export async function POST(req: NextRequest) {
           } catch (firestoreErr: unknown) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
+          }
+          // Pre-translate summary to all languages in background (fire-and-forget)
+          if (finalListing.ai_summary) {
+            void translateAndCacheSummary(docId, finalListing.ai_summary);
           }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);

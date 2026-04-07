@@ -305,7 +305,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
           if (rooms?.floorArea) {
             highlights.push({
               icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>,
-              label: `${rooms.floorArea} ${rooms.floorAreaUnit || 'sqm'}`,
+              label: `${rooms.floorArea} ${rooms.floorAreaUnit || t.sqm}`,
             });
           }
 
@@ -313,7 +313,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
           if (pa?.petFriendly || ad?.is_pet_friendly) {
             highlights.push({
               icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75 2.25 2.25 0 012.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282m0 0h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904m7.594-4.5v-4.5" /></svg>,
-              label: 'Pet Friendly',
+              label: t.amenityPetFriendly,
             });
           }
 

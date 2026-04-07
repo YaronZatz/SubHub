@@ -14,6 +14,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 export async function translateText(
   text: string,
   targetLanguage: string,
+  listingId?: string,
 ): Promise<string | null> {
   if (!text) return null;
 
@@ -21,7 +22,7 @@ export async function translateText(
     const response = await fetch('/api/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: text.slice(0, 1000), targetLanguage }),
+      body: JSON.stringify({ text: text.slice(0, 1000), targetLanguage, listingId }),
     });
     if (!response.ok) return null;
     const data = await response.json();

@@ -16,6 +16,7 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
 import { TranslatedText } from '@/components/TranslatedText';
+import { translateText } from '@/lib/translationService';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
 import { Sublet, ListingStatus, CurrencyCode } from '@/types';
@@ -161,6 +162,29 @@ export default function ListingDetailClient({
   const t = translations[lang];
   const [showLightbox, setShowLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [translatedSummary, setTranslatedSummary] = useState<string | null>(
+    () => (lang !== 'en' ? (initialListing?.summaryTranslations?.[lang] ?? null) : null)
+  );
+  const [summaryTranslating, setSummaryTranslating] = useState(false);
+
+  useEffect(() => {
+    const summary = sublet?.ai_summary;
+    if (!summary || lang === 'en') {
+      setTranslatedSummary(null);
+      return;
+    }
+    // Use cached translation from Firestore if available
+    const cached = sublet.summaryTranslations?.[lang];
+    if (cached) {
+      setTranslatedSummary(cached);
+      return;
+    }
+    setSummaryTranslating(true);
+    translateText(summary, lang, sublet.id)
+      .then(result => setTranslatedSummary(result && result.trim() !== summary.trim() ? result : null))
+      .catch(() => setTranslatedSummary(null))
+      .finally(() => setSummaryTranslating(false));
+  }, [sublet?.ai_summary, sublet?.summaryTranslations, lang]);
 
   const loadFromClient = useCallback(async () => {
     if (!listingId) return;
@@ -254,7 +278,7 @@ export default function ListingDetailClient({
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
   const addressLine = sublet ? (sublet.fullAddress || sublet.location || '') : '';
   const addressDir = contentTextDir(addressLine || null);
-  const summaryDir = contentTextDir(sublet?.ai_summary ?? null);
+  const summaryDir = contentTextDir(translatedSummary ?? sublet?.ai_summary ?? null);
   const originalDir = contentTextDir(sublet?.originalText ?? null);
   const isUiRTL = lang === 'he';
   const priceLocale = isUiRTL ? 'he-IL' : 'en-US';
@@ -428,7 +452,7 @@ export default function ListingDetailClient({
                   )}
                   <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
                     <span className="text-base">🏠</span>
-                    <span className="text-sm font-semibold text-slate-700">{sublet.type}</span>
+                    <span className="text-sm font-semibold text-slate-700">{t.subletTypes[sublet.type]}</span>
                   </div>
                 </div>
 
@@ -437,13 +461,17 @@ export default function ListingDetailClient({
                   <h2 className="text-lg font-bold text-slate-900">{t.aboutThisPlace}</h2>
                   {sublet.ai_summary ? (
                     <div className="space-y-5">
-                      <p
-                        className={contentBodyClass(summaryDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
-                        dir={summaryDir}
-                        {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
-                      >
-                        {sublet.ai_summary}
-                      </p>
+                      {summaryTranslating ? (
+                        <p className="text-xs text-slate-400 italic">{t.parsing}</p>
+                      ) : (
+                        <p
+                          className={contentBodyClass(summaryDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
+                          dir={summaryDir}
+                          {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
+                        >
+                          {translatedSummary ?? sublet.ai_summary}
+                        </p>
+                      )}
                       {sublet.originalText?.trim() ? (
                         <aside className="pt-5 mt-1 border-t border-slate-100">
                           <div className="flex items-center gap-2 mb-3" dir="ltr" lang="en">
@@ -558,7 +586,7 @@ export default function ListingDetailClient({
                       <span className="text-slate-500 font-medium">/mo</span>
                     </div>
                     <span className="inline-block mt-1 px-2 py-0.5 bg-[#4A7CC7]/10 text-[#4A7CC7] text-[10px] font-black uppercase rounded tracking-wider">
-                      {sublet.type}
+                      {t.subletTypes[sublet.type]}
                     </span>
                   </div>
 

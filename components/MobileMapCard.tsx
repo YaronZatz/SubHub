@@ -3,6 +3,7 @@ import { Sublet, Language, CurrencyCode } from '../types';
 import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
 import ListingCarousel from './ListingCarousel';
+import { translations } from '../translations';
 
 interface MobileMapCardProps {
   sublet: Sublet;
@@ -23,6 +24,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
   currency,
   language,
 }) => {
+  const t = translations[language];
   const rooms = sublet.parsedRooms?.bedrooms ?? sublet.parsedRooms?.totalRooms;
 
   return (
@@ -58,7 +60,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
         {/* Top row: type badge + heart */}
         <div className="flex items-center justify-between gap-1">
           <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider">
-            {String(sublet.type).toUpperCase()}
+            {t.subletTypes[sublet.type]}
           </span>
           <button
             onClick={onToggleSave}
@@ -78,7 +80,7 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
             <p className="text-[11px] text-slate-500 font-medium truncate">{sublet.neighborhood}</p>
           )}
           {rooms != null && (
-            <p className="text-[11px] text-slate-500">{rooms} bedroom{rooms !== 1 ? 's' : ''}</p>
+            <p className="text-[11px] text-slate-500">{rooms} {rooms !== 1 ? t.bedrooms : t.bedroom}</p>
           )}
         </div>
 
