@@ -22,13 +22,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!q) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(q.toLowerCase());
   if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <span className="font-bold text-slate-900">{text.slice(idx, idx + q.length)}</span>
-      {text.slice(idx + q.length)}
-    </>
-  );
+  return <span>{text.slice(0, idx)}<span className="font-bold text-slate-900">{text.slice(idx, idx + q.length)}</span>{text.slice(idx + q.length)}</span>;
 }
 
 const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({

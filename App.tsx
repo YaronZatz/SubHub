@@ -14,6 +14,8 @@ import LanguageSwitcher from './components/LanguageSwitcher';
 import ListingCarousel from './components/ListingCarousel';
 import FeatureIcons from './components/FeatureIcons';
 import AuthModal from './components/AuthModal';
+import SimilarListingsPanel from './components/SimilarListingsPanel';
+import WelcomeBackBanner from './components/WelcomeBackBanner';
 import { CurrencyProvider, useCurrency } from './contexts/CurrencyContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { persistenceService } from './services/persistenceService';
@@ -55,6 +57,13 @@ const AppContent: React.FC = () => {
   };
 
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  // Facebook redirect retention state
+  const [showSimilarPanel, setShowSimilarPanel] = useState(false);
+  const [showWelcomeBack, setShowWelcomeBack] = useState(false);
+  const [fbClickedListing, setFbClickedListing] = useState<Sublet | null>(null);
+  const fbClickTimestamp = useRef<number | null>(null);
+  const welcomeBackShownFor = useRef<Set<string>>(new Set());
   const [savedListingIds, setSavedListingIds] = useState<Set<string>>(new Set());
   
   const { currency } = useCurrency();
@@ -160,6 +169,20 @@ const AppContent: React.FC = () => {
       }, 100);
     }
   }, [selectedSubletId, viewMode]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) return;
+      if (!fbClickedListing) return;
+      if (welcomeBackShownFor.current.has(fbClickedListing.id)) return;
+      const elapsed = Date.now() - (fbClickTimestamp.current || 0);
+      if (elapsed < 5000) return;
+      welcomeBackShownFor.current.add(fbClickedListing.id);
+      setShowWelcomeBack(true);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [fbClickedListing]);
 
   const toggleSaveListing = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -327,6 +350,24 @@ const AppContent: React.FC = () => {
     setEditingSubletId(id);
   };
 
+  const handleFacebookRedirect = (listing: Sublet, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    // Open Facebook IMMEDIATELY — must be synchronous to avoid popup blockers
+    window.open(listing.sourceUrl, '_blank', 'noopener,noreferrer');
+    setFbClickedListing(listing);
+    fbClickTimestamp.current = Date.now();
+    setShowSimilarPanel(true);
+  };
+
+  const getSimilarListings = (current: Sublet): Sublet[] => {
+    if (!current) return [];
+    return sublets
+      .filter(s => s.id !== current.id && s.status === ListingStatus.AVAILABLE)
+      .filter(s => s.city?.toLowerCase() === current.city?.toLowerCase())
+      .sort((a, b) => Math.abs(a.price - current.price) - Math.abs(b.price - current.price))
+      .slice(0, 4);
+  };
+
   const getPostTimestamp = (sublet: { createdAt: number; postedAt?: string | null }) => {
     if (sublet.postedAt) {
       const ms = new Date(sublet.postedAt).getTime();
@@ -373,6 +414,7 @@ const AppContent: React.FC = () => {
           onClaim={handleClaimListing}
           onEdit={openEditModal}
           onShowToast={(message, type) => setToast({ message, type })}
+          onFacebookRedirect={handleFacebookRedirect}
         />
       )}
 
@@ -789,9 +831,12 @@ const AppContent: React.FC = () => {
                        {t.edit}
                      </button>
                    ) : (
-                     <div className="flex-1 bg-cyan-600 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-cyan-100">
-                       {t.viewOnFb}
-                     </div>
+                     <button
+                       onClick={(e) => handleFacebookRedirect(selectedSublet, e)}
+                       className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-cyan-100 transition-colors active:scale-95"
+                     >
+                       {t.messageOwnerOnFb}
+                     </button>
                    )}
                  </div>
                </div>
@@ -820,10 +865,34 @@ const AppContent: React.FC = () => {
       )}
 
       {isAuthModalOpen && (
-        <AuthModal 
+        <AuthModal
           onClose={() => setIsAuthModalOpen(false)}
         />
       )}
+
+      <SimilarListingsPanel
+        isVisible={showSimilarPanel}
+        onDismiss={() => setShowSimilarPanel(false)}
+        sourceListing={fbClickedListing}
+        similarListings={fbClickedListing ? getSimilarListings(fbClickedListing) : []}
+        onListingClick={(listing) => {
+          setShowSimilarPanel(false);
+          openFullDetail(listing.id);
+        }}
+        language={language}
+      />
+
+      <WelcomeBackBanner
+        isVisible={showWelcomeBack}
+        onDismiss={() => setShowWelcomeBack(false)}
+        onBrowseMore={() => {
+          setShowWelcomeBack(false);
+          setViewMode(ViewMode.BROWSE);
+        }}
+        lastViewedListing={fbClickedListing}
+        cityListingCount={fbClickedListing ? sublets.filter(s => s.city === fbClickedListing.city).length : 0}
+        language={language}
+      />
     </div>
   );
 };

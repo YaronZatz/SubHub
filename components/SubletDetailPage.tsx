@@ -23,6 +23,7 @@ interface SubletDetailPageProps {
   onClaim: (id: string) => void;
   onEdit: (id: string) => void;
   onShowToast?: (message: string, type: 'success' | 'error') => void;
+  onFacebookRedirect?: (listing: Sublet) => void;
 }
 
 const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
@@ -33,7 +34,8 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   currentUserId,
   onClaim,
   onEdit,
-  onShowToast
+  onShowToast,
+  onFacebookRedirect,
 }) => {
   const t = translations[language];
   const isRTL = language === Language.HE;
@@ -569,14 +571,16 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                 </button>
               ) : (
                 sublet.sourceUrl ? (
-                  <a 
-                    href={sublet.sourceUrl} 
-                    target="_blank" 
-                    className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-cyan-100 uppercase tracking-widest text-sm"
-                  >
-                    {t.contactHost}
-                    <ExternalLinkIcon className="w-4 h-4" />
-                  </a>
+                  <div>
+                    <button
+                      onClick={() => onFacebookRedirect ? onFacebookRedirect(sublet) : window.open(sublet.sourceUrl, '_blank', 'noopener,noreferrer')}
+                      className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-cyan-100 uppercase tracking-widest text-sm"
+                    >
+                      {t.messageOwnerOnFb}
+                      <ExternalLinkIcon className="w-4 h-4" />
+                    </button>
+                    <p className="text-center text-[10px] text-slate-400 mt-1.5">{t.fbHelperText}</p>
+                  </div>
                 ) : (
                   <button 
                     className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-cyan-100 uppercase tracking-widest text-sm"
