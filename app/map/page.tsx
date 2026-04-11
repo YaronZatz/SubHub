@@ -308,6 +308,16 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 
 let _pendingWebMapState: WebMapSavedState | null = null;
 
+/** Call before router.push('/map') to pre-seed search + map position for a city. */
+export function setInitialMapCity(city: string, center: { lat: number; lng: number; zoom?: number }) {
+  _pendingWebMapState = {
+    filters: { ...INITIAL_FILTERS, city },
+    searchQuery: city,
+    selectedSubletId: undefined,
+    cityFlyTo: center,
+  };
+}
+
 interface WebMapSavedState {
   filters: Filters;
   searchQuery: string;

@@ -28,8 +28,8 @@ const COPY: Record<AuthModalReason, { title: string; subtitle: string }> = {
     subtitle: 'Keep your favourites in one place — free forever.',
   },
   contact: {
-    title: 'Sign up to view on Facebook',
-    subtitle: 'View the original listing directly on Facebook.',
+    title: 'Sign up to message the owner',
+    subtitle: 'Message the owner directly on Facebook.',
   },
   general: {
     title: 'Join SubHub',

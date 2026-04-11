@@ -230,7 +230,7 @@ export default function WebNavbar() {
               </Link>
 
               {/* Currency picker */}
-              <div className="hidden sm:block">
+              <div>
                 <PillDropdown
                   value={currency}
                   options={CURRENCY_OPTIONS}
@@ -239,7 +239,7 @@ export default function WebNavbar() {
               </div>
 
               {/* Language picker */}
-              <div className="hidden sm:block">
+              <div>
                 <PillDropdown
                   value={language}
                   options={LANGUAGE_OPTIONS}

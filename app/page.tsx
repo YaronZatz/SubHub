@@ -38,7 +38,7 @@ import MobileMapCard from '../components/MobileMapCard';
 
 import PlatformWrapper from '@/components/shared/PlatformWrapper';
 import { WebHomePage } from '@/components/web/HomePage';
-import { MobileHomePlaceholder } from '@/components/mobile/HomePlaceholder';
+import { MobileHomePage } from '@/components/mobile/MobileHomePage';
 
 /** ~6 months in days; used to classify short-term vs long-term */
 const SHORT_TERM_DAYS = 183;
@@ -241,7 +241,23 @@ export default function Home() {
             activeFilterCount={activeFilterCount}
           />
         }
-        mobile={<MobileHomePlaceholder />}
+        mobile={
+          <MobileHomePage
+            onPostClick={handleAddPostClick}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filters={filters}
+            setFilters={setFilters}
+            cityFlyTo={cityFlyTo}
+            handleCityFlyTo={handleCityFlyTo}
+            mapSelectedSubletId={mapSelectedSubletId}
+            setMapSelectedSubletId={setMapSelectedSubletId}
+            filteredSublets={filteredSublets}
+            toggleSaved={toggleSaved}
+            savedListingIds={savedListingIds}
+            activeFilterCount={activeFilterCount}
+          />
+        }
       />
 
       {isAddModalOpen && user && (
