@@ -11,10 +11,5 @@ interface PlatformWrapperProps {
 export default function PlatformWrapper({ web, mobile }: PlatformWrapperProps) {
   const { isMobile } = usePlatform();
 
-  // Wait until mounted to prevent hydration flash
-  if (isMobile === undefined) {
-    return null;
-  }
-
   return <>{isMobile ? mobile : web}</>;
 }

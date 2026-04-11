@@ -1,27 +1,21 @@
 import { useState, useEffect } from 'react';
 
 export function usePlatform() {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
+  // Lazy initializer reads window synchronously on the client so isMobile is
+  // never undefined — PlatformWrapper can render immediately without a null gap.
+  // Falls back to false (desktop) during SSR where window doesn't exist.
+  const [isMobile, setIsMobile] = useState<boolean>(
+    () => typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const handleResize = () => {
-        setIsMobile(window.innerWidth < 768);
-      };
-
-      // Initial check
-      handleResize();
-
-      // Listen for window resize
-      window.addEventListener('resize', handleResize);
-
-      // Cleanup
-      return () => window.removeEventListener('resize', handleResize);
-    }
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   return {
     isMobile,
-    isDesktop: isMobile === undefined ? undefined : !isMobile,
+    isDesktop: !isMobile,
   };
 }
