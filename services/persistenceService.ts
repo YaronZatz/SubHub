@@ -78,13 +78,11 @@ export const persistenceService = {
 
   /**
    * Fetch a small set of active listings for a specific city — used by the homepage carousels.
-   * Much faster than the full fetch: ~20 docs per city, 3 cities in parallel.
+   * No orderBy to avoid needing a composite index; sorted client-side by createdAt.
    */
   async fetchListingsByCity(city: string, count = 20): Promise<Sublet[]> {
     if (!db) return [];
     try {
-      // No orderBy — avoids needing a composite index (status + city + postedAt).
-      // Sort by createdAt client-side after fetch.
       const q = query(
         collection(db!, COLLECTION),
         where('status', '==', 'active'),

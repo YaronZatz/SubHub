@@ -15,9 +15,9 @@ import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
 const FEATURED_CITIES = ['Tel Aviv', 'Berlin', 'London'];
+
 const CITY_CHIP_CITIES = ['Tel Aviv', 'Berlin', 'London', 'Amsterdam', 'Paris', 'New York'];
 
-// Props kept for interface compatibility with app/page.tsx
 interface WebHomePageProps {
   onPostClick?: () => void;
   searchQuery: string;
@@ -54,17 +54,16 @@ export function WebHomePage({
   searchQuery,
   setSearchQuery,
   handleCityFlyTo,
-  savedListingIds,
   toggleSaved,
-  // kept for interface compatibility
+  savedListingIds,
   onPostClick: _onPostClick,
   filters: _filters,
   setFilters: _setFilters,
   cityFlyTo: _cityFlyTo,
+  filteredSublets: _filteredSublets,
   mapSelectedSubletId: _mapSelectedSubletId,
   setMapSelectedSubletId: _setMapSelectedSubletId,
   activeFilterCount: _activeFilterCount,
-  filteredSublets: _filteredSublets,
 }: WebHomePageProps) {
   const { currency } = useCurrency();
   const { language } = useLanguage();
@@ -74,7 +73,6 @@ export function WebHomePage({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch all featured cities in parallel — small queries, fast
     Promise.all(
       FEATURED_CITIES.map(city =>
         persistenceService.fetchListingsByCity(city, 20).then(listings => ({ city, listings }))
@@ -101,10 +99,12 @@ export function WebHomePage({
 
       {/* Hero */}
       <header className="relative bg-[#0F172A] pt-20 pb-16 overflow-hidden">
+        {/* Subtle gradient orbs */}
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#4A7CC7]/20 rounded-full blur-3xl -z-0 pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-[#F5831F]/10 rounded-full blur-3xl -z-0 pointer-events-none" />
 
         <div className="relative z-10 max-w-3xl mx-auto px-4 text-center">
+          {/* AI pill */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A7CC7]/20 text-[#93bbf0] text-xs font-bold uppercase tracking-wider mb-6">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4A7CC7] opacity-75" />
@@ -120,14 +120,13 @@ export function WebHomePage({
             Every rental post from Facebook groups — structured by AI, searchable on one map.
           </p>
 
+          {/* Search bar */}
           <div className="relative z-20 max-w-2xl mx-auto">
             <SearchAutocomplete
               value={searchQuery}
               onChange={setSearchQuery}
               sublets={[]}
               onCitySelect={(city) => {
-                const center = CITY_CENTERS[city];
-                if (center) setInitialMapCity(city, center);
                 setSearchQuery(city);
                 handleCityFlyTo(city);
                 router.push('/map');
@@ -138,6 +137,7 @@ export function WebHomePage({
             />
           </div>
 
+          {/* City chips */}
           <div className="flex flex-wrap justify-center gap-2 mt-6">
             {CITY_CHIP_CITIES.map(city => (
               <button
@@ -177,44 +177,46 @@ export function WebHomePage({
       {/* City listing rows */}
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-14 space-y-14">
         {FEATURED_CITIES.map(city => (
-          <section key={city}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-black text-slate-900">
-                Listings in {city}
-                {!loading && listingsByCity[city]?.length > 0 && (
-                  <span className="ml-2 text-base font-semibold text-slate-400">
-                    ({listingsByCity[city].length}+)
-                  </span>
-                )}
-              </h2>
-              <button
-                onClick={() => navigateToCity(city)}
-                className="flex items-center gap-1 text-[#4A7CC7] text-sm font-bold hover:underline"
-              >
-                See all
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </button>
-            </div>
+            <section key={city}>
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-black text-slate-900">
+                  Listings in {city}
+                  {!loading && (listingsByCity[city]?.length ?? 0) > 0 && (
+                    <span className="ml-2 text-base font-semibold text-slate-400">
+                      ({listingsByCity[city].length}+)
+                    </span>
+                  )}
+                </h2>
+                <button
+                  onClick={() => navigateToCity(city)}
+                  className="flex items-center gap-1 text-[#4A7CC7] text-sm font-bold hover:underline"
+                >
+                  See all
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </button>
+              </div>
 
-            <div className="flex overflow-x-auto gap-4 pb-3 -mx-4 px-4 scrollbar-hide">
-              {loading
-                ? Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
-                : (listingsByCity[city] ?? []).map(sublet => (
-                    <HomeListingCard
-                      key={sublet.id}
-                      sublet={sublet}
-                      isSaved={savedListingIds.has(sublet.id)}
-                      onToggleSave={(e) => toggleSaved(e, sublet.id)}
-                      currency={currency}
-                      language={language}
-                    />
-                  ))
-              }
-            </div>
-          </section>
-        ))}
+              {/* Horizontal carousel */}
+              <div className="flex overflow-x-auto gap-4 pb-3 -mx-4 px-4 scrollbar-hide">
+                {loading
+                  ? Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
+                  : (listingsByCity[city] ?? []).map(sublet => (
+                      <HomeListingCard
+                        key={sublet.id}
+                        sublet={sublet}
+                        isSaved={savedListingIds.has(sublet.id)}
+                        onToggleSave={(e) => toggleSaved(e, sublet.id)}
+                        currency={currency}
+                        language={language}
+                      />
+                    ))
+                }
+              </div>
+            </section>
+          ))}
       </main>
 
       {/* Footer */}
