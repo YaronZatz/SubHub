@@ -77,6 +77,30 @@ export const persistenceService = {
   },
 
   /**
+   * Fetch a small set of active listings for a specific city — used by the homepage carousels.
+   * Much faster than the full fetch: ~20 docs per city, 3 cities in parallel.
+   */
+  async fetchListingsByCity(city: string, count = 20): Promise<Sublet[]> {
+    if (!db) return [];
+    try {
+      const q = query(
+        collection(db!, COLLECTION),
+        where('status', '==', 'active'),
+        where('city', '==', city),
+        orderBy('postedAt', 'desc'),
+        limit(count)
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((d) =>
+        listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
+      );
+    } catch (e) {
+      console.error(`❌ fetchListingsByCity(${city}) failed:`, e);
+      return [];
+    }
+  },
+
+  /**
    * Real-time listener — calls callback whenever listings change in Firestore.
    * Returns an unsubscribe function.
    */
