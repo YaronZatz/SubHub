@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -11,7 +11,6 @@ import HomeListingCard from '@/components/web/HomeListingCard';
 import { setInitialMapCity } from '@/app/map/page';
 import { setInitialMobileMapCity } from '@/components/mobile/MapScreen';
 import { CITY_CENTERS } from '@/constants';
-import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
 const FEATURED_CITIES = ['Tel Aviv', 'Berlin', 'London'];
@@ -33,33 +32,17 @@ interface MobileHomePageProps {
   activeFilterCount: number;
 }
 
-function CardSkeleton() {
-  return (
-    <div className="w-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-md animate-pulse">
-      <div className="h-36 bg-slate-200" />
-      <div className="p-3 space-y-2">
-        <div className="flex justify-between gap-2">
-          <div className="h-4 w-16 bg-slate-200 rounded-full" />
-          <div className="h-4 w-12 bg-slate-200 rounded-full" />
-        </div>
-        <div className="h-3 w-36 bg-slate-200 rounded" />
-        <div className="h-3 w-24 bg-slate-200 rounded" />
-      </div>
-    </div>
-  );
-}
-
 export function MobileHomePage({
   searchQuery,
   setSearchQuery,
   handleCityFlyTo,
-  savedListingIds,
+  filteredSublets,
   toggleSaved,
+  savedListingIds,
   onPostClick,
   filters: _filters,
   setFilters: _setFilters,
   cityFlyTo: _cityFlyTo,
-  filteredSublets: _filteredSublets,
   mapSelectedSubletId: _mapSelectedSubletId,
   setMapSelectedSubletId: _setMapSelectedSubletId,
   activeFilterCount: _activeFilterCount,
@@ -67,37 +50,33 @@ export function MobileHomePage({
   const { currency } = useCurrency();
   const { language } = useLanguage();
   const router = useRouter();
-  const [listingsByCity, setListingsByCity] = useState<Record<string, Sublet[]>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all(
-      FEATURED_CITIES.map(city =>
-        persistenceService.fetchListingsByCity(city, 20).then(listings => ({ city, listings }))
-      )
-    ).then(results => {
-      const map: Record<string, Sublet[]> = {};
-      results.forEach(({ city, listings }) => { map[city] = listings; });
-      setListingsByCity(map);
-      setLoading(false);
-    });
-  }, []);
 
   const navigateToCity = (city: string) => {
     const center = CITY_CENTERS[city];
     if (center) {
-      setInitialMapCity(city, center);
-      setInitialMobileMapCity(city, center);
+      setInitialMapCity(city, center);       // web map
+      setInitialMobileMapCity(city, center); // mobile map
     }
     setSearchQuery(city);
     handleCityFlyTo(city);
     router.push('/map');
   };
 
+  const listingsByCity = FEATURED_CITIES.reduce<Record<string, Sublet[]>>((acc, city) => {
+    acc[city] = filteredSublets
+      .filter(s => s.city?.toLowerCase() === city.toLowerCase())
+      .slice(0, 20);
+    return acc;
+  }, {});
+
+  const activeCities = FEATURED_CITIES.filter(city => listingsByCity[city].length > 0);
+
   return (
     <div className="font-sans bg-[#f6f7f8] text-slate-900 min-h-screen flex flex-col">
+      {/* Existing sticky navbar (logo + auth + currency/language) */}
       <WebNavbar />
 
+      {/* Scrollable content — padded for fixed tab bar */}
       <div className="flex-1 overflow-y-auto pb-24">
 
         {/* Search hero */}
@@ -112,13 +91,8 @@ export function MobileHomePage({
           <SearchAutocomplete
             value={searchQuery}
             onChange={setSearchQuery}
-            sublets={[]}
+            sublets={filteredSublets}
             onCitySelect={(city) => {
-              const center = CITY_CENTERS[city];
-              if (center) {
-                setInitialMapCity(city, center);
-                setInitialMobileMapCity(city, center);
-              }
               setSearchQuery(city);
               handleCityFlyTo(city);
               router.push('/map');
@@ -128,6 +102,7 @@ export function MobileHomePage({
             placeholder="Search cities, neighborhoods..."
           />
 
+          {/* City chips */}
           <div className="flex flex-wrap gap-2 mt-4 justify-center">
             {CITY_CHIP_CITIES.map(city => (
               <button
@@ -154,48 +129,51 @@ export function MobileHomePage({
 
         {/* City listing rows */}
         <main className="px-4 py-8 space-y-10">
-          {FEATURED_CITIES.map(city => (
-            <section key={city}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-black text-slate-900">
-                  {city}
-                  {!loading && (listingsByCity[city]?.length ?? 0) > 0 && (
+          {activeCities.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <div className="text-4xl mb-3">🏠</div>
+              <p className="text-base font-semibold">Loading listings…</p>
+            </div>
+          ) : (
+            activeCities.map(city => (
+              <section key={city}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-lg font-black text-slate-900">
+                    {city}
                     <span className="ml-1.5 text-sm font-semibold text-slate-400">
                       ({listingsByCity[city].length}+)
                     </span>
-                  )}
-                </h2>
-                <button
-                  onClick={() => navigateToCity(city)}
-                  className="flex items-center gap-1 text-[#4A7CC7] text-xs font-bold"
-                >
-                  See all
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </button>
-              </div>
+                  </h2>
+                  <button
+                    onClick={() => navigateToCity(city)}
+                    className="flex items-center gap-1 text-[#4A7CC7] text-xs font-bold"
+                  >
+                    See all
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  </button>
+                </div>
 
-              <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
-                {loading
-                  ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} />)
-                  : (listingsByCity[city] ?? []).map(sublet => (
-                      <HomeListingCard
-                        key={sublet.id}
-                        sublet={sublet}
-                        isSaved={savedListingIds.has(sublet.id)}
-                        onToggleSave={(e) => toggleSaved(e, sublet.id)}
-                        currency={currency}
-                        language={language}
-                      />
-                    ))
-                }
-              </div>
-            </section>
-          ))}
+                <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
+                  {listingsByCity[city].map(sublet => (
+                    <HomeListingCard
+                      key={sublet.id}
+                      sublet={sublet}
+                      isSaved={savedListingIds.has(sublet.id)}
+                      onToggleSave={(e) => toggleSaved(e, sublet.id)}
+                      currency={currency}
+                      language={language}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))
+          )}
         </main>
       </div>
 
+      {/* Tab bar — WebNavbar skips it on the home route, so we render it here */}
       <MobileTabBar variant="fixed" onPostClick={onPostClick} />
     </div>
   );

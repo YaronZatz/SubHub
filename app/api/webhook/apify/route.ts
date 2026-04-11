@@ -150,12 +150,18 @@ function ensureStringArray(arr: unknown): string[] {
       if (typeof x === 'string') return x;
       if (x && typeof x === 'object') {
         const obj = x as Record<string, unknown>;
-        // Facebook Groups Scraper nests image URL inside image.uri
+        // Facebook Groups Scraper nests image URL inside media.image.uri or image.uri
+        const media = obj.media as Record<string, unknown> | undefined;
+        const mediaImageUri = (media?.image as Record<string, unknown> | undefined)?.uri;
+        if (mediaImageUri && typeof mediaImageUri === 'string') return mediaImageUri;
         const image = obj.image as Record<string, unknown> | undefined;
         if (image?.uri && typeof image.uri === 'string') return image.uri;
+        // fallback to source or photo fields (full-size CDN URLs)
+        if (obj.source && typeof obj.source === 'string') return obj.source;
+        if (obj.photo && typeof obj.photo === 'string') return obj.photo;
         // fallback to thumbnail
         if (obj.thumbnail && typeof obj.thumbnail === 'string') return obj.thumbnail;
-        // fallback to plain url field
+        // fallback to plain url field (often a facebook.com page URL — last resort)
         if (obj.url && typeof obj.url === 'string') return obj.url;
       }
       return null;

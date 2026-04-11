@@ -43,18 +43,24 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   const [index, setIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
+  const [fallbackImages, setFallbackImages] = useState<Set<number>>(new Set());
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
   const touchDeltaRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  const images = useMemo(() => {
+  const { images, originalImages } = useMemo(() => {
     if (customImages && customImages.length > 0) {
-      const directImages = customImages.filter(isDirectImageUrl).map(enhanceImageUrl);
-      if (directImages.length > 0) return directImages;
+      const direct = customImages.filter(isDirectImageUrl);
+      if (direct.length > 0) {
+        return {
+          images: direct.map(enhanceImageUrl),
+          originalImages: direct,
+        };
+      }
     }
-    return [];
+    return { images: [] as string[], originalImages: [] as string[] };
   }, [id, customImages]);
 
   const hasImages = images.length > 0;
@@ -130,8 +136,13 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
   const handleImageError = useCallback((imgIndex: number) => {
-    setFailedImages(prev => new Set(prev).add(imgIndex));
-  }, []);
+    // If the enhanced URL failed and it differs from the original, try the original first
+    if (!fallbackImages.has(imgIndex) && originalImages[imgIndex] !== images[imgIndex]) {
+      setFallbackImages(prev => new Set(prev).add(imgIndex));
+    } else {
+      setFailedImages(prev => new Set(prev).add(imgIndex));
+    }
+  }, [fallbackImages, originalImages, images]);
 
   // Placeholder for when no valid images are available
   if (!hasImages) {
@@ -223,7 +234,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
           ) : (
             <img
               key={i}
-              src={src}
+              src={fallbackImages.has(i) ? originalImages[i] : src}
               className="w-full h-full object-cover shrink-0 select-none"
               alt={`Sublet view ${i + 1}`}
               loading="lazy"
