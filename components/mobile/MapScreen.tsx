@@ -363,6 +363,17 @@ function MiniPicker({ value, options, onChange }: {
 
 let _pendingMobileMapState: MobileMapSavedState | null = null;
 
+/** Call before router.push('/map') to pre-seed search + map position for a city. */
+export function setInitialMobileMapCity(city: string, center: { lat: number; lng: number; zoom?: number }) {
+  _pendingMobileMapState = {
+    filters: { ...INITIAL_FILTERS, city },
+    searchQuery: city,
+    selectedId: undefined,
+    cityFlyTo: center,
+    sheetHeight: SNAP_HANDLE,
+  };
+}
+
 interface MobileMapSavedState {
   filters: Filters;
   searchQuery: string;

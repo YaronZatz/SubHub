@@ -9,6 +9,7 @@ import WebNavbar from '@/components/web/WebNavbar';
 import MobileTabBar from '@/components/shared/MobileTabBar';
 import HomeListingCard from '@/components/web/HomeListingCard';
 import { setInitialMapCity } from '@/app/map/page';
+import { setInitialMobileMapCity } from '@/components/mobile/MapScreen';
 import { CITY_CENTERS } from '@/constants';
 import { Sublet, Filters } from '@/types';
 
@@ -52,7 +53,10 @@ export function MobileHomePage({
 
   const navigateToCity = (city: string) => {
     const center = CITY_CENTERS[city];
-    if (center) setInitialMapCity(city, center);
+    if (center) {
+      setInitialMapCity(city, center);       // web map
+      setInitialMobileMapCity(city, center); // mobile map
+    }
     setSearchQuery(city);
     handleCityFlyTo(city);
     router.push('/map');
