@@ -83,17 +83,19 @@ export const persistenceService = {
   async fetchListingsByCity(city: string, count = 20): Promise<Sublet[]> {
     if (!db) return [];
     try {
+      // No orderBy — avoids needing a composite index (status + city + postedAt).
+      // Sort by createdAt client-side after fetch.
       const q = query(
         collection(db!, COLLECTION),
         where('status', '==', 'active'),
         where('city', '==', city),
-        orderBy('postedAt', 'desc'),
         limit(count)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map((d) =>
+      const docs = snapshot.docs.map((d) =>
         listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
       );
+      return docs.sort((a, b) => b.createdAt - a.createdAt);
     } catch (e) {
       console.error(`❌ fetchListingsByCity(${city}) failed:`, e);
       return [];
