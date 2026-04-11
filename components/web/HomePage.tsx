@@ -62,10 +62,6 @@ export function WebHomePage({
     router.push('/map');
   };
 
-  const handleCardCitySelect = (city: string) => {
-    navigateToCity(city);
-  };
-
   // Group listings by city, limited per city for the carousel
   const listingsByCity = FEATURED_CITIES.reduce<Record<string, Sublet[]>>((acc, city) => {
     acc[city] = filteredSublets
@@ -195,7 +191,6 @@ export function WebHomePage({
                     sublet={sublet}
                     isSaved={savedListingIds.has(sublet.id)}
                     onToggleSave={(e) => toggleSaved(e, sublet.id)}
-                    onCitySelect={handleCardCitySelect}
                     currency={currency}
                     language={language}
                   />

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Sublet, CurrencyCode, Language } from '@/types';
 import { HeartIcon } from '@/components/Icons';
 import { formatPrice } from '@/utils/formatters';
@@ -11,7 +12,6 @@ interface HomeListingCardProps {
   sublet: Sublet;
   isSaved: boolean;
   onToggleSave: (e: React.MouseEvent) => void;
-  onCitySelect: (city: string) => void;
   currency: CurrencyCode;
   language: Language;
 }
@@ -20,15 +20,15 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
   sublet,
   isSaved,
   onToggleSave,
-  onCitySelect,
   currency,
   language,
 }) => {
+  const router = useRouter();
   const t = translations[language];
   const isNew = Date.now() - sublet.createdAt < 24 * 60 * 60 * 1000;
 
   const handleClick = () => {
-    if (sublet.city) onCitySelect(sublet.city);
+    router.push(`/listing/${sublet.id}`);
   };
 
   return (

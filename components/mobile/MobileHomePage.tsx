@@ -62,10 +62,6 @@ export function MobileHomePage({
     router.push('/map');
   };
 
-  const handleCardCitySelect = (city: string) => {
-    navigateToCity(city);
-  };
-
   const listingsByCity = FEATURED_CITIES.reduce<Record<string, Sublet[]>>((acc, city) => {
     acc[city] = filteredSublets
       .filter(s => s.city?.toLowerCase() === city.toLowerCase())
@@ -166,7 +162,6 @@ export function MobileHomePage({
                       sublet={sublet}
                       isSaved={savedListingIds.has(sublet.id)}
                       onToggleSave={(e) => toggleSaved(e, sublet.id)}
-                      onCitySelect={handleCardCitySelect}
                       currency={currency}
                       language={language}
                     />
