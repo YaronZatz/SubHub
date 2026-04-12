@@ -68,9 +68,13 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
           <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-wider truncate">
             {t.subletTypes[sublet.type]}
           </span>
-          <span className="text-sm font-black text-cyan-600 shrink-0">
-            {formatPrice(sublet.price, currency, language, sublet.currency)}
-          </span>
+          {sublet.price > 0 ? (
+            <span className="text-sm font-black text-cyan-600 shrink-0">
+              {formatPrice(sublet.price, currency, language, sublet.currency)}
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium text-slate-400 shrink-0">Price on request</span>
+          )}
         </div>
         <p className="text-xs font-semibold text-slate-800 line-clamp-1">{sublet.location}</p>
         {sublet.neighborhood && (

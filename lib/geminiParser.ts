@@ -133,6 +133,7 @@ TODAY'S DATE: ${today}
 Return strict JSON matching the schema. Rules:
 - price: number only, 0 if unknown
 - currency: Detect currency from symbols in the post ($ = USD, € = EUR, ₪ or NIS = ILS, £ = GBP). Infer from city/country if no symbol. Only default to ILS if the post is clearly in Israel with no other currency indicators.
+- location.city: use common English name only, no country suffix (e.g. "Tel Aviv" not "Tel Aviv-Yafo", "Berlin" not "Berlin, Germany")
 - location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown
 - location.countryCode: ISO 3166-1 alpha-2 (e.g. IL, US, DE, FR)
 - dates: use ISO YYYY-MM-DD; null if not mentioned; immediateAvailability=true for "now/immediate/available now"

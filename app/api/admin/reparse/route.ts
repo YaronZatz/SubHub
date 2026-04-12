@@ -16,6 +16,29 @@ import { adminDb } from '@/lib/firebase-admin';
 import { parseTextWithGemini, computeRentTerm } from '@/lib/geminiParser';
 import { geocodeAddress } from '@/services/geocodingService';
 
+const CITY_ALIASES: Record<string, string> = {
+  'tel aviv-yafo': 'Tel Aviv',
+  'tel aviv yafo': 'Tel Aviv',
+  'tel aviv, israel': 'Tel Aviv',
+  'tel-aviv': 'Tel Aviv',
+  'תל אביב': 'Tel Aviv',
+  'תל אביב-יפו': 'Tel Aviv',
+  'berlin, germany': 'Berlin',
+  'london, uk': 'London',
+  'london, england': 'London',
+  'london, united kingdom': 'London',
+  'amsterdam, netherlands': 'Amsterdam',
+  'paris, france': 'Paris',
+  'new york, usa': 'New York',
+  'new york city': 'New York',
+  'nyc': 'New York',
+};
+
+function normalizeCity(city?: string | null): string | null {
+  if (!city) return null;
+  return CITY_ALIASES[city.trim().toLowerCase()] ?? city.trim();
+}
+
 function buildLocationString(loc: { street?: string; neighborhood?: string; city?: string; displayAddress?: string } | undefined): string {
   if (!loc) return '';
   if (loc.displayAddress) return loc.displayAddress;
@@ -82,7 +105,7 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
     price: Number(parsed.price) || (data.price as number),
     currency: parsed.currency || data.currency,
     location: locationStr || (data.location as string),
-    city: loc?.city ?? data.city,
+    city: normalizeCity(loc?.city) ?? data.city,
     neighborhood: loc?.neighborhood ?? data.neighborhood,
     country: loc?.country ?? data.country,
     countryCode: loc?.countryCode ?? data.countryCode,

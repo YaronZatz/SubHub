@@ -12,6 +12,30 @@ import { GoogleGenAI } from '@google/genai';
 
 const PARSER_VERSION = '2.0.0';
 
+/** Canonical city names for common variants returned by Gemini */
+const CITY_ALIASES: Record<string, string> = {
+  'tel aviv-yafo': 'Tel Aviv',
+  'tel aviv yafo': 'Tel Aviv',
+  'tel aviv, israel': 'Tel Aviv',
+  'tel-aviv': 'Tel Aviv',
+  'תל אביב': 'Tel Aviv',
+  'תל אביב-יפו': 'Tel Aviv',
+  'berlin, germany': 'Berlin',
+  'london, uk': 'London',
+  'london, england': 'London',
+  'london, united kingdom': 'London',
+  'amsterdam, netherlands': 'Amsterdam',
+  'paris, france': 'Paris',
+  'new york, usa': 'New York',
+  'new york city': 'New York',
+  'nyc': 'New York',
+};
+
+function normalizeCity(city?: string | null): string | null {
+  if (!city) return null;
+  return CITY_ALIASES[city.trim().toLowerCase()] ?? city.trim();
+}
+
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
   return Object.fromEntries(
     Object.entries(obj).filter(([, v]) => v !== undefined)
@@ -166,7 +190,12 @@ function ensureStringArray(arr: unknown): string[] {
       }
       return null;
     })
-    .filter((s): s is string => typeof s === 'string' && s.startsWith('http'));
+    .filter((s): s is string => {
+      if (typeof s !== 'string' || !s.startsWith('http')) return false;
+      const lower = s.toLowerCase();
+      // Reject Facebook page URLs — they're HTML pages, not CDN images
+      return !lower.includes('facebook.com') && !lower.includes('fb.com/');
+    });
 }
 
 /**
@@ -535,7 +564,7 @@ export async function POST(req: NextRequest) {
             endDate: dates?.end_date || '',
             is_flexible: dates?.is_flexible ?? false,
             location: locationStr,
-            city: loc?.city ?? null,
+            city: normalizeCity(loc?.city),
             neighborhood: loc?.neighborhood ?? null,
             country: loc?.country ?? null,
             countryCode: loc?.countryCode ?? null,
