@@ -193,6 +193,23 @@ export const persistenceService = {
   },
 
   /**
+   * Fetch all listings owned by a specific user.
+   * Sorts client-side to avoid needing a composite index.
+   */
+  async fetchListingsByOwner(ownerId: string): Promise<Sublet[]> {
+    if (!db || !ownerId) return [];
+    try {
+      const q = query(collection(db!, COLLECTION), where('ownerId', '==', ownerId), limit(50));
+      const snap = await getDocs(q);
+      const docs = snap.docs.map(d => listingDocumentToSublet(d.id, d.data() as Record<string, unknown>));
+      return docs.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (e) {
+      console.error('❌ fetchListingsByOwner failed:', e);
+      return [];
+    }
+  },
+
+  /**
    * Add a new listing document to Firestore and return it with the generated id.
    */
   async addListing(listing: Sublet): Promise<Sublet> {

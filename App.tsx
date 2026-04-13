@@ -5,7 +5,6 @@ import { hasAmenity } from './utils/amenityHelpers';
 import { CITY_CENTERS, GLOBAL_CITIES } from './constants';
 import MapVisualizer from './components/MapVisualizer';
 import AddListingModal from './components/AddListingModal';
-import EditListingModal from './components/EditListingModal';
 import SubletDetailPage from './components/SubletDetailPage';
 import PriceRangeFilter from './components/PriceRangeFilter';
 import CityAutocomplete from './components/CityAutocomplete';
@@ -41,8 +40,7 @@ const AppContent: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.BROWSE);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [editingSubletId, setEditingSubletId] = useState<string | undefined>();
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
   // Persist language choice
@@ -346,10 +344,6 @@ const AppContent: React.FC = () => {
     setViewMode(ViewMode.DETAIL);
   };
 
-  const openEditModal = (id: string) => {
-    setEditingSubletId(id);
-  };
-
   const handleFacebookRedirect = (listing: Sublet, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     // Open Facebook IMMEDIATELY — must be synchronous to avoid popup blockers
@@ -412,7 +406,7 @@ const AppContent: React.FC = () => {
           setLanguage={setLanguage}
           currentUserId={user?.id || ''}
           onClaim={handleClaimListing}
-          onEdit={openEditModal}
+          onEdit={() => {}}
           onShowToast={(message, type) => setToast({ message, type })}
           onFacebookRedirect={handleFacebookRedirect}
         />
@@ -823,21 +817,12 @@ const AppContent: React.FC = () => {
                  </div>
 
                  <div className="mt-4 flex gap-2">
-                   {selectedSublet.ownerId === user?.id ? (
-                     <button 
-                      onClick={(e) => { e.stopPropagation(); openEditModal(selectedSublet.id); }}
-                      className="flex-1 bg-slate-900 text-white text-[10px] font-black py-2.5 rounded-xl text-center uppercase tracking-wider shadow-sm"
-                     >
-                       {t.edit}
-                     </button>
-                   ) : (
-                     <button
-                       onClick={(e) => handleFacebookRedirect(selectedSublet, e)}
-                       className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-cyan-100 transition-colors active:scale-95"
-                     >
-                       {t.messageOwnerOnFb}
-                     </button>
-                   )}
+                   <button
+                     onClick={(e) => handleFacebookRedirect(selectedSublet, e)}
+                     className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white text-[10px] font-black py-2.5 rounded-xl text-center flex items-center justify-center gap-2 uppercase tracking-wider shadow-md shadow-cyan-100 transition-colors active:scale-95"
+                   >
+                     {t.messageOwnerOnFb}
+                   </button>
                  </div>
                </div>
              </div>
@@ -852,15 +837,6 @@ const AppContent: React.FC = () => {
           onClose={() => setIsAddModalOpen(false)}
           language={language}
           currentUser={user}
-        />
-      )}
-
-      {editingSubletId && (
-        <EditListingModal 
-          sublet={sublets.find(s => s.id === editingSubletId)!}
-          onSave={handleUpdateSublet}
-          onClose={() => setEditingSubletId(undefined)}
-          language={language}
         />
       )}
 

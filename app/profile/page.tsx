@@ -1,18 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import WebNavbar from '@/components/web/WebNavbar';
 import AuthGuard from '@/components/shared/AuthGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { persistenceService } from '@/services/persistenceService';
+import type { Sublet } from '@/types';
+import { ListingStatus } from '@/types';
+import EditListingModal from '@/components/EditListingModal';
+import Toast from '@/components/shared/Toast';
 
 function ProfileContent() {
   const { user, logout } = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [myListings, setMyListings] = useState<Sublet[]>([]);
+  const [listingsLoading, setListingsLoading] = useState(true);
+  const [editListing, setEditListing] = useState<Sublet | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    setListingsLoading(true);
+    persistenceService.fetchListingsByOwner(user.id).then(listings => {
+      setMyListings(listings);
+      setListingsLoading(false);
+    });
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -102,6 +120,48 @@ function ProfileContent() {
           </Link>
         </div>
 
+        {/* My Listings */}
+        <div className="bg-white rounded-2xl border border-slate-200 mb-4 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">{(t as unknown as { myListings: string }).myListings}</h3>
+          </div>
+          {listingsLoading ? (
+            <div className="px-6 py-4 flex items-center gap-2 text-sm text-slate-400">
+              <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+              Loading…
+            </div>
+          ) : myListings.length === 0 ? (
+            <div className="px-6 py-4 text-sm text-slate-400">{(t as unknown as { noListingsYet: string }).noListingsYet}</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {myListings.map(listing => {
+                const isBlocked = listing.status === ListingStatus.TAKEN || listing.status === ListingStatus.EXPIRED;
+                return (
+                  <div key={listing.id} className="flex items-center justify-between px-6 py-3 gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{listing.location}{listing.city ? `, ${listing.city}` : ''}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                          listing.status === ListingStatus.TAKEN ? 'bg-red-100 text-red-600' :
+                          listing.status === ListingStatus.EXPIRED ? 'bg-slate-100 text-slate-500' :
+                          'bg-green-100 text-green-700'
+                        }`}>{listing.status}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => !isBlocked && setEditListing(listing)}
+                      disabled={isBlocked}
+                      className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-slate-200 text-slate-600 hover:bg-slate-50"
+                    >
+                      {t.edit}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {/* Sign out */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
           <button
@@ -122,6 +182,26 @@ function ProfileContent() {
           </button>
         </div>
       </div>
+
+      {/* Edit Listing Modal */}
+      {editListing && (
+        <EditListingModal
+          listing={editListing}
+          language={language}
+          onClose={() => setEditListing(null)}
+          onUpdate={(updated) => {
+            setMyListings(prev => prev.map(s => s.id === updated.id ? updated : s));
+          }}
+          onSuccess={(msg, updated) => {
+            setEditListing(null);
+            setMyListings(prev => prev.map(s => s.id === updated.id ? updated : s));
+            setToastMessage(msg);
+          }}
+        />
+      )}
+
+      {/* Toast */}
+      {toastMessage && <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />}
     </div>
   );
 }

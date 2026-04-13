@@ -16,6 +16,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
 import AuthModal from '@/components/shared/AuthModal';
 import PostListingModal from '@/components/PostListingModal';
+import EditListingModal from '@/components/EditListingModal';
+import Toast from '@/components/shared/Toast';
 import { useSaved } from '@/contexts/SavedContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '@/constants';
@@ -68,6 +70,7 @@ export default function ListingsPage() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editListing, setEditListing] = useState<Sublet | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const { currency } = useCurrency();
@@ -733,24 +736,23 @@ export default function ListingsPage() {
 
       {/* Edit Listing Modal */}
       {editListing && user && (
-        <PostListingModal
-          onAdd={() => {}}
+        <EditListingModal
+          listing={editListing}
+          language={language}
           onClose={() => setEditListing(null)}
-          onViewOnMap={(listing) => {
-            setEditListing(null);
-            if (listing.lat && listing.lng) {
-              setCityFlyTo({ lat: listing.lat, lng: listing.lng, zoom: 15 });
-            }
-          }}
           onUpdate={(updated) => {
             setSublets(prev => prev.map(s => s.id === updated.id ? updated : s));
           }}
-          existingListing={editListing}
-          language={language}
-          currentUserId={user.id}
-          currentUserName={user.name}
+          onSuccess={(msg, updated) => {
+            setEditListing(null);
+            setDetailSublet(updated);
+            setToastMessage(msg);
+          }}
         />
       )}
+
+      {/* Toast */}
+      {toastMessage && <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />}
     </div>
   );
 }

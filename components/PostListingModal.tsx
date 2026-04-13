@@ -10,9 +10,11 @@ import type { ExtractedListingPost } from '../actions/extractListingPost';
 import PhotoUploader from './post/PhotoUploader';
 import AmenitiesGrid from './post/AmenitiesGrid';
 import ListingSuccessScreen from './post/ListingSuccessScreen';
+import ReviewForm from './post/ReviewForm';
 import type { ReviewFormData, ReviewFormErrors } from './post/reviewFormTypes';
 import { EMPTY_REVIEW_FORM } from './post/reviewFormTypes';
 import type { AmenityKey } from './post/AmenitiesGrid';
+import { FL, ic, icErr, SectionHeading } from './post/formPrimitives';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -23,8 +25,6 @@ interface PostListingModalProps {
   language: Language;
   currentUserId: string;
   currentUserName: string;
-  existingListing?: Sublet;
-  onUpdate?: (listing: Sublet) => void;
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ function buildSublet(data: ReviewFormData, photos: string[], originalText: strin
   return {
     id: crypto.randomUUID(),
     sourceUrl: data.sourceUrl,
-    originalText,
+    originalText: originalText || data.description,
     price: Number(data.price) || 0,
     currency: data.currency,
     startDate: data.startDate,
@@ -105,23 +105,6 @@ function step2Errors(d: Step2Data): Record<string, string> {
   return e;
 }
 
-// ─── Small shared input primitives ─────────────────────────────────────────────
-
-const ic = 'w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all';
-const icErr = 'w-full px-3.5 py-3 bg-red-50 border border-red-300 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/10 transition-all';
-
-function FL({ label, required, error, children }: { label: string; required?: boolean; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
-      </label>
-      {children}
-      {error && <p className="text-[11px] text-red-500 font-medium mt-0.5">{error}</p>}
-    </div>
-  );
-}
-
 // ─── Step progress bar ─────────────────────────────────────────────────────────
 
 function StepBar({ step, total, label }: { step: number; total: number; label: string }) {
@@ -135,12 +118,6 @@ function StepBar({ step, total, label }: { step: number; total: number; label: s
       <span className="text-xs text-slate-400 font-semibold">{label}</span>
     </div>
   );
-}
-
-// ─── Section heading ────────────────────────────────────────────────────────────
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
-  return <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2 mb-3">{children}</h3>;
 }
 
 // ─── Extracting animation ───────────────────────────────────────────────────────
@@ -185,170 +162,18 @@ function ExtractingScreen({ resolvedCount, labels }: { resolvedCount: number; la
   );
 }
 
-// ─── Review form ────────────────────────────────────────────────────────────────
-
-function ReviewForm({
-  data, onChange, photos, onPhotosChange, errors, t, pm, amenityLabels, subletTypeLabels, photosReadOnly,
-}: {
-  data: ReviewFormData; onChange: (d: ReviewFormData) => void;
-  photos: string[]; onPhotosChange: (p: string[]) => void;
-  errors: ReviewFormErrors;
-  t: (typeof translations)[Language];
-  pm: (typeof translations)[Language]['postModal'];
-  amenityLabels: Record<AmenityKey, string>;
-  subletTypeLabels: Record<SubletType, string>;
-  photosReadOnly?: boolean;
-}) {
-  const s = <K extends keyof ReviewFormData>(k: K, v: ReviewFormData[K]) => onChange({ ...data, [k]: v });
-  const te = (v?: string) => !v ? undefined : v === 'required' ? pm.fieldRequired : v === 'end_before_start' ? pm.endDateBeforeStart : v;
-  const [photoErr, setPhotoErr] = useState<string | null>(null);
-
-  return (
-    <div className="space-y-7">
-      {/* Location section */}
-      <div>
-        <SectionHeading>{pm.locationLabel}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3">
-          <FL label={pm.locationLabel} required error={te(errors.location)}>
-            <input value={data.location} onChange={e => s('location', e.target.value)} className={errors.location ? icErr : ic} placeholder="12 Rothschild Blvd" />
-          </FL>
-          <FL label={pm.cityLabel} required error={te(errors.city)}>
-            <input value={data.city} onChange={e => s('city', e.target.value)} className={errors.city ? icErr : ic} placeholder="Tel Aviv" />
-          </FL>
-          <FL label={pm.neighborhoodLabel}>
-            <input value={data.neighborhood} onChange={e => s('neighborhood', e.target.value)} className={ic} />
-          </FL>
-        </div>
-      </div>
-
-      {/* Price & Type */}
-      <div>
-        <SectionHeading>{pm.priceLabel} & {pm.typeLabel}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3">
-          <FL label={pm.priceLabel} required error={te(errors.price)}>
-            <input type="number" min={0} value={data.price} onChange={e => s('price', e.target.value)} className={errors.price ? icErr : ic} placeholder="5000" />
-          </FL>
-          <FL label={pm.currencyLabel} required>
-            <select value={data.currency} onChange={e => s('currency', e.target.value as ReviewFormData['currency'])} className={ic + ' cursor-pointer'}>
-              <option value="ILS">{pm.currencyILS}</option>
-              <option value="USD">{pm.currencyUSD}</option>
-              <option value="EUR">{pm.currencyEUR}</option>
-            </select>
-          </FL>
-          <FL label={pm.typeLabel} required error={te(errors.type)}>
-            <select value={data.type} onChange={e => s('type', e.target.value as SubletType | '')} className={(errors.type ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
-              <option value="">—</option>
-              {Object.values(SubletType).map(v => <option key={v} value={v}>{subletTypeLabels[v]}</option>)}
-            </select>
-          </FL>
-          <FL label={pm.rentalDurationLabel} required error={te(errors.rentalDuration)}>
-            <select value={data.rentalDuration} onChange={e => s('rentalDuration', e.target.value as RentalDuration | '')} className={(errors.rentalDuration ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
-              <option value="">—</option>
-              <option value={RentalDuration.SUBLET}>{pm.rentalDurationSublet}</option>
-              <option value={RentalDuration.SHORT_TERM}>{pm.rentalDurationShortTerm}</option>
-              <option value={RentalDuration.LONG_TERM}>{pm.rentalDurationLongTerm}</option>
-            </select>
-          </FL>
-        </div>
-      </div>
-
-      {/* Dates */}
-      <div>
-        <SectionHeading>{pm.startDateLabel}</SectionHeading>
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <FL label={pm.startDateLabel} required error={te(errors.startDate)}>
-            <input type="date" value={data.startDate} onChange={e => s('startDate', e.target.value)} onClick={e => e.currentTarget.showPicker?.()} className={(errors.startDate ? icErr : ic) + ' cursor-pointer appearance-none'} />
-          </FL>
-          {!data.openEnded && (
-            <FL label={pm.endDateLabel} error={te(errors.endDate)}>
-              <input type="date" value={data.endDate} onChange={e => s('endDate', e.target.value)} onClick={e => e.currentTarget.showPicker?.()} className={(errors.endDate ? icErr : ic) + ' cursor-pointer appearance-none'} />
-            </FL>
-          )}
-        </div>
-        <label className="flex items-center gap-3 cursor-pointer select-none">
-          <div onClick={() => s('openEnded', !data.openEnded)} className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${data.openEnded ? 'bg-cyan-600' : 'bg-slate-200'}`}>
-            <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${data.openEnded ? 'translate-x-5' : 'translate-x-0'}`} />
-          </div>
-          <span className="text-sm text-slate-600 font-medium">{pm.openEndedLabel}</span>
-        </label>
-      </div>
-
-      {/* Amenities */}
-      <div>
-        <SectionHeading>{pm.amenitiesLabel}</SectionHeading>
-        <AmenitiesGrid selected={data.amenities} onChange={a => s('amenities', a)} labels={amenityLabels} />
-      </div>
-
-      {/* Description & URL */}
-      <div>
-        <SectionHeading>{pm.descriptionLabel}</SectionHeading>
-        <div className="space-y-3">
-          <FL label={pm.descriptionLabel}>
-            <textarea value={data.description} onChange={e => s('description', e.target.value)} rows={3} className="w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all resize-none" />
-          </FL>
-          <FL label={pm.sourceUrlLabel}>
-            <input type="url" value={data.sourceUrl} onChange={e => s('sourceUrl', e.target.value)} placeholder="https://…" className={ic} />
-          </FL>
-        </div>
-      </div>
-
-      {/* Photos */}
-      <div>
-        <SectionHeading>{pm.photosLabel}</SectionHeading>
-        {photosReadOnly ? (
-          <div className="flex flex-wrap gap-2">
-            {photos.map((src, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => onPhotosChange(photos.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors">×</button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <PhotoUploader photos={photos} onChange={onPhotosChange} subtitle={pm.photosSubtitle} error={photoErr} onError={msg => { setPhotoErr(msg); setTimeout(() => setPhotoErr(null), 4000); }} />
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Main modal ─────────────────────────────────────────────────────────────────
 
-function subletToReviewFormData(s: Sublet): ReviewFormData {
-  const amenities = Array.isArray(s.amenities) ? s.amenities as string[] : [];
-  // Infer rentalDuration from rentTerm
-  let rentalDuration: RentalDuration | '' = '';
-  if (s.rentTerm === RentTerm.LONG_TERM) rentalDuration = RentalDuration.LONG_TERM;
-  else if (s.rentTerm === RentTerm.SHORT_TERM) rentalDuration = RentalDuration.SHORT_TERM;
-  return {
-    location: s.location || '',
-    city: s.city || '',
-    neighborhood: s.neighborhood || '',
-    price: s.price > 0 ? String(s.price) : '',
-    currency: (s.currency as 'ILS' | 'USD' | 'EUR') || 'ILS',
-    startDate: s.startDate || '',
-    endDate: s.endDate || '',
-    openEnded: !s.endDate,
-    type: s.type || '',
-    rentalDuration,
-    amenities,
-    description: (s as unknown as { description?: string }).description || '',
-    sourceUrl: s.sourceUrl || '',
-  };
-}
-
-export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName, existingListing, onUpdate }: PostListingModalProps) {
+export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName }: PostListingModalProps) {
   const t = translations[language];
   const pm = t.postModal;
-  const isEditMode = !!existingListing;
 
   const amenityLabels: Record<AmenityKey, string> = { wifi: pm.amenityWifi, ac: pm.amenityAC, parking: pm.amenityParking, petFriendly: pm.amenityPetFriendly, balcony: pm.amenityBalcony, elevator: pm.amenityElevator, furnished: pm.amenityFurnished, billsIncluded: pm.amenityBillsIncluded };
   const subletTypeLabels: Record<SubletType, string> = { [SubletType.ENTIRE]: t.subletTypes[SubletType.ENTIRE], [SubletType.ROOMMATE]: t.subletTypes[SubletType.ROOMMATE], [SubletType.STUDIO]: t.subletTypes[SubletType.STUDIO] };
   const fieldLabels = EXTRACT_FIELDS.map(k => pm[k as keyof typeof pm] as string);
 
   // ── Tab ─────────────────────────────────────────────────────────────────────
-  const [tab, setTab] = useState<Tab>(isEditMode ? 'manual' : 'paste');
+  const [tab, setTab] = useState<Tab>('paste');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   // ── Path 1 ──────────────────────────────────────────────────────────────────
@@ -368,19 +193,15 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
   const extractedDataRef = useRef<ExtractedListingPost | null>(null);
 
   // ── Path 2 ──────────────────────────────────────────────────────────────────
-  const [manualStep, setManualStep] = useState<ManualStep>(isEditMode ? 'review' : 1);
+  const [manualStep, setManualStep] = useState<ManualStep>(1);
   const [step1, setStep1] = useState<Step1Data>(EMPTY_STEP1);
   const [step2, setStep2] = useState<Step2Data>(EMPTY_STEP2);
   const [step3, setStep3] = useState<Step3Data>(EMPTY_STEP3);
-  const [manualReviewData, setManualReviewData] = useState<ReviewFormData>(
-    isEditMode ? subletToReviewFormData(existingListing!) : EMPTY_REVIEW_FORM
-  );
+  const [manualReviewData, setManualReviewData] = useState<ReviewFormData>(EMPTY_REVIEW_FORM);
   const [manualReviewErrors, setManualReviewErrors] = useState<ReviewFormErrors>({});
   const [step1Errs, setStep1Errs] = useState<Record<string, string>>({});
   const [step2Errs, setStep2Errs] = useState<Record<string, string>>({});
-  const [manualReviewPhotos, setManualReviewPhotos] = useState<string[]>(
-    isEditMode ? (existingListing!.images ?? []) : []
-  );
+  const [manualReviewPhotos, setManualReviewPhotos] = useState<string[]>([]);
 
   // ── Shared ──────────────────────────────────────────────────────────────────
   const [submittedListing, setSubmittedListing] = useState<Sublet | null>(null);
@@ -468,60 +289,14 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
     }
     setIsSubmitting(true);
 
-    let lat = existingListing?.lat ?? 0;
-    let lng = existingListing?.lng ?? 0;
-    // Re-geocode if location changed (or no coords yet)
+    let lat = 0;
+    let lng = 0;
     const geoQuery = [data.location, data.city].filter(Boolean).join(', ');
-    if (geoQuery && (lat === 0 || data.location !== existingListing?.location)) {
+    if (geoQuery) {
       try {
         const coords = await geocodeAddress(geoQuery);
         if (coords) { lat = coords.lat; lng = coords.lng; }
       } catch { /* leave unchanged */ }
-    }
-
-    if (isEditMode && existingListing) {
-      // Build updated listing preserving original metadata
-      const updatedListing: Sublet = {
-        ...existingListing,
-        location: data.location,
-        city: data.city || undefined,
-        neighborhood: data.neighborhood || undefined,
-        price: Number(data.price) || 0,
-        currency: data.currency,
-        startDate: data.startDate,
-        endDate: data.openEnded ? '' : data.endDate,
-        type: data.type as SubletType,
-        amenities: data.amenities,
-        images: photos,
-        photoCount: photos.length,
-        sourceUrl: data.sourceUrl,
-        rentTerm: rentalDurationToRentTerm(data.rentalDuration as RentalDuration | ''),
-        lat, lng,
-      };
-      onUpdate?.(updatedListing);
-      setSubmittedListing(updatedListing);
-      setManualStep('success');
-      setIsSubmitting(false);
-
-      (async () => {
-        try {
-          const user = getAuth().currentUser;
-          const token = user ? await user.getIdToken() : null;
-          const res = await fetch(`/api/listings/${existingListing.id}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify(updatedListing),
-          });
-          if (!res.ok) throw new Error(`status ${res.status}`);
-        } catch {
-          setToastMsg(pm.persistenceError);
-          setTimeout(() => setToastMsg(null), 4000);
-        }
-      })();
-      return;
     }
 
     const listing = buildSublet(data, photos, originalText, currentUserId, currentUserName, lat, lng);
@@ -590,11 +365,11 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
           {/* ── Header ── */}
           <div className="shrink-0 px-6 pt-5 pb-0 border-b border-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-slate-900">{isEditMode ? pm.editModalTitle : pm.modalTitle}</h2>
+              <h2 className="text-lg font-black text-slate-900">{pm.modalTitle}</h2>
               <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-xl leading-none">×</button>
             </div>
 
-            {!isSuccess && !isEditMode && (
+            {!isSuccess && (
               <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
                 {(['paste', 'manual'] as Tab[]).map(tk => (
                   <button key={tk} type="button" onClick={() => setTab(tk)} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${tab === tk ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -714,7 +489,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                   </>
                 )}
                 {manualStep === 'success' && submittedListing && (
-                  <ListingSuccessScreen listing={submittedListing} onViewOnMap={() => { onViewOnMap(submittedListing); onClose(); }} onPostAnother={isEditMode ? onClose : () => { setStep1(EMPTY_STEP1); setStep2(EMPTY_STEP2); setStep3(EMPTY_STEP3); setManualReviewData(EMPTY_REVIEW_FORM); setSubmittedListing(null); setManualStep(1); }} onDone={onClose} t={{ successTitle: isEditMode ? pm.successUpdated : pm.successTitle, viewOnMap: pm.viewOnMap, postAnother: isEditMode ? pm.done : pm.postAnother, done: pm.done }} />
+                  <ListingSuccessScreen listing={submittedListing} onViewOnMap={() => { onViewOnMap(submittedListing); onClose(); }} onPostAnother={() => { setStep1(EMPTY_STEP1); setStep2(EMPTY_STEP2); setStep3(EMPTY_STEP3); setManualReviewData(EMPTY_REVIEW_FORM); setSubmittedListing(null); setManualStep(1); }} onDone={onClose} t={{ successTitle: pm.successTitle, viewOnMap: pm.viewOnMap, postAnother: pm.postAnother, done: pm.done }} />
                 )}
               </>
             )}
@@ -770,15 +545,13 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
               {/* Path 2 — Review */}
               {tab === 'manual' && manualStep === 'review' && (
                 <>
-                  {!isEditMode && (
-                    <button type="button" onClick={() => setManualStep(3)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
-                  )}
+                  <button type="button" onClick={() => setManualStep(3)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
                   <button type="button" disabled={isSubmitting} onClick={() => {
                     const orig = [manualReviewData.type && `${manualReviewData.type} in ${manualReviewData.location}, ${manualReviewData.city}`, manualReviewData.description].filter(Boolean).join('. ');
                     handleSubmit(manualReviewData, manualReviewPhotos, orig);
                   }} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2">
                     {isSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    {isEditMode ? pm.updateListingBtn : pm.postListingBtn}
+                    {pm.postListingBtn}
                   </button>
                 </>
               )}

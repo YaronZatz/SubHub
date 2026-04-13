@@ -1,5 +1,5 @@
 /**
- * PUT /api/listings/[id]
+ * PUT / PATCH /api/listings/[id]
  *
  * Updates an existing listing. Auth-protected via Firebase ID token.
  * Only the original owner can update their listing.
@@ -26,7 +26,7 @@ async function uploadBase64Images(base64Images: string[], listingId: string, sta
         await file.save(buffer, { metadata: { contentType }, public: true });
         return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
       } catch (err) {
-        console.error(`[PUT /api/listings] Failed to upload image ${startIndex + i}:`, err);
+        console.error(`[PATCH /api/listings] Failed to upload image ${startIndex + i}:`, err);
         return null;
       }
     })
@@ -34,9 +34,8 @@ async function uploadBase64Images(base64Images: string[], listingId: string, sta
   return results.filter((url): url is string => url !== null);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function handleUpdate(req: NextRequest, id: string): Promise<NextResponse> {
   try {
-    const { id } = await params;
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     // Verify Firebase ID token
@@ -79,7 +78,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ id }, { status: 200 });
   } catch (err) {
-    console.error('[PUT /api/listings/[id]] error:', err);
+    console.error('[PATCH /api/listings/[id]] error:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return handleUpdate(req, id);
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return handleUpdate(req, id);
 }

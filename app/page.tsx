@@ -30,8 +30,6 @@ const INITIAL_FILTERS: Filters = {
   postedWithin: 'all',
 };
 
-export { setInitialMapCity } from '@/app/map/page';
-
 export default function Home() {
   const [mapSelectedSubletId, setMapSelectedSubletId] = useState<string | undefined>();
   const [cityFlyTo, setCityFlyTo] = useState<{ lat: number; lng: number; zoom?: number } | null>(null);
