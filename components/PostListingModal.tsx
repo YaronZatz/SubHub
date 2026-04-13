@@ -191,8 +191,8 @@ function ReviewForm({
   data: ReviewFormData; onChange: (d: ReviewFormData) => void;
   photos: string[]; onPhotosChange: (p: string[]) => void;
   errors: ReviewFormErrors;
-  t: ReturnType<typeof translations[Language]>;
-  pm: ReturnType<typeof translations[Language]>['postModal'];
+  t: (typeof translations)[Language];
+  pm: (typeof translations)[Language]['postModal'];
   amenityLabels: Record<AmenityKey, string>;
   subletTypeLabels: Record<SubletType, string>;
   photosReadOnly?: boolean;
