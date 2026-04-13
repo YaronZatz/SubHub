@@ -67,6 +67,7 @@ export default function ListingsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editListing, setEditListing] = useState<Sublet | null>(null);
   const [showSavedOnly, setShowSavedOnly] = useState(false);
 
   const { currency } = useCurrency();
@@ -685,7 +686,10 @@ export default function ListingsPage() {
           setLanguage={setLanguage}
           currentUserId={user?.id || ''}
           onClaim={() => {}}
-          onEdit={() => {}}
+          onEdit={(id) => {
+            const listing = sublets.find(s => s.id === id);
+            if (listing) { setDetailSublet(null); setEditListing(listing); }
+          }}
         />
       )}
 
@@ -721,6 +725,27 @@ export default function ListingsPage() {
               setCityFlyTo({ lat: listing.lat, lng: listing.lng, zoom: 15 });
             }
           }}
+          language={language}
+          currentUserId={user.id}
+          currentUserName={user.name}
+        />
+      )}
+
+      {/* Edit Listing Modal */}
+      {editListing && user && (
+        <PostListingModal
+          onAdd={() => {}}
+          onClose={() => setEditListing(null)}
+          onViewOnMap={(listing) => {
+            setEditListing(null);
+            if (listing.lat && listing.lng) {
+              setCityFlyTo({ lat: listing.lat, lng: listing.lng, zoom: 15 });
+            }
+          }}
+          onUpdate={(updated) => {
+            setSublets(prev => prev.map(s => s.id === updated.id ? updated : s));
+          }}
+          existingListing={editListing}
           language={language}
           currentUserId={user.id}
           currentUserName={user.name}

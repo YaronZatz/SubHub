@@ -23,6 +23,8 @@ interface PostListingModalProps {
   language: Language;
   currentUserId: string;
   currentUserName: string;
+  existingListing?: Sublet;
+  onUpdate?: (listing: Sublet) => void;
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -313,16 +315,40 @@ function ReviewForm({
 
 // ─── Main modal ─────────────────────────────────────────────────────────────────
 
-export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName }: PostListingModalProps) {
+function subletToReviewFormData(s: Sublet): ReviewFormData {
+  const amenities = Array.isArray(s.amenities) ? s.amenities as string[] : [];
+  // Infer rentalDuration from rentTerm
+  let rentalDuration: RentalDuration | '' = '';
+  if (s.rentTerm === RentTerm.LONG_TERM) rentalDuration = RentalDuration.LONG_TERM;
+  else if (s.rentTerm === RentTerm.SHORT_TERM) rentalDuration = RentalDuration.SHORT_TERM;
+  return {
+    location: s.location || '',
+    city: s.city || '',
+    neighborhood: s.neighborhood || '',
+    price: s.price > 0 ? String(s.price) : '',
+    currency: (s.currency as 'ILS' | 'USD' | 'EUR') || 'ILS',
+    startDate: s.startDate || '',
+    endDate: s.endDate || '',
+    openEnded: !s.endDate,
+    type: s.type || '',
+    rentalDuration,
+    amenities,
+    description: (s as unknown as { description?: string }).description || '',
+    sourceUrl: s.sourceUrl || '',
+  };
+}
+
+export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName, existingListing, onUpdate }: PostListingModalProps) {
   const t = translations[language];
   const pm = t.postModal;
+  const isEditMode = !!existingListing;
 
   const amenityLabels: Record<AmenityKey, string> = { wifi: pm.amenityWifi, ac: pm.amenityAC, parking: pm.amenityParking, petFriendly: pm.amenityPetFriendly, balcony: pm.amenityBalcony, elevator: pm.amenityElevator, furnished: pm.amenityFurnished, billsIncluded: pm.amenityBillsIncluded };
   const subletTypeLabels: Record<SubletType, string> = { [SubletType.ENTIRE]: t.subletTypes[SubletType.ENTIRE], [SubletType.ROOMMATE]: t.subletTypes[SubletType.ROOMMATE], [SubletType.STUDIO]: t.subletTypes[SubletType.STUDIO] };
   const fieldLabels = EXTRACT_FIELDS.map(k => pm[k as keyof typeof pm] as string);
 
   // ── Tab ─────────────────────────────────────────────────────────────────────
-  const [tab, setTab] = useState<Tab>('paste');
+  const [tab, setTab] = useState<Tab>(isEditMode ? 'manual' : 'paste');
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
   // ── Path 1 ──────────────────────────────────────────────────────────────────
@@ -342,15 +368,19 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
   const extractedDataRef = useRef<ExtractedListingPost | null>(null);
 
   // ── Path 2 ──────────────────────────────────────────────────────────────────
-  const [manualStep, setManualStep] = useState<ManualStep>(1);
+  const [manualStep, setManualStep] = useState<ManualStep>(isEditMode ? 'review' : 1);
   const [step1, setStep1] = useState<Step1Data>(EMPTY_STEP1);
   const [step2, setStep2] = useState<Step2Data>(EMPTY_STEP2);
   const [step3, setStep3] = useState<Step3Data>(EMPTY_STEP3);
-  const [manualReviewData, setManualReviewData] = useState<ReviewFormData>(EMPTY_REVIEW_FORM);
+  const [manualReviewData, setManualReviewData] = useState<ReviewFormData>(
+    isEditMode ? subletToReviewFormData(existingListing!) : EMPTY_REVIEW_FORM
+  );
   const [manualReviewErrors, setManualReviewErrors] = useState<ReviewFormErrors>({});
   const [step1Errs, setStep1Errs] = useState<Record<string, string>>({});
   const [step2Errs, setStep2Errs] = useState<Record<string, string>>({});
-  const [manualReviewPhotos, setManualReviewPhotos] = useState<string[]>([]);
+  const [manualReviewPhotos, setManualReviewPhotos] = useState<string[]>(
+    isEditMode ? (existingListing!.images ?? []) : []
+  );
 
   // ── Shared ──────────────────────────────────────────────────────────────────
   const [submittedListing, setSubmittedListing] = useState<Sublet | null>(null);
@@ -438,13 +468,60 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
     }
     setIsSubmitting(true);
 
-    let lat = 0, lng = 0;
+    let lat = existingListing?.lat ?? 0;
+    let lng = existingListing?.lng ?? 0;
+    // Re-geocode if location changed (or no coords yet)
     const geoQuery = [data.location, data.city].filter(Boolean).join(', ');
-    if (geoQuery) {
+    if (geoQuery && (lat === 0 || data.location !== existingListing?.location)) {
       try {
         const coords = await geocodeAddress(geoQuery);
         if (coords) { lat = coords.lat; lng = coords.lng; }
-      } catch { /* leave at 0 */ }
+      } catch { /* leave unchanged */ }
+    }
+
+    if (isEditMode && existingListing) {
+      // Build updated listing preserving original metadata
+      const updatedListing: Sublet = {
+        ...existingListing,
+        location: data.location,
+        city: data.city || undefined,
+        neighborhood: data.neighborhood || undefined,
+        price: Number(data.price) || 0,
+        currency: data.currency,
+        startDate: data.startDate,
+        endDate: data.openEnded ? '' : data.endDate,
+        type: data.type as SubletType,
+        amenities: data.amenities,
+        images: photos,
+        photoCount: photos.length,
+        sourceUrl: data.sourceUrl,
+        rentTerm: rentalDurationToRentTerm(data.rentalDuration as RentalDuration | ''),
+        lat, lng,
+      };
+      onUpdate?.(updatedListing);
+      setSubmittedListing(updatedListing);
+      setManualStep('success');
+      setIsSubmitting(false);
+
+      (async () => {
+        try {
+          const user = getAuth().currentUser;
+          const token = user ? await user.getIdToken() : null;
+          const res = await fetch(`/api/listings/${existingListing.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(updatedListing),
+          });
+          if (!res.ok) throw new Error(`status ${res.status}`);
+        } catch {
+          setToastMsg(pm.persistenceError);
+          setTimeout(() => setToastMsg(null), 4000);
+        }
+      })();
+      return;
     }
 
     const listing = buildSublet(data, photos, originalText, currentUserId, currentUserName, lat, lng);
@@ -513,11 +590,11 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
           {/* ── Header ── */}
           <div className="shrink-0 px-6 pt-5 pb-0 border-b border-slate-100">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-slate-900">{pm.modalTitle}</h2>
+              <h2 className="text-lg font-black text-slate-900">{isEditMode ? pm.editModalTitle : pm.modalTitle}</h2>
               <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-xl leading-none">×</button>
             </div>
 
-            {!isSuccess && (
+            {!isSuccess && !isEditMode && (
               <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
                 {(['paste', 'manual'] as Tab[]).map(tk => (
                   <button key={tk} type="button" onClick={() => setTab(tk)} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${tab === tk ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
@@ -637,7 +714,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                   </>
                 )}
                 {manualStep === 'success' && submittedListing && (
-                  <ListingSuccessScreen listing={submittedListing} onViewOnMap={() => { onViewOnMap(submittedListing); onClose(); }} onPostAnother={() => { setStep1(EMPTY_STEP1); setStep2(EMPTY_STEP2); setStep3(EMPTY_STEP3); setManualReviewData(EMPTY_REVIEW_FORM); setSubmittedListing(null); setManualStep(1); }} onDone={onClose} t={{ successTitle: pm.successTitle, viewOnMap: pm.viewOnMap, postAnother: pm.postAnother, done: pm.done }} />
+                  <ListingSuccessScreen listing={submittedListing} onViewOnMap={() => { onViewOnMap(submittedListing); onClose(); }} onPostAnother={isEditMode ? onClose : () => { setStep1(EMPTY_STEP1); setStep2(EMPTY_STEP2); setStep3(EMPTY_STEP3); setManualReviewData(EMPTY_REVIEW_FORM); setSubmittedListing(null); setManualStep(1); }} onDone={onClose} t={{ successTitle: isEditMode ? pm.successUpdated : pm.successTitle, viewOnMap: pm.viewOnMap, postAnother: isEditMode ? pm.done : pm.postAnother, done: pm.done }} />
                 )}
               </>
             )}
@@ -693,13 +770,15 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
               {/* Path 2 — Review */}
               {tab === 'manual' && manualStep === 'review' && (
                 <>
-                  <button type="button" onClick={() => setManualStep(3)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
+                  {!isEditMode && (
+                    <button type="button" onClick={() => setManualStep(3)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
+                  )}
                   <button type="button" disabled={isSubmitting} onClick={() => {
                     const orig = [manualReviewData.type && `${manualReviewData.type} in ${manualReviewData.location}, ${manualReviewData.city}`, manualReviewData.description].filter(Boolean).join('. ');
                     handleSubmit(manualReviewData, manualReviewPhotos, orig);
                   }} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2">
                     {isSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    {pm.postListingBtn}
+                    {isEditMode ? pm.updateListingBtn : pm.postListingBtn}
                   </button>
                 </>
               )}
