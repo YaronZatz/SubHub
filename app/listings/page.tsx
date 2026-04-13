@@ -82,20 +82,14 @@ export default function ListingsPage() {
   };
   const [openAddModalAfterAuth, setOpenAddModalAfterAuth] = useState(false);
 
-  // Fetch listings
+  // Real-time listings listener — updates automatically when new listings are posted
   useEffect(() => {
-    async function loadData() {
-      try {
-        setIsLoading(true);
-        const data = await persistenceService.fetchListings();
-        setSublets(data);
-      } catch (err) {
-        console.error('Data loading failed', err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
+    setIsLoading(true);
+    const unsubscribe = persistenceService.onListingsChanged((data) => {
+      setSublets(data);
+      setIsLoading(false);
+    });
+    return unsubscribe;
   }, []);
 
   // Filtered listings
