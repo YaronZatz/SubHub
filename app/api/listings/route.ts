@@ -35,10 +35,14 @@ export async function POST(req: NextRequest) {
     }
 
     const { id, ...data } = listing;
+    const now = Date.now();
+    // postedAt is required by the Firestore query (orderBy('postedAt', 'desc')).
+    // Documents missing this field are silently excluded from query results.
     const docRef = await adminDb.collection('listings').add({
       ...data,
       ownerId: uid,
-      createdAt: Date.now(),
+      createdAt: now,
+      postedAt: new Date(now).toISOString(),
     });
 
     return NextResponse.json({ id: docRef.id }, { status: 201 });
