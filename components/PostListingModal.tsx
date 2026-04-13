@@ -454,9 +454,8 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
     else setManualStep('success');
     setIsSubmitting(false);
 
-    // Background Firestore save via API route (client SDK cannot write directly)
-    // Strip large base64 images to avoid Firestore 1MB doc limit
-    const firestoreListing = { ...listing, images: [] as string[], photoCount: photos.length };
+    // Save via API route (client SDK cannot write directly due to Firestore rules).
+    // The API route uploads base64 images to Firebase Storage and saves public URLs.
     (async () => {
       try {
         const user = getAuth().currentUser;
@@ -467,7 +466,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify(firestoreListing),
+          body: JSON.stringify(listing),
         });
         if (!res.ok) throw new Error(`status ${res.status}`);
       } catch {
