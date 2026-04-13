@@ -79,3 +79,9 @@ export const adminStorage = new Proxy({} as admin.storage.Storage, {
     return (admin.storage() as unknown as Record<string, unknown>)[prop as string];
   },
 });
+export const adminAuth = new Proxy({} as admin.auth.Auth, {
+  get(_, prop) {
+    getAdminApp();
+    return (admin.auth() as unknown as Record<string, unknown>)[prop as string];
+  },
+});

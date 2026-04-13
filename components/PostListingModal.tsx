@@ -3,8 +3,8 @@
 import React, { useState, useRef } from 'react';
 import { Sublet, ListingStatus, Language, SubletType, RentalDuration, RentTerm } from '../types';
 import { translations } from '../translations';
-import { persistenceService } from '../services/persistenceService';
 import { geocodeAddress } from '../services/geocodingService';
+import { getAuth } from 'firebase/auth';
 import { extractListingPost } from '../actions/extractListingPost';
 import type { ExtractedListingPost } from '../actions/extractListingPost';
 import PhotoUploader from './post/PhotoUploader';
@@ -454,12 +454,27 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
     else setManualStep('success');
     setIsSubmitting(false);
 
-    // Background Firestore save — strip large base64 images to avoid 1MB doc limit
+    // Background Firestore save via API route (client SDK cannot write directly)
+    // Strip large base64 images to avoid Firestore 1MB doc limit
     const firestoreListing = { ...listing, images: [] as string[], photoCount: photos.length };
-    persistenceService.addListing(firestoreListing).catch(() => {
-      setToastMsg(pm.persistenceError);
-      setTimeout(() => setToastMsg(null), 4000);
-    });
+    (async () => {
+      try {
+        const user = getAuth().currentUser;
+        const token = user ? await user.getIdToken() : null;
+        const res = await fetch('/api/listings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(firestoreListing),
+        });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+      } catch {
+        setToastMsg(pm.persistenceError);
+        setTimeout(() => setToastMsg(null), 4000);
+      }
+    })();
   };
 
   // ── Discard guard ────────────────────────────────────────────────────────────
