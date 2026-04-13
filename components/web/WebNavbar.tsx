@@ -10,6 +10,7 @@ import { translations } from '@/translations';
 import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 import MobileTabBar from '@/components/shared/MobileTabBar';
+import PostListingModal from '@/components/PostListingModal';
 
 // ─── Small pill dropdown (currency / language) ────────────────────────────────
 
@@ -131,6 +132,17 @@ export default function WebNavbar() {
   const pathname = usePathname();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [openPostModalAfterAuth, setOpenPostModalAfterAuth] = useState(false);
+
+  const handlePostListingClick = () => {
+    if (user) {
+      setIsPostModalOpen(true);
+    } else {
+      setOpenPostModalAfterAuth(true);
+      setIsAuthModalOpen(true);
+    }
+  };
   const [searchQuery, setSearchQuery] = useState('');
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -208,15 +220,15 @@ export default function WebNavbar() {
               </Link>
 
               {/* Post a Listing */}
-              <Link
-                href="/post"
+              <button
+                onClick={handlePostListingClick}
                 className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4A7CC7] text-white text-sm font-bold hover:bg-[#3b66a6] transition-colors whitespace-nowrap shrink-0"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 {t.postListing}
-              </Link>
+              </button>
 
               {/* Saved Listings — always visible in header */}
               <Link
@@ -325,7 +337,28 @@ export default function WebNavbar() {
         <AuthModal
           reason="general"
           initialMode="signup"
-          onClose={() => setIsAuthModalOpen(false)}
+          onClose={() => { setIsAuthModalOpen(false); setOpenPostModalAfterAuth(false); }}
+          onSuccess={() => {
+            setIsAuthModalOpen(false);
+            if (openPostModalAfterAuth) {
+              setOpenPostModalAfterAuth(false);
+              setIsPostModalOpen(true);
+            }
+          }}
+        />
+      )}
+
+      {isPostModalOpen && user && (
+        <PostListingModal
+          onAdd={() => {}}
+          onClose={() => setIsPostModalOpen(false)}
+          onViewOnMap={() => {
+            setIsPostModalOpen(false);
+            router.push('/listings');
+          }}
+          language={language}
+          currentUserId={user.id}
+          currentUserName={(user as any).displayName ?? user.name}
         />
       )}
     </>

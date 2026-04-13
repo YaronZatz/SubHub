@@ -9,12 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { persistenceService } from '@/services/persistenceService';
 import { formatPrice } from '@/utils/formatters';
 import { translations } from '@/translations';
+import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
 import { HeartIcon } from '@/components/Icons';
 import ListingCarousel from '@/components/ListingCarousel';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import CurrencySwitcher from '@/components/CurrencySwitcher';
 import AuthModal from '@/components/shared/AuthModal';
-import AddListingModal from '@/components/AddListingModal';
+import PostListingModal from '@/components/PostListingModal';
 import { useSaved } from '@/contexts/SavedContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import { GLOBAL_CITIES, CITY_CENTERS, MAP_CENTER, MAP_ZOOM } from '@/constants';
@@ -75,9 +76,11 @@ export default function ListingsPage() {
     if (user) {
       setIsAddModalOpen(true);
     } else {
+      setOpenAddModalAfterAuth(true);
       setIsAuthModalOpen(true);
     }
   };
+  const [openAddModalAfterAuth, setOpenAddModalAfterAuth] = useState(false);
 
   // Fetch listings
   useEffect(() => {
@@ -398,12 +401,12 @@ export default function ListingsPage() {
                   </div>
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-bold text-slate-900 text-sm truncate pr-2">{sublet.location}</h3>
+                      <h3 className="font-bold text-slate-900 text-sm truncate pr-2">{localizedLocation(sublet, language)}</h3>
                       <span className="text-[#4A7CC7] font-black text-sm whitespace-nowrap">
                         {formatPrice(sublet.price, currency, language, sublet.currency)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 mb-2 truncate">{sublet.neighborhood || sublet.city}</p>
+                    <p className="text-xs text-slate-500 mb-2 truncate">{localizedNeighborhood(sublet, language) || sublet.city}</p>
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#4A7CC7]/10 text-[#4A7CC7]">
                         {t.subletTypes[sublet.type]}
@@ -694,7 +697,16 @@ export default function ListingsPage() {
 
       {/* Auth Modal */}
       {isAuthModalOpen && (
-        <AuthModal onClose={() => setIsAuthModalOpen(false)} />
+        <AuthModal
+          onClose={() => { setIsAuthModalOpen(false); setOpenAddModalAfterAuth(false); }}
+          onSuccess={() => {
+            setIsAuthModalOpen(false);
+            if (openAddModalAfterAuth) {
+              setOpenAddModalAfterAuth(false);
+              setIsAddModalOpen(true);
+            }
+          }}
+        />
       )}
 
       {/* Sign-in-to-save modal */}
@@ -702,16 +714,22 @@ export default function ListingsPage() {
         <AuthModal reason="save" initialMode="signup" onClose={closeSignInModal} />
       )}
 
-      {/* Add Listing Modal */}
+      {/* Post Listing Modal */}
       {isAddModalOpen && user && (
-        <AddListingModal
+        <PostListingModal
           onAdd={(newSublet) => {
             setSublets(prev => [newSublet, ...prev]);
-            setIsAddModalOpen(false);
           }}
           onClose={() => setIsAddModalOpen(false)}
+          onViewOnMap={(listing) => {
+            setIsAddModalOpen(false);
+            if (listing.lat && listing.lng) {
+              setCityFlyTo({ lat: listing.lat, lng: listing.lng, zoom: 15 });
+            }
+          }}
           language={language}
-          currentUser={user}
+          currentUserId={user.id}
+          currentUserName={user.name}
         />
       )}
     </div>

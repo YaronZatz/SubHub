@@ -36,6 +36,12 @@ export enum DateMode {
   FLEXIBLE = 'Flexible'
 }
 
+export enum RentalDuration {
+  SUBLET = 'Sublet',
+  SHORT_TERM = 'Short Term',
+  LONG_TERM = 'Long Term',
+}
+
 /** Filter by listing duration: sublet/short-term vs long-term rent */
 export enum RentTerm {
   ALL = 'all',
@@ -162,6 +168,8 @@ export interface Sublet {
   rentTerm?: RentTerm;
   postedAt?: string | null;
   summaryTranslations?: Record<string, string>;
+  locationTranslations?: Record<string, string>;
+  neighborhoodTranslations?: Record<string, string>;
 }
 
 export interface Filters {

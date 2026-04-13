@@ -6,7 +6,7 @@ import { CITY_CENTERS } from '../constants';
 import { useAuth } from '../contexts/AuthContext';
 import { useSaved } from '../contexts/SavedContext';
 
-import AddListingModal from '../components/AddListingModal';
+import PostListingModal from '../components/PostListingModal';
 import AuthModal from '../components/AuthModal';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -82,11 +82,13 @@ export default function Home() {
       />
 
       {isAddModalOpen && user && (
-        <AddListingModal
+        <PostListingModal
+          onAdd={() => {}}
           onClose={() => setIsAddModalOpen(false)}
-          onAdd={() => setIsAddModalOpen(false)}
+          onViewOnMap={() => setIsAddModalOpen(false)}
           language={language}
-          currentUser={user}
+          currentUserId={user.id}
+          currentUserName={(user as any).displayName ?? user.name}
         />
       )}
 
