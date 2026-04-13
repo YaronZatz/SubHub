@@ -34,9 +34,9 @@ async function uploadBase64Images(base64Images: string[], listingId: string, sta
   return results.filter((url): url is string => url !== null);
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     // Verify Firebase ID token
