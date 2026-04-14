@@ -138,7 +138,7 @@ function ProfileContent() {
           };
 
           return (
-            <div className="bg-white rounded-2xl border border-slate-200 mb-4 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 mb-4">
               {/* Header + Tabs */}
               <div className="px-6 pt-4 pb-0 border-b border-slate-100">
                 <h3 className="text-sm font-bold text-slate-900 mb-3">{t.myListings}</h3>
