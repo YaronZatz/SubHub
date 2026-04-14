@@ -359,7 +359,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-4 pb-20 md:p-4 bg-slate-900/60 backdrop-blur-sm">
         <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200">
 
           {/* ── Header ── */}
