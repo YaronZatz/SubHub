@@ -59,11 +59,11 @@ export default function ListingActionMenu({
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  const patchStatus = async (newStatus: string): Promise<boolean> => {
+  const patchStatus = async (newStatus: string): Promise<{ ok: boolean; errorMsg?: string }> => {
     try {
       const user = getAuth().currentUser;
       const token = user ? await user.getIdToken() : null;
-      if (!token) return false;
+      if (!token) return { ok: false, errorMsg: 'Not signed in' };
       const res = await fetch(`/api/listings/${listing.id}/status`, {
         method: 'PATCH',
         headers: {
@@ -72,31 +72,35 @@ export default function ListingActionMenu({
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      return res.ok;
-    } catch {
-      return false;
+      if (res.ok) return { ok: true };
+      let errorMsg = `Error ${res.status}`;
+      try { const body = await res.json(); errorMsg = body?.error ?? errorMsg; } catch { /* ignore */ }
+      console.error(`[ListingActionMenu] PATCH status failed: ${errorMsg}`);
+      return { ok: false, errorMsg };
+    } catch (err) {
+      return { ok: false, errorMsg: String(err) };
     }
   };
 
   const handlePause = async () => {
     setOpen(false);
-    const ok = await patchStatus('paused');
+    const { ok, errorMsg } = await patchStatus('paused');
     if (ok) {
       onStatusChange({ ...listing, status: ListingStatus.PAUSED });
       showToast(t.toastPaused);
     } else {
-      showToast('Failed to pause listing');
+      showToast(errorMsg ?? 'Failed to pause listing');
     }
   };
 
   const handleResume = async () => {
     setOpen(false);
-    const ok = await patchStatus('active');
+    const { ok, errorMsg } = await patchStatus('active');
     if (ok) {
       onStatusChange({ ...listing, status: ListingStatus.AVAILABLE });
       showToast(t.toastResumed);
     } else {
-      showToast('Failed to resume listing');
+      showToast(errorMsg ?? 'Failed to resume listing');
     }
   };
 
@@ -104,24 +108,24 @@ export default function ListingActionMenu({
     if (!pendingAction) return;
     setIsLoading(true);
     if (pendingAction === 'fill') {
-      const ok = await patchStatus('filled');
+      const { ok, errorMsg } = await patchStatus('filled');
       setPendingAction(null);
       setIsLoading(false);
       if (ok) {
         onStatusChange({ ...listing, status: ListingStatus.FILLED });
         showToast(t.toastFilled);
       } else {
-        showToast('Failed to mark as filled');
+        showToast(errorMsg ?? 'Failed to mark as filled');
       }
     } else if (pendingAction === 'delete') {
-      const ok = await patchStatus('deleted');
+      const { ok, errorMsg } = await patchStatus('deleted');
       setPendingAction(null);
       setIsLoading(false);
       if (ok) {
         onDelete(listing.id);
         showToast(t.toastDeleted);
       } else {
-        showToast('Failed to delete listing');
+        showToast(errorMsg ?? 'Failed to delete listing');
       }
     }
   };
