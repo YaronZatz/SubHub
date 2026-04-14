@@ -97,6 +97,9 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
   const markersRef = useRef<Record<string, ReturnType<typeof createPriceOverlay>>>({});
   const userOverlayRef = useRef<google.maps.OverlayView | null>(null);
   const initialFitDoneRef = useRef(false);
+  // Keep a ref so the async sublets effect always sees the latest flyToCity value
+  const flyToCityRef = useRef(flyToCity);
+  flyToCityRef.current = flyToCity;
   const [isLocating, setIsLocating] = useState(false);
   const [isMapReady, setIsMapReady] = useState(false);
 
@@ -171,15 +174,19 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
       }
     });
 
-    // Initial fit-to-bounds
+    // Initial fit-to-bounds — skip when flyToCity is set (user navigated to a
+    // specific city; one bad geocode must not blow out the view).
     if (!initialFitDoneRef.current) {
-      const valid = sublets.filter(s => s.lat && s.lng);
-      if (valid.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        valid.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
-        mapRef.current.fitBounds(bounds, 50);
-        initialFitDoneRef.current = true;
+      if (!flyToCityRef.current) {
+        const valid = sublets.filter(s => s.lat && s.lng);
+        if (valid.length > 0) {
+          const bounds = new google.maps.LatLngBounds();
+          valid.forEach(s => bounds.extend({ lat: s.lat, lng: s.lng }));
+          mapRef.current.fitBounds(bounds, 50);
+        }
       }
+      // Mark done either way so later data loads don't override the city view
+      initialFitDoneRef.current = true;
     }
   }, [sublets, selectedSubletId, onMarkerClick, currency, isMapReady]);
 
