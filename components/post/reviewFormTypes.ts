@@ -1,5 +1,6 @@
 import { SubletType, RentalDuration, RentTerm } from '../../types';
 import type { Sublet } from '../../types';
+import { parsedAmenitiesToArray } from '../../utils/amenityHelpers';
 
 export interface ReviewFormData {
   location: string;
@@ -48,7 +49,10 @@ export function validateReviewForm(data: ReviewFormData): ReviewFormErrors {
 }
 
 export function subletToReviewFormData(s: Sublet): ReviewFormData {
-  const amenities = Array.isArray(s.amenities) ? s.amenities as string[] : [];
+  // parsedAmenities is the canonical form; fall back to string[] for legacy listings
+  const amenities = s.parsedAmenities
+    ? parsedAmenitiesToArray(s.parsedAmenities)
+    : Array.isArray(s.amenities) ? s.amenities as string[] : [];
   let rentalDuration: RentalDuration | '' = '';
   if (s.rentTerm === RentTerm.LONG_TERM) rentalDuration = RentalDuration.LONG_TERM;
   else if (s.rentTerm === RentTerm.SHORT_TERM) rentalDuration = RentalDuration.SHORT_TERM;

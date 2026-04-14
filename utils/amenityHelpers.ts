@@ -54,3 +54,34 @@ export function getActiveAmenities(sublet: AmenitiesSource): AmenityDef[] {
   const norm = normalizeAmenities(sublet);
   return AMENITY_DEFS.filter(def => norm[def.key] === true);
 }
+
+/**
+ * Convert the form's string[] amenity keys to a ParsedAmenities object.
+ * AmenitiesGrid uses 'billsIncluded' which maps to 'utilitiesIncluded' in ParsedAmenities.
+ */
+export function amenityArrayToParsedAmenities(keys: string[]): ParsedAmenities {
+  const result: ParsedAmenities = {};
+  for (const key of keys) {
+    if (key === 'billsIncluded') {
+      result.utilitiesIncluded = true;
+    } else {
+      (result as Record<string, boolean>)[key] = true;
+    }
+  }
+  return result;
+}
+
+/**
+ * Convert a ParsedAmenities object back to the form's string[] format.
+ * Inverse of amenityArrayToParsedAmenities.
+ */
+export function parsedAmenitiesToArray(pa: ParsedAmenities | undefined): string[] {
+  if (!pa) return [];
+  const result: string[] = [];
+  for (const [key, val] of Object.entries(pa)) {
+    if (val === true && key !== 'other') {
+      result.push(key === 'utilitiesIncluded' ? 'billsIncluded' : key);
+    }
+  }
+  return result;
+}

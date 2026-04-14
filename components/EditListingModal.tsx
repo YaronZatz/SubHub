@@ -9,6 +9,7 @@ import ReviewForm from './post/ReviewForm';
 import type { ReviewFormData, ReviewFormErrors } from './post/reviewFormTypes';
 import { subletToReviewFormData, validateReviewForm } from './post/reviewFormTypes';
 import type { AmenityKey } from './post/AmenitiesGrid';
+import { amenityArrayToParsedAmenities } from '../utils/amenityHelpers';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -94,7 +95,8 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
       startDate: formData.startDate,
       endDate: formData.openEnded ? '' : formData.endDate,
       type: formData.type as SubletType,
-      amenities: formData.amenities,
+      parsedAmenities: amenityArrayToParsedAmenities(formData.amenities),
+      amenities: amenityArrayToParsedAmenities(formData.amenities),
       images: photos,
       photoCount: photos.length,
       sourceUrl: formData.sourceUrl,

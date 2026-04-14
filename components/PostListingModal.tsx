@@ -15,6 +15,7 @@ import type { ReviewFormData, ReviewFormErrors } from './post/reviewFormTypes';
 import { EMPTY_REVIEW_FORM } from './post/reviewFormTypes';
 import type { AmenityKey } from './post/AmenitiesGrid';
 import { FL, ic, icErr, SectionHeading } from './post/formPrimitives';
+import { amenityArrayToParsedAmenities } from '../utils/amenityHelpers';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -70,7 +71,8 @@ function buildSublet(data: ReviewFormData, photos: string[], originalText: strin
     createdAt: Date.now(),
     ownerId: userId,
     authorName: userName,
-    amenities: data.amenities,
+    parsedAmenities: amenityArrayToParsedAmenities(data.amenities),
+    amenities: amenityArrayToParsedAmenities(data.amenities),
     images: photos,
     photoCount: photos.length,
     rentTerm: rentalDurationToRentTerm(data.rentalDuration as RentalDuration | ''),
