@@ -57,6 +57,12 @@ async function handleUpdate(req: NextRequest, id: string): Promise<NextResponse>
     if (!snap.exists) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     if (snap.data()?.ownerId !== uid) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+    // Block edits on filled or deleted listings
+    const currentStatus = snap.data()?.status;
+    if (currentStatus === 'filled' || currentStatus === 'deleted') {
+      return NextResponse.json({ error: 'Cannot edit a filled or deleted listing' }, { status: 409 });
+    }
+
     const { id: _id, images, ...data } = await req.json();
 
     // Separate existing URLs from new base64 images

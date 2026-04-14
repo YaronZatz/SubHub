@@ -693,6 +693,10 @@ export default function ListingsPage() {
             const listing = sublets.find(s => s.id === id);
             if (listing) { setDetailSublet(null); setEditListing(listing); }
           }}
+          onStatusChange={(updated) => {
+            setSublets(prev => prev.map(s => s.id === updated.id ? updated : s));
+            setDetailSublet(updated);
+          }}
         />
       )}
 

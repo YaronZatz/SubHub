@@ -54,9 +54,12 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const isBlocked =
-    listing.status === ListingStatus.TAKEN ||
-    listing.status === ListingStatus.EXPIRED;
+  const isBlocked = [
+    ListingStatus.TAKEN,
+    ListingStatus.EXPIRED,
+    ListingStatus.FILLED,
+    ListingStatus.DELETED,
+  ].includes(listing.status);
 
   const isDirty = () =>
     JSON.stringify({ formData, photos }) !==

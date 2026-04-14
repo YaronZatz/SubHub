@@ -5,10 +5,30 @@ export enum SubletType {
   STUDIO = 'Studio'
 }
 
+/**
+ * Listing status — two separate lifecycles share this enum:
+ *
+ * User-posted listings (ownerId set, created via app):
+ *   AVAILABLE ('Available' in Firestore as 'active') — publicly visible
+ *   PAUSED    ('paused')  — hidden from browse; owner can resume or fill
+ *   FILLED    ('filled')  — permanently hidden; no further edits allowed
+ *   DELETED   ('deleted') — soft-deleted; hidden everywhere
+ *
+ * Scraped listings (no ownerId, created by webhook):
+ *   AVAILABLE ('active')  — publicly visible
+ *   TAKEN     ('Taken')   — marked taken by admin/webhook; read-only
+ *   EXPIRED   ('expired') — auto-expired by webhook; read-only
+ *
+ * The new lifecycle actions (Pause/Resume/Fill/Delete) apply ONLY to user-posted listings.
+ * Scraped listings retain their TAKEN/EXPIRED values and are not changeable via the UI.
+ */
 export enum ListingStatus {
   AVAILABLE = 'Available',
   TAKEN = 'Taken',
-  EXPIRED = 'Expired'
+  EXPIRED = 'Expired',
+  PAUSED = 'paused',
+  FILLED = 'filled',
+  DELETED = 'deleted',
 }
 
 export enum Language {
@@ -170,6 +190,9 @@ export interface Sublet {
   summaryTranslations?: Record<string, string>;
   locationTranslations?: Record<string, string>;
   neighborhoodTranslations?: Record<string, string>;
+  paused_at?: number;   // ms epoch, set when → 'paused'
+  filled_at?: number;   // ms epoch, set when → 'filled'
+  deleted_at?: number;  // ms epoch, set when → 'deleted'
 }
 
 export interface Filters {

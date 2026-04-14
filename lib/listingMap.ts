@@ -26,13 +26,19 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
       : (data.createdAt as { toMillis?: () => number })?.toMillis?.() ?? Date.now();
 
   const status =
-    data.status === 'active' ||
-    data.status === 'Available' ||
-    data.status === 'AVAILABLE'
+    data.status === 'active' || data.status === 'Available' || data.status === 'AVAILABLE'
       ? ListingStatus.AVAILABLE
       : data.status === 'Taken' || data.status === 'TAKEN'
         ? ListingStatus.TAKEN
-        : ListingStatus.AVAILABLE;
+        : data.status === 'expired' || data.status === 'Expired' || data.status === 'EXPIRED'
+          ? ListingStatus.EXPIRED
+          : data.status === 'paused'
+            ? ListingStatus.PAUSED
+            : data.status === 'filled'
+              ? ListingStatus.FILLED
+              : data.status === 'deleted'
+                ? ListingStatus.DELETED
+                : ListingStatus.AVAILABLE;
 
   const lat = data.lat != null ? Number(data.lat) : 0;
   const lng = data.lng != null ? Number(data.lng) : 0;
@@ -111,6 +117,11 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
       immediateAvailability
     ),
     summaryTranslations: data.summaryTranslations as Record<string, string> | undefined,
+    locationTranslations: data.locationTranslations as Record<string, string> | undefined,
+    neighborhoodTranslations: data.neighborhoodTranslations as Record<string, string> | undefined,
     postedAt: data.postedAt as string | null | undefined,
+    paused_at: data.paused_at as number | undefined,
+    filled_at: data.filled_at as number | undefined,
+    deleted_at: data.deleted_at as number | undefined,
   };
 }

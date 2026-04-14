@@ -11,6 +11,7 @@ import { persistenceService } from '@/services/persistenceService';
 import type { Sublet } from '@/types';
 import { ListingStatus } from '@/types';
 import EditListingModal from '@/components/EditListingModal';
+import ListingActionMenu from '@/components/ListingActionMenu';
 import Toast from '@/components/shared/Toast';
 
 function ProfileContent() {
@@ -20,6 +21,7 @@ function ProfileContent() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [myListings, setMyListings] = useState<Sublet[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
   const [editListing, setEditListing] = useState<Sublet | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -121,46 +123,90 @@ function ProfileContent() {
         </div>
 
         {/* My Listings */}
-        <div className="bg-white rounded-2xl border border-slate-200 mb-4 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100">
-            <h3 className="text-sm font-bold text-slate-900">{(t as unknown as { myListings: string }).myListings}</h3>
-          </div>
-          {listingsLoading ? (
-            <div className="px-6 py-4 flex items-center gap-2 text-sm text-slate-400">
-              <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
-              Loading…
-            </div>
-          ) : myListings.length === 0 ? (
-            <div className="px-6 py-4 text-sm text-slate-400">{(t as unknown as { noListingsYet: string }).noListingsYet}</div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {myListings.map(listing => {
-                const isBlocked = listing.status === ListingStatus.TAKEN || listing.status === ListingStatus.EXPIRED;
-                return (
-                  <div key={listing.id} className="flex items-center justify-between px-6 py-3 gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{listing.location}{listing.city ? `, ${listing.city}` : ''}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full ${
-                          listing.status === ListingStatus.TAKEN ? 'bg-red-100 text-red-600' :
-                          listing.status === ListingStatus.EXPIRED ? 'bg-slate-100 text-slate-500' :
-                          'bg-green-100 text-green-700'
-                        }`}>{listing.status}</span>
-                      </div>
-                    </div>
+        {(() => {
+          const activeListings = myListings.filter(s =>
+            s.status === ListingStatus.AVAILABLE || s.status === ListingStatus.PAUSED
+          );
+          const pastListings = myListings.filter(s => s.status === ListingStatus.FILLED);
+          const tabListings = activeTab === 'active' ? activeListings : pastListings;
+
+          const statusBadge = (status: ListingStatus) => {
+            if (status === ListingStatus.AVAILABLE) return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">{t.statusActive}</span>;
+            if (status === ListingStatus.PAUSED)    return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">{t.statusPaused}</span>;
+            if (status === ListingStatus.FILLED)    return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{t.statusFilled}</span>;
+            return null;
+          };
+
+          return (
+            <div className="bg-white rounded-2xl border border-slate-200 mb-4 overflow-hidden">
+              {/* Header + Tabs */}
+              <div className="px-6 pt-4 pb-0 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900 mb-3">{t.myListings}</h3>
+                <div className="flex gap-1 -mb-px">
+                  {(['active', 'past'] as const).map(tab => (
                     <button
-                      onClick={() => !isBlocked && setEditListing(listing)}
-                      disabled={isBlocked}
-                      className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors disabled:opacity-40 disabled:cursor-not-allowed border-slate-200 text-slate-600 hover:bg-slate-50"
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors ${
+                        activeTab === tab
+                          ? 'border-cyan-600 text-cyan-700'
+                          : 'border-transparent text-slate-400 hover:text-slate-600'
+                      }`}
                     >
-                      {t.edit}
+                      {tab === 'active' ? t.activeListingsTab : t.pastListingsTab}
+                      {tab === 'active' && activeListings.length > 0 && (
+                        <span className="ml-1.5 bg-slate-100 text-slate-500 text-[10px] font-black px-1.5 py-0.5 rounded-full">{activeListings.length}</span>
+                      )}
                     </button>
-                  </div>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
+
+              {/* Body */}
+              {listingsLoading ? (
+                <div className="px-6 py-4 flex items-center gap-2 text-sm text-slate-400">
+                  <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+                  Loading…
+                </div>
+              ) : tabListings.length === 0 ? (
+                <div className="px-6 py-4 text-sm text-slate-400">{t.noListingsYet}</div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {tabListings.map(listing => {
+                    const canEdit = listing.status !== ListingStatus.FILLED && listing.status !== ListingStatus.DELETED;
+                    return (
+                      <div key={listing.id} className="flex items-center gap-3 px-6 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">
+                            {listing.location}{listing.city ? `, ${listing.city}` : ''}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {statusBadge(listing.status)}
+                          </div>
+                        </div>
+                        {canEdit && (
+                          <button
+                            onClick={() => setEditListing(listing)}
+                            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                          >
+                            {t.edit}
+                          </button>
+                        )}
+                        <ListingActionMenu
+                          listing={listing}
+                          language={language}
+                          onStatusChange={(updated) => setMyListings(prev => prev.map(s => s.id === updated.id ? updated : s))}
+                          onDelete={(id) => setMyListings(prev => prev.filter(s => s.id !== id))}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* Sign out */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">

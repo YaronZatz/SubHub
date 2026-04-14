@@ -12,7 +12,8 @@ import { formatPrice, formatDate } from '@/utils/formatters';
 import { HeartIcon } from '@/components/Icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
-import { Sublet, CurrencyCode } from '@/types';
+import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { Sublet, CurrencyCode, ListingStatus } from '@/types';
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
@@ -49,7 +50,14 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
   const { language } = useLanguage();
   const t = translations[language];
 
-  const title = [sublet.neighborhood, sublet.city].filter(Boolean).join(', ') || sublet.location || t.unknownLocation;
+  const isUnavailable = [
+    ListingStatus.FILLED,
+    ListingStatus.DELETED,
+    ListingStatus.TAKEN,
+    ListingStatus.EXPIRED,
+  ].includes(sublet.status);
+
+  const title = [localizedNeighborhood(sublet, language), sublet.city].filter(Boolean).join(', ') || localizedLocation(sublet, language) || t.unknownLocation;
   const dateRange = (() => {
     const s = sublet.startDate ? formatDate(sublet.startDate) : '';
     const e = sublet.endDate ? formatDate(sublet.endDate) : '';
@@ -58,6 +66,33 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
     if (sublet.immediateAvailability) return t.availableNow;
     return '';
   })();
+
+  if (isUnavailable) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm opacity-60">
+        <div className="relative aspect-[4/3] bg-slate-100 flex items-center justify-center">
+          <span className="text-slate-400 text-xs font-semibold">{t.unavailable}</span>
+          <button
+            onClick={(e) => { e.preventDefault(); onUnsave(); }}
+            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+            title="Remove from saved"
+          >
+            <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
+          </button>
+        </div>
+        <div className="p-4 flex items-center justify-between">
+          <p className="text-sm text-slate-500 font-medium">{t.noLongerAvailable}</p>
+          <button
+            onClick={onUnsave}
+            className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+            title="Remove from saved"
+          >
+            <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">

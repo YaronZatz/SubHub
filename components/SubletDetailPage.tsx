@@ -11,6 +11,7 @@ import { TranslatedText } from './TranslatedText';
 import LanguageSwitcher from './LanguageSwitcher';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 import PhotoGallery from './PhotoGallery';
+import ListingActionMenu from './ListingActionMenu';
 
 const SWIPE_THRESHOLD = 50;
 
@@ -22,6 +23,7 @@ interface SubletDetailPageProps {
   currentUserId: string;
   onClaim: (id: string) => void;
   onEdit: (id: string) => void;
+  onStatusChange?: (updated: Sublet) => void;
   onShowToast?: (message: string, type: 'success' | 'error') => void;
   onFacebookRedirect?: (listing: Sublet) => void;
 }
@@ -34,12 +36,17 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
   currentUserId,
   onClaim,
   onEdit,
+  onStatusChange,
   onShowToast,
   onFacebookRedirect,
 }) => {
   const t = translations[language];
   const isRTL = language === Language.HE;
   const isOwner = sublet.ownerId === currentUserId;
+  const canEdit = isOwner && ![
+    ListingStatus.FILLED, ListingStatus.DELETED,
+    ListingStatus.TAKEN, ListingStatus.EXPIRED,
+  ].includes(sublet.status);
   const { currency } = useCurrency();
   const [activeImgIndex, setActiveImgIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
@@ -236,7 +243,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
         
         <div className="flex items-center gap-3">
           <LanguageSwitcher language={language} setLanguage={setLanguage} />
-          {isOwner && (
+          {canEdit && (
             <button
               onClick={() => onEdit(sublet.id)}
               className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-full font-bold text-xs transition-all"
@@ -563,12 +570,24 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
               )}
 
               {isOwner ? (
-                <button 
-                  onClick={() => onEdit(sublet.id)}
-                  className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black uppercase tracking-widest text-sm"
-                >
-                  {t.edit}
-                </button>
+                <div className="space-y-2">
+                  {canEdit && (
+                    <button
+                      onClick={() => onEdit(sublet.id)}
+                      className="w-full bg-slate-900 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-black uppercase tracking-widest text-sm"
+                    >
+                      {t.edit}
+                    </button>
+                  )}
+                  <div className="flex justify-end">
+                    <ListingActionMenu
+                      listing={sublet}
+                      language={language}
+                      onStatusChange={(updated) => onStatusChange?.(updated)}
+                      onDelete={() => onClose()}
+                    />
+                  </div>
+                </div>
               ) : (
                 sublet.sourceUrl ? (
                   <div>
