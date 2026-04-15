@@ -127,6 +127,8 @@ export function WebHomePage({
               onChange={setSearchQuery}
               sublets={[]}
               onCitySelect={(city) => {
+                const center = CITY_CENTERS[city];
+                if (center) setInitialMapCity(city, center);
                 setSearchQuery(city);
                 handleCityFlyTo(city);
                 router.push('/map');

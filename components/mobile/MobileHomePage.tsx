@@ -102,6 +102,11 @@ export function MobileHomePage({
             onChange={setSearchQuery}
             sublets={[]}
             onCitySelect={(city) => {
+              const center = CITY_CENTERS[city];
+              if (center) {
+                setInitialMapCity(city, center);
+                setInitialMobileMapCity(city, center);
+              }
               setSearchQuery(city);
               handleCityFlyTo(city);
               router.push('/map');
