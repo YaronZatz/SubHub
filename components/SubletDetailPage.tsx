@@ -585,6 +585,7 @@ const SubletDetailPage: React.FC<SubletDetailPageProps> = ({
                       language={language}
                       onStatusChange={(updated) => onStatusChange?.(updated)}
                       onDelete={() => onClose()}
+                      onToast={(msg) => onShowToast?.(msg, 'success')}
                     />
                   </div>
                 </div>

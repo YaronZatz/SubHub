@@ -11,6 +11,7 @@ interface ListingActionMenuProps {
   language: Language;
   onStatusChange: (updated: Sublet) => void;
   onDelete: (id: string) => void;
+  onToast: (msg: string) => void;
   className?: string;
 }
 
@@ -21,13 +22,13 @@ export default function ListingActionMenu({
   language,
   onStatusChange,
   onDelete,
+  onToast,
   className = '',
 }: ListingActionMenuProps) {
   const t = translations[language];
   const [open, setOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -54,12 +55,7 @@ export default function ListingActionMenu({
   const canFill    = status === ListingStatus.AVAILABLE || status === ListingStatus.PAUSED;
   const canDelete  = true; // active, paused, filled all allow delete
 
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3500);
-  };
-
-  const patchStatus = async (newStatus: string): Promise<{ ok: boolean; errorMsg?: string }> => {
+  const patchStatus = async (newStatus: string): Promise<{ ok: boolean; errorMsg: string }> => {
     try {
       const user = getAuth().currentUser;
       const token = user ? await user.getIdToken() : null;
@@ -72,9 +68,9 @@ export default function ListingActionMenu({
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (res.ok) return { ok: true };
+      if (res.ok) return { ok: true, errorMsg: '' };
       let errorMsg = `Error ${res.status}`;
-      try { const body = await res.json(); errorMsg = body?.error ?? errorMsg; } catch { /* ignore */ }
+      try { const body = await res.json(); errorMsg = body?.error || errorMsg; } catch { /* ignore */ }
       console.error(`[ListingActionMenu] PATCH status failed: ${errorMsg}`);
       return { ok: false, errorMsg };
     } catch (err) {
@@ -87,9 +83,9 @@ export default function ListingActionMenu({
     const { ok, errorMsg } = await patchStatus('paused');
     if (ok) {
       onStatusChange({ ...listing, status: ListingStatus.PAUSED });
-      showToast(t.toastPaused);
+      onToast(t.toastPaused);
     } else {
-      showToast(errorMsg ?? 'Failed to pause listing');
+      onToast(errorMsg || 'Failed to pause listing');
     }
   };
 
@@ -98,9 +94,9 @@ export default function ListingActionMenu({
     const { ok, errorMsg } = await patchStatus('active');
     if (ok) {
       onStatusChange({ ...listing, status: ListingStatus.AVAILABLE });
-      showToast(t.toastResumed);
+      onToast(t.toastResumed);
     } else {
-      showToast(errorMsg ?? 'Failed to resume listing');
+      onToast(errorMsg || 'Failed to resume listing');
     }
   };
 
@@ -113,9 +109,9 @@ export default function ListingActionMenu({
       setIsLoading(false);
       if (ok) {
         onStatusChange({ ...listing, status: ListingStatus.FILLED });
-        showToast(t.toastFilled);
+        onToast(t.toastFilled);
       } else {
-        showToast(errorMsg ?? 'Failed to mark as filled');
+        onToast(errorMsg || 'Failed to mark as filled');
       }
     } else if (pendingAction === 'delete') {
       const { ok, errorMsg } = await patchStatus('deleted');
@@ -123,9 +119,9 @@ export default function ListingActionMenu({
       setIsLoading(false);
       if (ok) {
         onDelete(listing.id);
-        showToast(t.toastDeleted);
+        onToast(t.toastDeleted);
       } else {
-        showToast(errorMsg ?? 'Failed to delete listing');
+        onToast(errorMsg || 'Failed to delete listing');
       }
     }
   };
@@ -207,12 +203,6 @@ export default function ListingActionMenu({
         />
       )}
 
-      {/* Inline toast */}
-      {toastMsg && (
-        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[160] pointer-events-none">
-          <div className="bg-slate-800 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-2xl">{toastMsg}</div>
-        </div>
-      )}
     </>
   );
 }

@@ -198,6 +198,7 @@ function ProfileContent() {
                           language={language}
                           onStatusChange={(updated) => setMyListings(prev => prev.map(s => s.id === updated.id ? updated : s))}
                           onDelete={(id) => setMyListings(prev => prev.filter(s => s.id !== id))}
+                          onToast={(msg) => setToastMessage(msg)}
                         />
                       </div>
                     );
