@@ -79,7 +79,7 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
     const query = loc.displayAddress || [loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', ');
     if (query) {
       try {
-        const coords = await geocodeAddress(query);
+        const coords = await geocodeAddress(query, loc?.countryCode ?? undefined);
         if (coords) { lat = coords.lat; lng = coords.lng; }
       } catch { /* keep existing coords */ }
     }
@@ -120,6 +120,9 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
 
   await ref.update(updates);
 
+  // Clear stale location translation caches so they get re-generated on next visit
+  await ref.update({ locationTranslations: null, neighborhoodTranslations: null }).catch(() => {});
+
   const after = {
     startDate: updates.startDate,
     endDate: updates.endDate,
@@ -134,10 +137,53 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
   return { id: docId, before, after };
 }
 
+const HEBREW_RE = /[\u0590-\u05FF]/;
+
+function hasHebrewLocation(data: Record<string, unknown>): boolean {
+  return [data.location, data.neighborhood, data.street, data.fullAddress]
+    .some(v => typeof v === 'string' && HEBREW_RE.test(v));
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    // ── Bulk: reparse all listings with Hebrew location strings ──────────────
+    if (body.fixLocations) {
+      const dryRun = body.dryRun === true;
+      const batchSize = typeof body.batchSize === 'number' ? body.batchSize : 20;
+      const snap = await adminDb.collection('listings').where('status', '==', 'active').get();
+      const toFix = snap.docs
+        .filter(d => hasHebrewLocation(d.data() as Record<string, unknown>))
+        .map(d => d.id);
+
+      console.log(`[Reparse] fixLocations: found ${toFix.length} listings with Hebrew location strings (dryRun=${dryRun})`);
+
+      if (dryRun) {
+        return NextResponse.json({ dryRun: true, found: toFix.length, ids: toFix });
+      }
+
+      // Process in serial batches to avoid hammering Gemini
+      const results: { success: boolean; id: string; error?: string }[] = [];
+      for (let i = 0; i < toFix.length; i += batchSize) {
+        const chunk = toFix.slice(i, i + batchSize);
+        const chunkResults = await Promise.allSettled(chunk.map(reparseOne));
+        chunkResults.forEach((r, j) => {
+          results.push(
+            r.status === 'fulfilled'
+              ? { success: true, id: chunk[j] }
+              : { success: false, id: chunk[j], error: r.reason instanceof Error ? r.reason.message : String(r.reason) }
+          );
+        });
+        if (i + batchSize < toFix.length) await new Promise(r => setTimeout(r, 1000)); // rate limit
+      }
+
+      const succeeded = results.filter(r => r.success).length;
+      console.log(`[Reparse] fixLocations done: ${succeeded}/${toFix.length} reparsed`);
+      return NextResponse.json({ reparsed: succeeded, total: toFix.length, results });
+    }
+
+    // ── Single / explicit IDs ─────────────────────────────────────────────────
     let ids: string[] = [];
 
     if (body.id) {
@@ -149,7 +195,7 @@ export async function POST(req: NextRequest) {
       if (snap.empty) return NextResponse.json({ error: 'No listing found with that sourceUrl' }, { status: 404 });
       ids = [snap.docs[0].id];
     } else {
-      return NextResponse.json({ error: 'Provide { id }, { ids }, or { sourceUrl }' }, { status: 400 });
+      return NextResponse.json({ error: 'Provide { id }, { ids }, { sourceUrl }, or { fixLocations: true }' }, { status: 400 });
     }
 
     const results = await Promise.allSettled(ids.map(reparseOne));

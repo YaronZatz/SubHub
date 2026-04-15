@@ -7,6 +7,7 @@ import { HeartIcon } from '@/components/Icons';
 import { formatPrice } from '@/utils/formatters';
 import ListingCarousel from '@/components/ListingCarousel';
 import { translations } from '@/translations';
+import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
 
 interface HomeListingCardProps {
   sublet: Sublet;
@@ -84,10 +85,10 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
             <span className="text-[10px] font-medium text-slate-400 shrink-0">Price on request</span>
           )}
         </div>
-        <p className="text-xs font-semibold text-slate-800 line-clamp-1">{sublet.location}</p>
+        <p className="text-xs font-semibold text-slate-800 line-clamp-1">{localizedLocation(sublet, language)}</p>
         {sublet.neighborhood && (
           <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 line-clamp-1">
-            {sublet.neighborhood}
+            {localizedNeighborhood(sublet, language)}
           </p>
         )}
       </div>

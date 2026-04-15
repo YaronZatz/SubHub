@@ -64,6 +64,8 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   }, [id, customImages]);
 
   const hasImages = images.length > 0;
+  // All images definitively failed (both enhanced and original URLs tried and rejected)
+  const allImagesFailed = hasImages && failedImages.size >= images.length;
 
   const next = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -144,8 +146,8 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
     }
   }, [fallbackImages, originalImages, images]);
 
-  // Placeholder for when no valid images are available
-  if (!hasImages) {
+  // Placeholder for when no valid images are available, or when all failed to load
+  if (!hasImages || allImagesFailed) {
     const color1 = hashColor(id);
     const color2 = hashColor(id + '-2');
     const iconPath = PLACEHOLDER_ICONS[Math.abs(id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % PLACEHOLDER_ICONS.length];

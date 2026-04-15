@@ -4,6 +4,7 @@ import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
 import ListingCarousel from './ListingCarousel';
 import { translations } from '../translations';
+import { localizedLocation, localizedNeighborhood } from '../lib/locationUtils';
 
 interface MapPreviewCardProps {
   sublet: Sublet;
@@ -74,10 +75,10 @@ const MapPreviewCard: React.FC<MapPreviewCardProps> = ({
               {formatPrice(sublet.price, currency, language, sublet.currency)}
             </span>
           </div>
-          <p className="text-sm font-semibold text-slate-800 line-clamp-1">{sublet.location}</p>
+          <p className="text-sm font-semibold text-slate-800 line-clamp-1">{localizedLocation(sublet, language)}</p>
           {sublet.neighborhood && (
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-              {sublet.neighborhood}
+              {localizedNeighborhood(sublet, language)}
             </p>
           )}
           {rooms != null && (

@@ -15,6 +15,7 @@ import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
 import { TranslatedText } from '@/components/TranslatedText';
 import { translateText } from '@/lib/translationService';
 import { formatPrice, formatDate } from '@/utils/formatters';
@@ -163,22 +164,18 @@ export default function ListingDetailClient({
   const [showLightbox, setShowLightbox] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [translatedSummary, setTranslatedSummary] = useState<string | null>(
-    () => (lang !== 'en' ? (initialListing?.summaryTranslations?.[lang] ?? null) : null)
+    () => initialListing?.summaryTranslations?.[lang] ?? null
   );
   const [summaryTranslating, setSummaryTranslating] = useState(false);
 
   useEffect(() => {
     const summary = sublet?.ai_summary;
-    if (!summary || lang === 'en') {
-      setTranslatedSummary(null);
-      return;
-    }
-    // Use cached translation from Firestore if available
+    if (!summary) { setTranslatedSummary(null); return; }
+    // Use cached translation from Firestore if available (including 'en' for old listings with non-English summaries)
     const cached = sublet.summaryTranslations?.[lang];
-    if (cached) {
-      setTranslatedSummary(cached);
-      return;
-    }
+    if (cached) { setTranslatedSummary(cached); return; }
+    // For English, fall back to raw ai_summary (which is always English for new listings)
+    if (lang === 'en') { setTranslatedSummary(null); return; }
     setSummaryTranslating(true);
     translateText(summary, lang, sublet.id)
       .then(result => setTranslatedSummary(result && result.trim() !== summary.trim() ? result : null))
@@ -276,7 +273,7 @@ export default function ListingDetailClient({
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
   const pageTitleText = sublet ? getPageTitle(sublet) : '';
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
-  const addressLine = sublet ? (sublet.fullAddress || sublet.location || '') : '';
+  const addressLine = sublet ? (sublet.fullAddress || localizedLocation(sublet, lang) || '') : '';
   const addressDir = contentTextDir(addressLine || null);
   const summaryDir = contentTextDir(translatedSummary ?? sublet?.ai_summary ?? null);
   const originalDir = contentTextDir(sublet?.originalText ?? null);
@@ -378,7 +375,7 @@ export default function ListingDetailClient({
                   dir={addressDir}
                   {...(addressDir === 'rtl' ? { lang: 'he' as const } : {})}
                 >
-                  {sublet.fullAddress || sublet.location}
+                  {sublet.fullAddress || localizedLocation(sublet, lang)}
                 </p>
               ) : null}
             </div>
@@ -391,6 +388,7 @@ export default function ListingDetailClient({
                   <PhotoGallery
                     images={galleryImages}
                     alt={sublet.location}
+                    sourceUrl={sublet.sourceUrl}
                     onShowAll={() => { setLightboxIndex(0); setShowLightbox(true); }}
                     onImageClick={(i) => { setLightboxIndex(i); setShowLightbox(true); }}
                   />
@@ -520,7 +518,7 @@ export default function ListingDetailClient({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     <span>
-                      {[sublet.neighborhood, sublet.city, sublet.country].filter(Boolean).join(', ') || sublet.location}
+                      {[localizedNeighborhood(sublet, lang), sublet.city, sublet.country].filter(Boolean).join(', ') || localizedLocation(sublet, lang)}
                     </span>
                   </div>
 
@@ -541,7 +539,7 @@ export default function ListingDetailClient({
                     </div>
                   ) : (
                     <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <span className="text-slate-500 text-sm">{sublet.location}</span>
+                      <span className="text-slate-500 text-sm">{localizedLocation(sublet, lang)}</span>
                     </div>
                   )}
                 </div>

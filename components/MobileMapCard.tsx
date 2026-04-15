@@ -4,6 +4,7 @@ import { HeartIcon } from './Icons';
 import { formatPrice } from '../utils/formatters';
 import ListingCarousel from './ListingCarousel';
 import { translations } from '../translations';
+import { localizedLocation, localizedNeighborhood } from '../lib/locationUtils';
 
 interface MobileMapCardProps {
   sublet: Sublet;
@@ -72,12 +73,12 @@ const MobileMapCard: React.FC<MobileMapCardProps> = ({
         </div>
 
         {/* Location */}
-        <p className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight">{sublet.location}</p>
+        <p className="text-sm font-bold text-slate-900 line-clamp-2 leading-tight">{localizedLocation(sublet, language)}</p>
 
         {/* Meta */}
         <div>
           {sublet.neighborhood && (
-            <p className="text-[11px] text-slate-500 font-medium truncate">{sublet.neighborhood}</p>
+            <p className="text-[11px] text-slate-500 font-medium truncate">{localizedNeighborhood(sublet, language)}</p>
           )}
           {rooms != null && (
             <p className="text-[11px] text-slate-500">{rooms} {rooms !== 1 ? t.bedrooms : t.bedroom}</p>

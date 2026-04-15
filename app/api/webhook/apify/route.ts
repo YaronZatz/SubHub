@@ -58,6 +58,7 @@ interface ApifyPayload {
   time?: string;
   posterName?: string;
   postID?: string;
+  groupName?: string;
   likesCount?: number;
   commentsCount?: number;
   postedAt?: string | null;
@@ -71,6 +72,7 @@ interface NormalizedPayload {
   images: string[];
   scrapedAt: string;
   posterName?: string;
+  groupName?: string;
   partialData?: boolean;
 }
 
@@ -89,6 +91,7 @@ function normalizePayload(raw: ApifyPayload): NormalizedPayload | null {
   const images = Array.isArray(raw.attachments) ? raw.attachments : (Array.isArray(raw.images) ? raw.images : []);
   const scrapedAt = (raw.scrapedAt || raw.time || new Date().toISOString()).toString();
   const posterName = typeof raw.posterName === 'string' ? raw.posterName : undefined;
+  const groupName = typeof raw.groupName === 'string' ? raw.groupName : undefined;
   const postID = raw.postID != null ? String(raw.postID).trim() : '';
 
   if (!url && !postID) return null;
@@ -96,31 +99,60 @@ function normalizePayload(raw: ApifyPayload): NormalizedPayload | null {
 
   const partialData = text.length < 50;
   const docId = postID || crypto.createHash('md5').update(url).digest('hex');
-  return { postID: docId, url: url || `https://facebook.com/post/${docId}`, text, images, scrapedAt, posterName, partialData };
+  return { postID: docId, url: url || `https://facebook.com/post/${docId}`, text, images, scrapedAt, posterName, groupName, partialData };
 }
 
-async function uploadImagesToStorage(facebookUrls: string[], listingId: string): Promise<string[]> {
+/**
+ * Try to upload Facebook CDN images to permanent Firebase Storage.
+ * Returns an array parallel to `facebookUrls`: Storage URL if upload succeeded, null if it failed.
+ * Callers should fall back to the original CDN URL for null entries.
+ *
+ * Uses Firebase Storage download token URLs which:
+ *  - Bypass Firebase Storage security rules (no auth needed)
+ *  - Don't expire (unlike Facebook CDN oe= tokens)
+ *  - Work regardless of bucket ACL / uniform access setting
+ */
+async function uploadImagesToStorage(facebookUrls: string[], listingId: string): Promise<(string | null)[]> {
   const bucket = adminStorage.bucket();
-  const uploadPromises = facebookUrls.map(async (url, index) => {
+  return Promise.all(facebookUrls.map(async (url, index) => {
     try {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
+      // Use browser-like headers — Facebook CDN blocks plain server-side fetches
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Referer': 'https://www.facebook.com/',
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        },
+      });
+      if (!response.ok) {
+        console.warn(`[Apify Webhook] HTTP ${response.status} fetching image ${index} for ${listingId} — keeping CDN URL`);
+        return null;
+      }
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-      const filePath = `listings/${listingId}/image_${index}.jpg`;
+      // Reject suspiciously small payloads (error pages / redirect HTML)
+      if (buffer.length < 2000) {
+        console.warn(`[Apify Webhook] Image ${index} for ${listingId} too small (${buffer.length}B) — likely an error page`);
+        return null;
+      }
+      const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+      const filePath = `listings/${listingId}/image_${index}.${ext}`;
       const file = bucket.file(filePath);
+      // Embed a stable download token so the URL is permanent regardless of bucket ACL settings
+      const downloadToken = crypto.randomUUID();
       await file.save(buffer, {
-        metadata: { contentType: 'image/jpeg' },
-        public: true,
+        metadata: {
+          contentType,
+          metadata: { firebaseStorageDownloadTokens: downloadToken },
+        },
       });
-      return `https://storage.googleapis.com/${bucket.name}/${filePath}`;
+      return `https://firebasestorage.googleapis.com/v0/b/${encodeURIComponent(bucket.name)}/o/${encodeURIComponent(filePath)}?alt=media&token=${downloadToken}`;
     } catch (error) {
-      console.error(`[Apify Webhook] Error processing image ${index} for ${listingId}:`, error);
+      console.error(`[Apify Webhook] Error uploading image ${index} for ${listingId}:`, error);
       return null;
     }
-  });
-  const results = await Promise.all(uploadPromises);
-  return results.filter((url): url is string => url !== null);
+  }));
 }
 
 
@@ -284,6 +316,7 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
       postUrl: r.postUrl ?? r.url,
       postText: combinedText,
       posterName: r.posterName ?? r.authorName ?? r.author,
+      groupName: r.groupName ?? r.group_name ?? (r.group as Record<string, unknown> | undefined)?.name,
       attachments,
       images: attachments,
       scrapedAt: r.scrapedAt ?? r.time ?? r.createdAt,
@@ -296,9 +329,42 @@ function mapDatasetItemToPayload(item: unknown): ApifyPayload {
 }
 
 const TRANSLATE_LANGUAGES: Record<string, string> = {
+  en: 'English',
   he: 'Hebrew', ru: 'Russian', fr: 'French', es: 'Spanish',
   uk: 'Ukrainian', de: 'German', zh: 'Chinese', pt: 'Portuguese', it: 'Italian',
 };
+
+/** Fire-and-forget: translate location + neighborhood to all languages in one Gemini call and cache in Firestore. */
+async function translateAndCacheLocation(listingId: string, location: string, neighborhood: string | null): Promise<void> {
+  if (!location || !process.env.GEMINI_API_KEY) return;
+  const langs = Object.keys(TRANSLATE_LANGUAGES);
+  const langList = langs.map(l => `${l} (${TRANSLATE_LANGUAGES[l]})`).join(', ');
+  const neighborhoodLine = neighborhood ? `\nNeighborhood: "${neighborhood}"` : '';
+  const prompt = `Translate the following place names to the listed languages. Return ONLY a valid JSON object with this shape: { "location": { "<lang>": "..." }, "neighborhood": { "<lang>": "..." } }. For each language, provide the conventional local name or transliteration. If neighborhood is empty, return empty strings for it.\n\nLanguages: ${langList}\n\nLocation: "${location}"${neighborhoodLine}`;
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+    const raw = response.text?.trim() ?? '';
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return;
+    const result = JSON.parse(jsonMatch[0]) as { location?: Record<string, string>; neighborhood?: Record<string, string> };
+    const updates: Record<string, string> = {};
+    for (const lang of langs) {
+      if (typeof result.location?.[lang] === 'string' && result.location[lang].trim()) {
+        updates[`locationTranslations.${lang}`] = result.location[lang].trim();
+      }
+      if (neighborhood && typeof result.neighborhood?.[lang] === 'string' && result.neighborhood[lang].trim()) {
+        updates[`neighborhoodTranslations.${lang}`] = result.neighborhood[lang].trim();
+      }
+    }
+    if (Object.keys(updates).length > 0) {
+      await adminDb.collection('listings').doc(listingId).update(updates);
+      console.log(`[Apify Webhook] Pre-translated location for ${listingId} to ${Object.keys(updates).length} fields`);
+    }
+  } catch (err) {
+    console.warn(`[Apify Webhook] Location pre-translation failed for ${listingId}:`, err);
+  }
+}
 
 /** Fire-and-forget: translate ai_summary to all languages in one Gemini call and cache in Firestore. */
 async function translateAndCacheSummary(listingId: string, summary: string): Promise<void> {
@@ -501,7 +567,7 @@ export async function POST(req: NextRequest) {
       try {
         let structuredData: GeminiResponse | null = null;
         try {
-          structuredData = await parseTextWithGemini(payload.text);
+          structuredData = await parseTextWithGemini(payload.text, payload.groupName);
         } catch (geminiErr: unknown) {
           console.error('--- Gemini Error ---', geminiErr);
           console.error(`${logPrefix} Gemini parse failed for item ${i}:`, {
@@ -510,8 +576,12 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Use Apify image URLs directly — uploading to Firebase Storage often fails silently
-        const persistentImages = payload.images;
+        // Try to upload images to permanent Firebase Storage; fall back per-image to the CDN URL.
+        // Firebase Storage download token URLs are permanent and bypass ACL rules.
+        // The CDN fallback expires in ~7-14 days but is better than nothing.
+        const uploadResults = await uploadImagesToStorage(payload.images, docId);
+        const persistentImages = payload.images.map((cdnUrl, i) => uploadResults[i] ?? cdnUrl);
+        const storedCount = uploadResults.filter(Boolean).length;
         const now = Date.now();
         const loc = structuredData?.location;
         const dates = structuredData?.dates;
@@ -524,11 +594,11 @@ export async function POST(req: NextRequest) {
           const geocodeQuery = buildGeocodingQuery(loc);
           if (geocodeQuery) {
             try {
-              const coords = await geocodeAddress(geocodeQuery);
+              const coords = await geocodeAddress(geocodeQuery, loc.countryCode ?? undefined);
               if (coords) {
                 lat = coords.lat;
                 lng = coords.lng;
-                console.log(`${logPrefix} Geocoded "${geocodeQuery}" → lat=${lat}, lng=${lng}`);
+                console.log(`${logPrefix} Geocoded "${geocodeQuery}" (cc=${loc.countryCode ?? 'none'}) → lat=${lat}, lng=${lng}`);
               } else {
                 console.log(`${logPrefix} Geocoding returned null for "${geocodeQuery}"`);
               }
@@ -609,13 +679,16 @@ export async function POST(req: NextRequest) {
             console.error('--- Firestore Error ---', firestoreErr);
             throw firestoreErr;
           }
-          // Pre-translate summary to all languages in background (fire-and-forget)
+          // Pre-translate summary + location to all languages in background (fire-and-forget)
           if (finalListing.ai_summary) {
             void translateAndCacheSummary(docId, finalListing.ai_summary);
           }
+          if (finalListing.location) {
+            void translateAndCacheLocation(docId, finalListing.location, finalListing.neighborhood ?? null);
+          }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);
-          console.log(`${logPrefix} Success | docId=${docId} | lat=${lat} | lng=${lng} | imagesProcessed=${persistentImages.length}`);
+          console.log(`${logPrefix} Success | docId=${docId} | lat=${lat} | lng=${lng} | images=${persistentImages.length} (${storedCount} stored, ${persistentImages.length - storedCount} CDN fallback)`);
         } else {
           const fallbackListing = {
             id: docId,
@@ -656,7 +729,7 @@ export async function POST(req: NextRequest) {
           }
           results.push({ id: docId });
           console.log(`${logPrefix} Document saved to Firestore`);
-          console.log(`${logPrefix} Stored with needs_review | docId=${docId} | imagesProcessed=${persistentImages.length}`);
+          console.log(`${logPrefix} Stored with needs_review | docId=${docId} | images=${persistentImages.length} (${storedCount} stored, ${persistentImages.length - storedCount} CDN fallback)`);
         }
       } catch (itemErr: unknown) {
         const errMsg = itemErr instanceof Error ? itemErr.message : String(itemErr);

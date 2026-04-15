@@ -120,19 +120,23 @@ export function computeRentTerm(
   return days <= SHORT_TERM_DAYS ? RentTerm.SHORT_TERM : RentTerm.LONG_TERM;
 }
 
-export async function parseTextWithGemini(rawText: string): Promise<GeminiResponse> {
+export async function parseTextWithGemini(rawText: string, groupName?: string): Promise<GeminiResponse> {
   const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY or API_KEY is not configured');
   const ai = new GoogleGenAI({ apiKey });
 
   const today = new Date().toISOString().slice(0, 10);
-  const prompt = `Extract all structured data from this sublet/rental Facebook post. Be multilingual — handle Hebrew, English, French, Russian, German.
+  const groupHint = groupName
+    ? `\nFACEBOOK GROUP CONTEXT: This post was scraped from the Facebook group "${groupName}". Use this to resolve any location ambiguity — the listing is almost certainly in that group's city/country.\n`
+    : '';
+  const prompt = `Extract all structured data from this sublet/rental Facebook post. Be multilingual — handle Hebrew, English, French, Russian, German.${groupHint}
 
 TODAY'S DATE: ${today}
 
 Return strict JSON matching the schema. Rules:
 - price: number only, 0 if unknown
 - currency: Detect currency from symbols in the post ($ = USD, € = EUR, ₪ or NIS = ILS, £ = GBP). Infer from city/country if no symbol. Only default to ILS if the post is clearly in Israel with no other currency indicators.
+- location fields: ALL location strings (city, neighborhood, street, displayAddress) must be in English — transliterate or translate from Hebrew/other scripts (e.g. "רחוב דיזנגוף" → "Dizengoff Street", "שפירא" → "Shapira")
 - location.city: use common English name only, no country suffix (e.g. "Tel Aviv" not "Tel Aviv-Yafo", "Berlin" not "Berlin, Germany")
 - location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown
 - location.countryCode: ISO 3166-1 alpha-2 (e.g. IL, US, DE, FR)
@@ -145,7 +149,7 @@ Return strict JSON matching the schema. Rules:
 - rooms.floorAreaUnit: "sqm" or "sqft"
 - amenities: set each boolean to true only if explicitly mentioned
 - category: exactly "Entire Place", "Room in Shared", or "Studio"
-- ai_summary: one short marketing sentence
+- ai_summary: one short marketing sentence (always write in English, regardless of the post language)
 
 POST TEXT:
 "${rawText}"`;
