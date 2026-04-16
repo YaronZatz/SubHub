@@ -54,13 +54,13 @@ export async function geocodeAddress(
     const ccParam = ccNorm ? `&countrycodes=${encodeURIComponent(ccNorm)}` : '';
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=3&addressdetails=1${ccParam}`;
     const res = await fetch(url, { headers: { 'User-Agent': 'SubHub/1.0', 'Accept-Language': 'en' } });
-    if (!res.ok) { cache.set(key, null); return null; }
+    if (!res.ok) return null;
 
     const data = await res.json() as Array<{
       lat: string; lon: string;
       address?: Record<string, string>;
     }>;
-    if (!Array.isArray(data) || data.length === 0) { cache.set(key, null); return null; }
+    if (!Array.isArray(data) || data.length === 0) return null;
 
     for (const item of data) {
       // If caller specified an expected city, validate this result
@@ -68,15 +68,13 @@ export async function geocodeAddress(
         if (!resultMatchesCity(item.address, expectedCity)) continue; // wrong city — try next result
       }
       const result = { lat: parseFloat(item.lat), lng: parseFloat(item.lon) };
-      cache.set(key, result);
+      cache.set(key, result); // only cache successes
       return result;
     }
 
-    // All results failed city validation
-    cache.set(key, null);
+    // All results failed city validation — don't cache so future retries can succeed
     return null;
   } catch {
-    cache.set(key, null);
     return null;
   }
 }
