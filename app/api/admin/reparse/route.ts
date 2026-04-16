@@ -39,10 +39,16 @@ function normalizeCity(city?: string | null): string | null {
   return CITY_ALIASES[city.trim().toLowerCase()] ?? city.trim();
 }
 
+const NULL_SENTINEL_RE = /^(null|undefined|n\/a|none|unknown)$/i;
+
+function isValidLocPart(v: string | null | undefined): v is string {
+  return typeof v === 'string' && v.trim().length > 0 && !NULL_SENTINEL_RE.test(v.trim());
+}
+
 function buildLocationString(loc: { street?: string; neighborhood?: string; city?: string; displayAddress?: string } | undefined): string {
   if (!loc) return '';
-  if (loc.displayAddress) return loc.displayAddress;
-  return [loc.street, loc.neighborhood, loc.city].filter(Boolean).join(', ');
+  if (loc.displayAddress && isValidLocPart(loc.displayAddress)) return loc.displayAddress;
+  return [loc.street, loc.neighborhood, loc.city].filter(isValidLocPart).join(', ');
 }
 
 async function reparseOne(docId: string): Promise<{ id: string; before: Record<string, unknown>; after: Record<string, unknown> }> {
@@ -143,10 +149,17 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
 }
 
 const HEBREW_RE = /[\u0590-\u05FF]/;
+const NULL_STRING_RE = /^(null|undefined|n\/a|none|unknown)$/i;
 
 function hasHebrewLocation(data: Record<string, unknown>): boolean {
   return [data.location, data.neighborhood, data.street, data.fullAddress]
     .some(v => typeof v === 'string' && HEBREW_RE.test(v));
+}
+
+function hasNullStringLocation(data: Record<string, unknown>): boolean {
+  return [data.location, data.neighborhood, data.street, data.fullAddress, data.city]
+    .some(v => typeof v === 'string' && NULL_STRING_RE.test(v.trim()))
+    || (typeof data.location === 'string' && data.location.split(',').some(p => NULL_STRING_RE.test(p.trim())));
 }
 
 export async function POST(req: NextRequest) {
@@ -188,6 +201,40 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ reparsed: succeeded, total: toFix.length, results });
     }
 
+    // ── Bulk: reparse all listings with "null" string in location fields ────────
+    if (body.fixNullStrings) {
+      const dryRun = body.dryRun === true;
+      const batchSize = typeof body.batchSize === 'number' ? body.batchSize : 20;
+      const snap = await adminDb.collection('listings').where('status', '==', 'active').get();
+      const toFix = snap.docs
+        .filter(d => hasNullStringLocation(d.data() as Record<string, unknown>))
+        .map(d => d.id);
+
+      console.log(`[Reparse] fixNullStrings: found ${toFix.length} listings with null-string location fields (dryRun=${dryRun})`);
+
+      if (dryRun) {
+        return NextResponse.json({ dryRun: true, found: toFix.length, ids: toFix });
+      }
+
+      const results: { success: boolean; id: string; error?: string }[] = [];
+      for (let i = 0; i < toFix.length; i += batchSize) {
+        const chunk = toFix.slice(i, i + batchSize);
+        const chunkResults = await Promise.allSettled(chunk.map(reparseOne));
+        chunkResults.forEach((r, j) => {
+          results.push(
+            r.status === 'fulfilled'
+              ? { success: true, id: chunk[j] }
+              : { success: false, id: chunk[j], error: r.reason instanceof Error ? r.reason.message : String(r.reason) }
+          );
+        });
+        if (i + batchSize < toFix.length) await new Promise(r => setTimeout(r, 1000));
+      }
+
+      const succeeded = results.filter(r => r.success).length;
+      console.log(`[Reparse] fixNullStrings done: ${succeeded}/${toFix.length} reparsed`);
+      return NextResponse.json({ reparsed: succeeded, total: toFix.length, results });
+    }
+
     // ── Single / explicit IDs ─────────────────────────────────────────────────
     let ids: string[] = [];
 
@@ -200,7 +247,7 @@ export async function POST(req: NextRequest) {
       if (snap.empty) return NextResponse.json({ error: 'No listing found with that sourceUrl' }, { status: 404 });
       ids = [snap.docs[0].id];
     } else {
-      return NextResponse.json({ error: 'Provide { id }, { ids }, { sourceUrl }, or { fixLocations: true }' }, { status: 400 });
+      return NextResponse.json({ error: 'Provide { id }, { ids }, { sourceUrl }, { fixLocations: true }, or { fixNullStrings: true }' }, { status: 400 });
     }
 
     const results = await Promise.allSettled(ids.map(reparseOne));

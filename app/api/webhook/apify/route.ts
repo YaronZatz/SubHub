@@ -216,10 +216,16 @@ function mapCategoryToType(category: string | undefined): string {
   return SubletType.ENTIRE;
 }
 
+const NULL_SENTINEL_RE = /^(null|undefined|n\/a|none|unknown)$/i;
+
+function isValidLocPart(v: string | null | undefined): v is string {
+  return typeof v === 'string' && v.trim().length > 0 && !NULL_SENTINEL_RE.test(v.trim());
+}
+
 function buildLocationString(loc: GeminiLocation | undefined): string {
   if (!loc) return '';
-  if (loc.displayAddress) return loc.displayAddress;
-  const parts = [loc.street, loc.neighborhood, loc.city].filter(Boolean);
+  if (loc.displayAddress && isValidLocPart(loc.displayAddress)) return loc.displayAddress;
+  const parts = [loc.street, loc.neighborhood, loc.city].filter(isValidLocPart);
   return parts.join(', ') || '';
 }
 

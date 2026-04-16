@@ -118,9 +118,13 @@ const REASONING_PATTERNS = [
   /\bI'?m not sure\b/i,
 ];
 
-/** Null out a string if it's too long or contains model reasoning. */
+// Literal sentinel strings Gemini writes when it can't determine a value (schema forces STRING type).
+const NULL_SENTINELS = new Set(['null', 'undefined', 'n/a', 'none', 'unknown', 'не указано']);
+
+/** Null out a string if it's a sentinel, too long, or contains model reasoning. */
 function sanitizeString(value: string | undefined | null, maxLen: number): string | undefined {
   if (value == null || value === '') return undefined;
+  if (NULL_SENTINELS.has(value.trim().toLowerCase())) return undefined;
   if (value.length > maxLen) return undefined;
   if (REASONING_PATTERNS.some((re) => re.test(value))) return undefined;
   return value;
