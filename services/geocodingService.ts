@@ -11,7 +11,7 @@ const CITY_ALIASES: Record<string, string> = {
 };
 
 function normalizeCity(name: string): string {
-  const lower = name.trim().toLowerCase();
+  const lower = name.trim().toLowerCase().replace(/-/g, ' ');
   return CITY_ALIASES[lower] ?? lower;
 }
 
@@ -53,7 +53,7 @@ export async function geocodeAddress(
   try {
     const ccParam = ccNorm ? `&countrycodes=${encodeURIComponent(ccNorm)}` : '';
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=3&addressdetails=1${ccParam}`;
-    const res = await fetch(url, { headers: { 'User-Agent': 'SubHub/1.0' } });
+    const res = await fetch(url, { headers: { 'User-Agent': 'SubHub/1.0', 'Accept-Language': 'en' } });
     if (!res.ok) { cache.set(key, null); return null; }
 
     const data = await res.json() as Array<{
