@@ -118,7 +118,9 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
     parserVersion: '2.1.0-reparse',
   };
 
-  await ref.update(updates);
+  // Strip undefined values — Firestore rejects them
+  const safeUpdates = Object.fromEntries(Object.entries(updates).filter(([, v]) => v !== undefined));
+  await ref.update(safeUpdates);
 
   // Clear stale location translation caches so they get re-generated on next visit
   await ref.update({ locationTranslations: null, neighborhoodTranslations: null }).catch(() => {});

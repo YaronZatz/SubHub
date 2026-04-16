@@ -16,6 +16,7 @@ export interface GeminiLocation {
   neighborhood?: string;
   street?: string;
   displayAddress?: string;
+  rawLocationText?: string;
   confidence?: 'high' | 'medium' | 'low';
 }
 
@@ -90,6 +91,64 @@ export interface GeminiResponse {
 
 const SHORT_TERM_DAYS = 183;
 
+// Max character lengths per field. Anything longer is almost certainly a thinking leak.
+const FIELD_MAX_LEN: Record<string, number> = {
+  city: 60,
+  street: 150,
+  neighborhood: 150,
+  country: 80,
+  countryCode: 3,
+  displayAddress: 250,
+  rawLocationText: 400,
+  rawDateText: 300,
+  ai_summary: 600,
+  duration: 80,
+};
+
+// Patterns that indicate internal reasoning bled into an output field.
+const REASONING_PATTERNS = [
+  /\bwait[,\s]/i,
+  /\blet'?s\b/i,
+  /\bi should\b/i,
+  /\bi need to\b/i,
+  /\bactually[,\s]/i,
+  /\bhmm\b/i,
+  /```/,                              // code-fence markers
+  /\bthis is\b.{0,30}\bunclear\b/i,
+  /\bI'?m not sure\b/i,
+];
+
+/** Null out a string if it's too long or contains model reasoning. */
+function sanitizeString(value: string | undefined | null, maxLen: number): string | undefined {
+  if (value == null || value === '') return undefined;
+  if (value.length > maxLen) return undefined;
+  if (REASONING_PATTERNS.some((re) => re.test(value))) return undefined;
+  return value;
+}
+
+/** Strip reasoning leaks from all string fields in a parsed Gemini response. */
+function sanitizeGeminiResponse(raw: GeminiResponse): GeminiResponse {
+  if (raw.location) {
+    const loc = raw.location;
+    loc.city          = sanitizeString(loc.city,          FIELD_MAX_LEN.city);
+    loc.street        = sanitizeString(loc.street,        FIELD_MAX_LEN.street);
+    loc.neighborhood  = sanitizeString(loc.neighborhood,  FIELD_MAX_LEN.neighborhood);
+    loc.country       = sanitizeString(loc.country,       FIELD_MAX_LEN.country);
+    loc.countryCode   = sanitizeString(loc.countryCode,   FIELD_MAX_LEN.countryCode);
+    loc.displayAddress   = sanitizeString(loc.displayAddress,   FIELD_MAX_LEN.displayAddress);
+    loc.rawLocationText  = sanitizeString(loc.rawLocationText,  FIELD_MAX_LEN.rawLocationText);
+  }
+  if (raw.dates) {
+    const d = raw.dates;
+    d.rawDateText = sanitizeString(d.rawDateText, FIELD_MAX_LEN.rawDateText);
+    d.duration    = sanitizeString(d.duration,    FIELD_MAX_LEN.duration);
+  }
+  if (raw.ai_summary != null) {
+    raw.ai_summary = sanitizeString(raw.ai_summary, FIELD_MAX_LEN.ai_summary) ?? '';
+  }
+  return raw;
+}
+
 function getDurationDays(
   startDate: string | null | undefined,
   endDate: string | null | undefined,
@@ -138,7 +197,9 @@ Return strict JSON matching the schema. Rules:
 - currency: Detect currency from symbols in the post ($ = USD, € = EUR, ₪ or NIS = ILS, £ = GBP). Infer from city/country if no symbol. Only default to ILS if the post is clearly in Israel with no other currency indicators.
 - location fields: ALL location strings (city, neighborhood, street, displayAddress) must be in English — transliterate or translate from Hebrew/other scripts (e.g. "רחוב דיזנגוף" → "Dizengoff Street", "שפירא" → "Shapira")
 - location.city: use common English name only, no country suffix (e.g. "Tel Aviv" not "Tel Aviv-Yafo", "Berlin" not "Berlin, Germany")
-- location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown
+- location.neighborhood and location.street: ONLY populate if explicitly stated in the post text — do NOT guess or infer these from the city name or context
+- location.rawLocationText: copy the EXACT location phrase verbatim from the post (preserve original language/script, e.g. Hebrew) — omit if no location mentioned
+- location.confidence: 'high' if explicitly stated, 'medium' if inferred from context, 'low' if unknown or uncertain
 - location.countryCode: ISO 3166-1 alpha-2 (e.g. IL, US, DE, FR)
 - dates: use ISO YYYY-MM-DD; null if not mentioned; immediateAvailability=true for "now/immediate/available now"
 - dates YEAR RULE: when only day/month is given (e.g. "7/3", "March 7", "ב-7 למרץ"), use today's date to infer the year — pick the nearest upcoming occurrence (same year if the date hasn't passed yet, next year if it has already passed)
@@ -159,6 +220,7 @@ POST TEXT:
     contents: prompt,
     config: {
       responseMimeType: 'application/json',
+      thinkingConfig: { thinkingBudget: 0 },
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -173,6 +235,7 @@ POST TEXT:
               neighborhood: { type: Type.STRING },
               street: { type: Type.STRING },
               displayAddress: { type: Type.STRING },
+              rawLocationText: { type: Type.STRING },
               confidence: { type: Type.STRING },
             },
           },
@@ -262,7 +325,7 @@ POST TEXT:
         .map((p) => p.text)
         .join('');
       const text = nonThoughtText || response.text || '{}';
-      return JSON.parse(text) as GeminiResponse;
+      return sanitizeGeminiResponse(JSON.parse(text) as GeminiResponse);
     } catch (err: unknown) {
       const isRateLimit =
         err instanceof Error &&

@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { Buffer } from 'buffer';
 import { SubletType, RentTerm } from '@/types';
 import { fetchDatasetItems, fetchDatasetItemsWithClient, fetchDatasetItemsByDatasetId } from '@/services/apifyService';
-import { geocodeAddress } from '@/services/geocodingService';
+import { geocodeWithFallback } from '@/services/geocodingService';
 import { contentHash } from '@/utils/contentHash';
 import { GoogleGenAI } from '@google/genai';
 
@@ -31,9 +31,61 @@ const CITY_ALIASES: Record<string, string> = {
   'nyc': 'New York',
 };
 
+/** Lookup table: lowercase token → canonical city + countryCode. Used to extract hard location context from Facebook group names. */
+const CITY_LOOKUP: Record<string, { city: string; countryCode: string }> = {
+  'tel aviv': { city: 'Tel Aviv', countryCode: 'IL' },
+  'telaviv': { city: 'Tel Aviv', countryCode: 'IL' },
+  'jerusalem': { city: 'Jerusalem', countryCode: 'IL' },
+  'haifa': { city: 'Haifa', countryCode: 'IL' },
+  'berlin': { city: 'Berlin', countryCode: 'DE' },
+  'munich': { city: 'Munich', countryCode: 'DE' },
+  'hamburg': { city: 'Hamburg', countryCode: 'DE' },
+  'amsterdam': { city: 'Amsterdam', countryCode: 'NL' },
+  'paris': { city: 'Paris', countryCode: 'FR' },
+  'london': { city: 'London', countryCode: 'GB' },
+  'new york': { city: 'New York', countryCode: 'US' },
+  'nyc': { city: 'New York', countryCode: 'US' },
+  'los angeles': { city: 'Los Angeles', countryCode: 'US' },
+  'san francisco': { city: 'San Francisco', countryCode: 'US' },
+  'chicago': { city: 'Chicago', countryCode: 'US' },
+  'toronto': { city: 'Toronto', countryCode: 'CA' },
+  'montreal': { city: 'Montreal', countryCode: 'CA' },
+  'barcelona': { city: 'Barcelona', countryCode: 'ES' },
+  'madrid': { city: 'Madrid', countryCode: 'ES' },
+  'rome': { city: 'Rome', countryCode: 'IT' },
+  'milan': { city: 'Milan', countryCode: 'IT' },
+  'vienna': { city: 'Vienna', countryCode: 'AT' },
+  'zurich': { city: 'Zurich', countryCode: 'CH' },
+  'prague': { city: 'Prague', countryCode: 'CZ' },
+  'warsaw': { city: 'Warsaw', countryCode: 'PL' },
+  'budapest': { city: 'Budapest', countryCode: 'HU' },
+  'lisbon': { city: 'Lisbon', countryCode: 'PT' },
+  'stockholm': { city: 'Stockholm', countryCode: 'SE' },
+  'copenhagen': { city: 'Copenhagen', countryCode: 'DK' },
+  'sydney': { city: 'Sydney', countryCode: 'AU' },
+  'melbourne': { city: 'Melbourne', countryCode: 'AU' },
+  'dubai': { city: 'Dubai', countryCode: 'AE' },
+  'singapore': { city: 'Singapore', countryCode: 'SG' },
+  'tokyo': { city: 'Tokyo', countryCode: 'JP' },
+  'brussels': { city: 'Brussels', countryCode: 'BE' },
+};
+
 function normalizeCity(city?: string | null): string | null {
   if (!city) return null;
   return CITY_ALIASES[city.trim().toLowerCase()] ?? city.trim();
+}
+
+/**
+ * Parse a Facebook group name and return city + countryCode if a known city is found.
+ * Multi-word keys are checked before single-word keys to avoid partial matches (e.g. "New York" before "York").
+ */
+function extractLocationFromGroupName(groupName: string): { city: string; countryCode: string } | null {
+  const lower = groupName.toLowerCase();
+  const sortedKeys = Object.keys(CITY_LOOKUP).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    if (lower.includes(key)) return CITY_LOOKUP[key];
+  }
+  return null;
 }
 
 function stripUndefined<T extends Record<string, unknown>>(obj: T): T {
@@ -171,10 +223,28 @@ function buildLocationString(loc: GeminiLocation | undefined): string {
   return parts.join(', ') || '';
 }
 
-function buildGeocodingQuery(loc: GeminiLocation): string {
-  if (loc.displayAddress) return loc.displayAddress;
-  const parts = [loc.neighborhood, loc.city, loc.country].filter(Boolean);
-  return parts.join(', ');
+/**
+ * Build a list of geocoding queries ordered from most precise to least precise.
+ * geocodeWithFallback will try each in order and return on first success.
+ */
+function buildGeocodingCandidates(loc: GeminiLocation): string[] {
+  const candidates: string[] = [];
+  // Verbatim text from post — most faithful, bypasses transliteration errors
+  if (loc.rawLocationText) candidates.push(loc.rawLocationText);
+  // Full formatted address built by Gemini
+  if (loc.displayAddress) candidates.push(loc.displayAddress);
+  // Street + neighborhood + city + country
+  const full = [loc.street, loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', ');
+  if (full) candidates.push(full);
+  // Neighborhood + city + country (drop street)
+  const neighCity = [loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', ');
+  if (neighCity !== full) candidates.push(neighCity);
+  // City + country only (drop neighborhood)
+  const cityCountry = [loc.city, loc.country].filter(Boolean).join(', ');
+  if (cityCountry !== neighCity) candidates.push(cityCountry);
+  // City alone as last resort
+  if (loc.city) candidates.push(loc.city);
+  return [...new Set(candidates.filter(Boolean))];
 }
 
 /** Apify sends run-completion events with eventType and eventData.actorRunId (not dataset items). */
@@ -276,6 +346,8 @@ function isValidListing(item: ApifyPayload, images: string[]): boolean {
   if (images.length === 0) return false;
 
   const text = (item.postText || item.text || '').toLowerCase();
+
+  // Reject "looking for" posts (seekers, not listers)
   const lookingForPhrases = [
     'looking for', 'searching for', 'need a place', 'need an apartment',
     'seeking', 'wanted', 'iso ', 'in search of', 'anyone know of',
@@ -283,6 +355,38 @@ function isValidListing(item: ApifyPayload, images: string[]): boolean {
   ];
   if (lookingForPhrases.some(phrase => text.includes(phrase))) return false;
 
+  // Reject non-rental professional ads (courses, services, etc.)
+  const nonRentalPhrases = [
+    'mba ', 'mba\n', 'executive program', 'business school',
+    'coaching program', 'enroll now', 'scholarship', 'certification program',
+    'online course', 'lease plan specialist', 'land registry', 'landlord registration',
+    'letting agent', 'estate agent', 'property management service',
+  ];
+  if (nonRentalPhrases.some(phrase => text.includes(phrase))) return false;
+
+  // Reject "WhatsApp only" spam: a bare phone number + WhatsApp with no address context.
+  // Pattern: contains a WhatsApp number but has none of the location-signal words.
+  const hasWhatsAppNumber = /whatsapp\s*\+?\d{7,}/.test(text) || /\+\d{10,}/.test(text);
+  if (hasWhatsAppNumber) {
+    // Keep if there are substantive location words alongside the WhatsApp number
+    const hasLocationSignal = [
+      'street', 'strasse', 'straße', 'avenue', 'boulevard', 'road', 'lane', 'place',
+      'floor', 'district', 'neighborhood', 'postcode', 'zip', 'near ', 'next to',
+      'רחוב', 'שכונ', 'כיכר', 'פינת',
+    ].some(w => text.includes(w));
+    if (!hasLocationSignal) return false;
+  }
+
+  // Reject "DM / message for location" posts (no location stated, contact-only)
+  const contactForLocationPhrases = [
+    'dm for postcode', 'dm me postcode', 'dm me your postcode',
+    'send me postcode', 'send your postcode', 'message for postcode',
+    'dm for location', 'message for location', 'contact for location',
+    'dm for address', 'message for address',
+  ];
+  if (contactForLocationPhrases.some(phrase => text.includes(phrase))) return false;
+
+  // Require at least one housing keyword
   const housingKeywords = [
     'sublet', 'sublease', 'apartment', 'room', 'studio', 'bedroom', 'br',
     'rent', 'lease', 'available', 'month', 'weekly', 'furnished',
@@ -576,6 +680,25 @@ export async function POST(req: NextRequest) {
           });
         }
 
+        // Apply group name hard override for city + countryCode.
+        // Group name is a stronger country signal than post text — if the group is "Tel Aviv Sublets"
+        // the listing is almost certainly in Israel, regardless of what Gemini extracted.
+        const groupOverride = payload.groupName ? extractLocationFromGroupName(payload.groupName) : null;
+        if (groupOverride && structuredData) {
+          if (!structuredData.location) {
+            structuredData.location = { city: groupOverride.city, countryCode: groupOverride.countryCode, confidence: 'medium' };
+          } else {
+            // Always override countryCode — group name is the strongest country signal
+            structuredData.location.countryCode = groupOverride.countryCode;
+            // Override city only if Gemini didn't find one or was low confidence
+            if (!structuredData.location.city || structuredData.location.confidence === 'low') {
+              structuredData.location.city = groupOverride.city;
+              if (structuredData.location.confidence === 'low') structuredData.location.confidence = 'medium';
+            }
+          }
+          console.log(`${logPrefix} Group override applied: city=${structuredData.location.city}, cc=${structuredData.location.countryCode} (from "${payload.groupName}")`);
+        }
+
         // Try to upload images to permanent Firebase Storage; fall back per-image to the CDN URL.
         // Firebase Storage download token URLs are permanent and bypass ACL rules.
         // The CDN fallback expires in ~7-14 days but is better than nothing.
@@ -590,17 +713,23 @@ export async function POST(req: NextRequest) {
         // --- Geocoding ---
         let lat: number | null = null;
         let lng: number | null = null;
-        if (loc && (loc.city || loc.displayAddress)) {
-          const geocodeQuery = buildGeocodingQuery(loc);
-          if (geocodeQuery) {
+        // needs_review = true when location is absent or low-confidence after all overrides.
+        // This covers: (a) Gemini returned low confidence, (b) no location at all was found.
+        const hasLocation = !!(loc?.city || loc?.rawLocationText || loc?.country || loc?.displayAddress);
+        let locationLowConfidence = !hasLocation || loc?.confidence === 'low';
+        if (loc) {
+          if (loc.confidence === 'low') {
+            console.log(`${logPrefix} Skipping geocoding — low confidence location`);
+          } else if (loc.city || loc.displayAddress || loc.rawLocationText) {
+            const candidates = buildGeocodingCandidates(loc);
             try {
-              const coords = await geocodeAddress(geocodeQuery, loc.countryCode ?? undefined);
+              const coords = await geocodeWithFallback(candidates, loc.countryCode ?? undefined);
               if (coords) {
                 lat = coords.lat;
                 lng = coords.lng;
-                console.log(`${logPrefix} Geocoded "${geocodeQuery}" (cc=${loc.countryCode ?? 'none'}) → lat=${lat}, lng=${lng}`);
+                console.log(`${logPrefix} Geocoded → lat=${lat}, lng=${lng} (tried ${candidates.length} candidates: ${candidates.join(' | ')})`);
               } else {
-                console.log(`${logPrefix} Geocoding returned null for "${geocodeQuery}"`);
+                console.log(`${logPrefix} Geocoding returned null for all ${candidates.length} candidates: ${candidates.join(' | ')}`);
               }
             } catch (geoErr) {
               console.warn(`${logPrefix} Geocoding error (non-fatal):`, geoErr);
@@ -663,7 +792,7 @@ export async function POST(req: NextRequest) {
               confidence: dates.confidence ?? null,
             } : null,
             ai_summary: structuredData.ai_summary || '',
-            needs_review: false,
+            needs_review: locationLowConfidence,
             contentHash: hashValue,
             partialData: payload.partialData ?? false,
             lastParsedAt: now,
