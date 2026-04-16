@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { parseTextWithGemini, computeRentTerm } from '@/lib/geminiParser';
-import { geocodeAddress } from '@/services/geocodingService';
+import { geocodeWithFallback } from '@/services/geocodingService';
 
 const CITY_ALIASES: Record<string, string> = {
   'tel aviv-yafo': 'Tel Aviv',
@@ -70,19 +70,22 @@ async function reparseOne(docId: string): Promise<{ id: string; before: Record<s
   const loc = parsed.location;
   const locationStr = buildLocationString(loc);
 
-  // Re-geocode if location changed
+  // Always re-geocode with city validation so wrong-city results are rejected
   let lat = data.lat as number | null;
   let lng = data.lng as number | null;
-  const newCity = loc?.city ?? null;
-  const oldCity = data.city as string | null;
-  if (loc && (loc.city || loc.displayAddress) && newCity !== oldCity) {
-    const query = loc.displayAddress || [loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', ');
-    if (query) {
-      try {
-        const coords = await geocodeAddress(query, loc?.countryCode ?? undefined);
-        if (coords) { lat = coords.lat; lng = coords.lng; }
-      } catch { /* keep existing coords */ }
-    }
+  if (loc && (loc.city || loc.displayAddress)) {
+    const candidates = [
+      loc.rawLocationText,
+      loc.displayAddress,
+      [loc.street, loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', '),
+      [loc.neighborhood, loc.city, loc.country].filter(Boolean).join(', '),
+      [loc.city, loc.country].filter(Boolean).join(', '),
+      loc.city,
+    ].filter((s): s is string => !!s);
+    try {
+      const coords = await geocodeWithFallback(candidates, loc.countryCode ?? undefined, loc.city ?? undefined);
+      if (coords) { lat = coords.lat; lng = coords.lng; }
+    } catch { /* keep existing coords */ }
   }
 
   const updates: Record<string, unknown> = {

@@ -723,7 +723,7 @@ export async function POST(req: NextRequest) {
           } else if (loc.city || loc.displayAddress || loc.rawLocationText) {
             const candidates = buildGeocodingCandidates(loc);
             try {
-              const coords = await geocodeWithFallback(candidates, loc.countryCode ?? undefined);
+              const coords = await geocodeWithFallback(candidates, loc.countryCode ?? undefined, loc.city ?? undefined);
               if (coords) {
                 lat = coords.lat;
                 lng = coords.lng;
