@@ -358,11 +358,6 @@ export default function ListingDetailClient({
                 >
                   {getPageTitle(sublet)}
                 </h1>
-                {hasAI && (
-                  <span className="bg-[#F5831F] text-white text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest">
-                    {t.aiParsed}
-                  </span>
-                )}
                 {isTaken && (
                   <span className="bg-red-100 text-red-600 text-xs font-black px-3 py-1 rounded-full uppercase">
                     {t.taken}
@@ -520,6 +515,11 @@ export default function ListingDetailClient({
                     <span>
                       {[localizedNeighborhood(sublet, lang), sublet.city, sublet.country].filter(Boolean).join(', ') || localizedLocation(sublet, lang)}
                     </span>
+                    {sublet.pin_status === 'approximate' && (
+                      <span className="ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                        approx.
+                      </span>
+                    )}
                   </div>
 
                   {sublet.lat && sublet.lng ? (

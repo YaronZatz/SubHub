@@ -9,6 +9,23 @@ const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   [CurrencyCode.GBP]: '£',
 };
 
+// Some Firestore docs (parsed by Gemini) store the display symbol instead of the ISO code.
+const SYMBOL_TO_CODE: Record<string, CurrencyCode> = {
+  '₪': CurrencyCode.ILS,
+  '$': CurrencyCode.USD,
+  '€': CurrencyCode.EUR,
+  '£': CurrencyCode.GBP,
+};
+
+/** Coerce a potentially-symbol currency value to a valid ISO 4217 code. */
+export function normalizeCurrencyCode(raw: string | undefined | null): CurrencyCode {
+  if (!raw) return CurrencyCode.ILS;
+  if (SYMBOL_TO_CODE[raw]) return SYMBOL_TO_CODE[raw];
+  const upper = raw.toUpperCase();
+  if ((Object.values(CurrencyCode) as string[]).includes(upper)) return upper as CurrencyCode;
+  return CurrencyCode.ILS;
+}
+
 /**
  * Formats a price according to the selected currency and locale.
  * @param amountInBase The amount in the listing's original currency (or ILS if unknown).
@@ -22,20 +39,22 @@ export const formatPrice = (
   locale: string = 'en-US',
   listingCurrency?: string
 ): string => {
-  // Normalize to ILS first if the listing is priced in a known non-ILS currency
+  // Coerce symbol strings (€, $, £, ₪) that Gemini occasionally writes instead of ISO codes.
+  const safeCurrency = normalizeCurrencyCode(targetCurrency);
+  const safeListingCurrency = listingCurrency ? normalizeCurrencyCode(listingCurrency) : undefined;
+
   const ilsRates = getILSBasedRates();
   let priceInILS = amountInBase;
-  if (listingCurrency && listingCurrency !== 'ILS') {
-    const rate = ilsRates[listingCurrency];
+  if (safeListingCurrency && safeListingCurrency !== CurrencyCode.ILS) {
+    const rate = ilsRates[safeListingCurrency];
     if (rate && rate > 0) priceInILS = amountInBase / rate;
-    // Unknown currencies fall through and are treated as ILS
   }
 
-  const convertedAmount = priceInILS * (ilsRates[targetCurrency] ?? 0.27);
+  const convertedAmount = priceInILS * (ilsRates[safeCurrency] ?? 0.27);
 
   return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: targetCurrency,
+    currency: safeCurrency,
     maximumFractionDigits: 0,
   }).format(convertedAmount);
 };

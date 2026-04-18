@@ -177,6 +177,17 @@ export interface Sublet {
   street?: string;
   fullAddress?: string;
   locationConfidence?: 'high' | 'medium' | 'low' | string;
+  /**
+   * Authoritative pin status from Stage 6 (Score & Decide).
+   * exact       → pin at street + number coords
+   * street      → pin at street centerline
+   * approximate → neighborhood centroid or no reliable pin; shown in sidebar
+   * rejected    → no usable location; not published
+   * undefined   → old listing processed by legacy pipeline (use lat/lng check)
+   */
+  pin_status?: 'exact' | 'street' | 'approximate' | 'rejected';
+  /** Airbnb-style titles pre-generated per language by Stage 7 */
+  titles_by_lang?: Record<string, string>;
   contentHash?: string;
   duplicateOf?: string;
   partialData?: boolean;

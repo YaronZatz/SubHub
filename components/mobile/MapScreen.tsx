@@ -399,14 +399,6 @@ function SelectedCard({ sublet: s, currency, isSaved, onSave, onNavigate }: {
         <div className="relative w-[100px] aspect-square rounded-xl overflow-hidden shrink-0">
           <ListingCarousel id={s.id} images={s.images} sourceUrl={s.sourceUrl}
             photoCount={s.photoCount} aspectRatio="aspect-square" />
-          {hasAI && (
-            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-[#F5831F] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wide pointer-events-none z-10">
-              <svg className="w-2 h-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z" />
-              </svg>
-              AI PARSED
-            </div>
-          )}
         </div>
 
         {/* Info */}

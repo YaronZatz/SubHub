@@ -22,6 +22,8 @@ export default async function ListingPage({ params }: PageProps) {
   const result = await getListingByIdForServer(listingId);
 
   if (result.ok) {
+    // pin_status is authoritative — no on-demand re-geocoding.
+    // Coordinates are set permanently by the pipeline's Stage 5 & 6.
     return (
       <ListingDetailClient
         key={listingId}

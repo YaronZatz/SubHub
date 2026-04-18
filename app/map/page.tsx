@@ -375,13 +375,6 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
             {/* Gradient scrim — subtle top fade only for badge readability */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent pointer-events-none z-10" />
 
-            {/* AI badge — top left */}
-            {hasAI && (
-              <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1 bg-[#F5831F] text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow pointer-events-none">
-                <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1.323l3.954 1.582 1.599-.8a1 1 0 01.894 1.79l-1.233.616 1.738 5.42a1 1 0 01-.285 1.05A3.989 3.989 0 0115 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.715-5.349L11 6.477V16h2a1 1 0 110 2H7a1 1 0 110-2h2V6.477L6.237 7.582l1.715 5.349a1 1 0 01-.285 1.05A3.989 3.989 0 015 15a3.989 3.989 0 01-2.667-1.019 1 1 0 01-.285-1.05l1.738-5.42-1.233-.617a1 1 0 01.894-1.788l1.599.799L9 4.323V3a1 1 0 011-1z"/></svg>
-                AI Parsed
-              </div>
-            )}
 
             {/* Time-ago badge — bottom left */}
             {isNew ? (

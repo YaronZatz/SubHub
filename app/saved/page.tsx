@@ -13,7 +13,59 @@ import { HeartIcon } from '@/components/Icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
 import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { normalizeCurrencyCode } from '@/utils/formatters';
 import { Sublet, CurrencyCode, ListingStatus } from '@/types';
+
+// ─── Schema normalizer ────────────────────────────────────────────────────────
+
+/**
+ * Normalise a Sublet coming from the listings collection before rendering on
+ * the saved page.  Handles field renames introduced by the new pipeline and
+ * guards against non-string dates that can leak through the Firestore mapping
+ * layer (e.g. Timestamp objects stored by older ingest scripts).
+ *
+ * Returns null when the document is unsalvageable (missing id).
+ */
+function normalizeSavedListing(raw: Sublet): Sublet | null {
+  if (!raw.id) return null;
+
+  const d = raw as unknown as Record<string, unknown>;
+
+  // Coerce a date field to string-or-empty, guarding against Timestamp objects.
+  function safeDate(v: unknown): string {
+    if (typeof v === 'string') return v;
+    if (v == null) return '';
+    // Firestore Timestamp has toDate(); convert to ISO string.
+    if (typeof (v as Record<string, unknown>).toDate === 'function') {
+      try { return ((v as { toDate(): Date }).toDate()).toISOString().slice(0, 10); } catch { return ''; }
+    }
+    return '';
+  }
+
+  const startDate = safeDate(raw.startDate);
+  const endDate   = safeDate(raw.endDate);
+
+  // parsedDates may carry Timestamp objects too — normalise in place.
+  const parsedDates = raw.parsedDates
+    ? { ...raw.parsedDates, startDate: safeDate(raw.parsedDates.startDate) || null, endDate: safeDate(raw.parsedDates.endDate) || null }
+    : raw.parsedDates;
+
+  return {
+    ...raw,
+    // New pipeline uses snake_case; listingMap may not have had the fallback deployed yet.
+    sourceUrl: raw.sourceUrl || (d['source_url'] as string) || '',
+    originalText: raw.originalText || (d['original_text'] as string) || '',
+    // images_cdn is the pre-publish fallback if images array is absent.
+    images: Array.isArray(raw.images) ? raw.images
+      : Array.isArray(d['images_cdn']) ? (d['images_cdn'] as string[])
+      : undefined,
+    // Gemini sometimes writes the display symbol (€/$) instead of the ISO code.
+    currency: normalizeCurrencyCode(raw.currency),
+    startDate,
+    endDate,
+    parsedDates,
+  };
+}
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
@@ -59,11 +111,11 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
 
   const title = [localizedNeighborhood(sublet, language), sublet.city].filter(Boolean).join(', ') || localizedLocation(sublet, language) || t.unknownLocation;
   const dateRange = (() => {
-    const s = sublet.startDate ? formatDate(sublet.startDate) : '';
-    const e = sublet.endDate ? formatDate(sublet.endDate) : '';
+    const s = typeof sublet.startDate === 'string' && sublet.startDate ? formatDate(sublet.startDate) : '';
+    const e = typeof sublet.endDate === 'string' && sublet.endDate ? formatDate(sublet.endDate) : '';
     if (s && e) return `${s} – ${e}`;
-    if (s) return t.fromDate.replace('{date}', s);
-    if (sublet.immediateAvailability) return t.availableNow;
+    if (s) return t.fromDate ? t.fromDate.replace('{date}', s) : s;
+    if (sublet.immediateAvailability) return t.availableNow ?? '';
     return '';
   })();
 
@@ -161,9 +213,11 @@ function SavedContent() {
     setListingsLoading(true);
     Promise.all(Array.from(savedIds).map((id) => persistenceService.fetchListingById(id)))
       .then((results) => {
-        setSavedListings(
-          results.filter((r): r is { ok: true; listing: Sublet } => r.ok).map((r) => r.listing),
-        );
+        const listings = results
+          .filter((r): r is { ok: true; listing: Sublet } => r.ok)
+          .map((r) => normalizeSavedListing(r.listing))
+          .filter((l): l is Sublet => l !== null);
+        setSavedListings(listings);
         setListingsLoading(false);
       })
       .catch(() => setListingsLoading(false));

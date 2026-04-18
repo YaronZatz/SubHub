@@ -31,7 +31,11 @@ function parseAdminSdkConfig(jsonString: string | undefined): admin.ServiceAccou
 function getAdminApp() {
   if (admin.apps.length > 0) return admin.app();
 
-  const serviceAccount = parseAdminSdkConfig(process.env.ADMIN_SDK_CONFIG);
+  // ADMIN_SDK_CONFIG is set in production (apphosting.yaml).
+  // FIREBASE_SERVICE_ACCOUNT_JSON is the local dev equivalent in .env.local.
+  const serviceAccount = parseAdminSdkConfig(
+    process.env.ADMIN_SDK_CONFIG ?? process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+  );
 
   if (serviceAccount) {
     // Explicit service account — used in local dev via .env.local

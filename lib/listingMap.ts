@@ -72,8 +72,9 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
 
   return {
     id: docId,
-    sourceUrl: (data.sourceUrl as string) || '',
-    originalText: (data.originalText as string) || '',
+    // New pipeline uses snake_case; fall back to camelCase for legacy docs
+    sourceUrl: (data.sourceUrl as string) || (data.source_url as string) || '',
+    originalText: (data.originalText as string) || (data.original_text as string) || '',
     price: Number(data.price) || 0,
     currency: (data.currency as string) || 'ILS',
     startDate: (data.startDate as string) || '',
@@ -119,6 +120,8 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
     summaryTranslations: data.summaryTranslations as Record<string, string> | undefined,
     locationTranslations: data.locationTranslations as Record<string, string> | undefined,
     neighborhoodTranslations: data.neighborhoodTranslations as Record<string, string> | undefined,
+    pin_status: data.pin_status as Sublet['pin_status'],
+    titles_by_lang: data.titles_by_lang as Record<string, string> | undefined,
     postedAt: data.postedAt as string | null | undefined,
     paused_at: data.paused_at as number | undefined,
     filled_at: data.filled_at as number | undefined,

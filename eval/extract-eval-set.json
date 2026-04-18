@@ -1,0 +1,158 @@
+[
+  {
+    "id": "he-exact-1",
+    "description": "Hebrew post with street + number (exact)",
+    "language": "he",
+    "post_text": "להשכרה דירת 3 חדרים ברחוב דיזנגוף 42, תל אביב. מרפסת, מיזוג, ממ\"ד. 6500 ₪ לחודש. זמינה מ-1 לפברואר.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": null,
+      "street": "Dizengoff",
+      "street_number": "42",
+      "extraction_confidence": "exact"
+    }
+  },
+  {
+    "id": "he-street-1",
+    "description": "Hebrew post with street name only",
+    "language": "he",
+    "post_text": "משכירים דירת 2 חדרים ברחוב בן יהודה, תל אביב. 5800 ₪ לחודש כולל ארנונה.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": null,
+      "street": "Ben Yehuda",
+      "street_number": null,
+      "extraction_confidence": "street"
+    }
+  },
+  {
+    "id": "he-neighborhood-1",
+    "description": "Hebrew post with neighborhood only",
+    "language": "he",
+    "post_text": "סאבלט לחודשיים בפלורנטין, תל אביב. חדר גדול, שותפות של 3. 2500 ₪. זמין מיידית.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": "Florentin",
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "neighborhood"
+    }
+  },
+  {
+    "id": "en-exact-1",
+    "description": "English post with full address",
+    "language": "en",
+    "post_text": "Sublet available at 15 Rothschild Blvd, Tel Aviv. 3BR apartment, fully furnished, $2500/month. Available from March 1 for 3 months.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": null,
+      "street": "Rothschild Blvd",
+      "street_number": "15",
+      "extraction_confidence": "exact"
+    }
+  },
+  {
+    "id": "en-neighborhood-1",
+    "description": "English post with neighborhood",
+    "language": "en",
+    "post_text": "Cozy studio in Prenzlauer Berg, Berlin. Great neighborhood, close to all amenities. €950/month, available June 1.",
+    "expected": {
+      "city": "Berlin",
+      "neighborhood": "Prenzlauer Berg",
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "neighborhood"
+    }
+  },
+  {
+    "id": "en-none-1",
+    "description": "Post with no location (city only)",
+    "language": "en",
+    "post_text": "Looking to sublet my apartment in Tel Aviv for the summer. DM for details. 3 rooms, AC, parking included. 7000 ILS.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": null,
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "none"
+    }
+  },
+  {
+    "id": "en-none-2",
+    "description": "Post with no location at all",
+    "language": "en",
+    "post_text": "Beautiful furnished 1-bedroom available from July. Great natural light, modern kitchen. $1800/month. Contact for more info.",
+    "expected": {
+      "city": null,
+      "neighborhood": null,
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "none"
+    }
+  },
+  {
+    "id": "de-exact-1",
+    "description": "German post with full address",
+    "language": "de",
+    "post_text": "Untermiete: Schöne 2-Zimmer Wohnung, Kastanienallee 12, Berlin Mitte. 1200€ warm, verfügbar ab 1. April für 3 Monate.",
+    "expected": {
+      "city": "Berlin",
+      "neighborhood": "Mitte",
+      "street": "Kastanienallee",
+      "street_number": "12",
+      "extraction_confidence": "exact"
+    }
+  },
+  {
+    "id": "de-neighborhood-1",
+    "description": "German post with district only",
+    "language": "de",
+    "post_text": "1 Zimmer Wohnung in Kreuzberg, Berlin zur Untermiete. 700€ kalt, 2 Monate ab März.",
+    "expected": {
+      "city": "Berlin",
+      "neighborhood": "Kreuzberg",
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "neighborhood"
+    }
+  },
+  {
+    "id": "es-neighborhood-1",
+    "description": "Spanish post with neighborhood",
+    "language": "es",
+    "post_text": "Se alquila habitación en piso compartido en el barrio de Gracia, Barcelona. 650€/mes, disponible desde el 1 de mayo.",
+    "expected": {
+      "city": "Barcelona",
+      "neighborhood": "Gracia",
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "neighborhood"
+    }
+  },
+  {
+    "id": "en-misleading-1",
+    "description": "Intentionally vague post with multiple cities — should return none",
+    "language": "en",
+    "post_text": "Apartment available near everything, great location, price negotiable. Available now for short term.",
+    "expected": {
+      "city": null,
+      "neighborhood": null,
+      "street": null,
+      "street_number": null,
+      "extraction_confidence": "none"
+    }
+  },
+  {
+    "id": "he-street-2",
+    "description": "Hebrew post with street name and city, no number",
+    "language": "he",
+    "post_text": "דירת 4 חדרים להשכרה ברחוב יהודה הלוי, תל אביב-יפו. קומה 3, מעלית, חניה. 9000 ₪.",
+    "expected": {
+      "city": "Tel Aviv",
+      "neighborhood": null,
+      "street": "Yehuda Halevi",
+      "street_number": null,
+      "extraction_confidence": "street"
+    }
+  }
+]

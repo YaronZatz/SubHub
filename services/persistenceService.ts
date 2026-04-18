@@ -20,8 +20,20 @@ function buildQuery() {
   );
 }
 
-/** Filter out listings with no geocoded location — they can't be shown on the map. */
+/**
+ * Returns true when a listing has enough location data to appear on the map or sidebar.
+ *
+ * For listings processed by the new pipeline: use pin_status as the authoritative source.
+ *   exact / street / approximate → show
+ *   rejected                     → hide
+ *
+ * For legacy listings (no pin_status): fall back to non-zero coordinates.
+ */
 function hasValidCoords(s: Sublet): boolean {
+  if (s.pin_status !== undefined) {
+    return s.pin_status === 'exact' || s.pin_status === 'street' || s.pin_status === 'approximate';
+  }
+  // Legacy path — old listings without pin_status
   return s.lat !== 0 || s.lng !== 0;
 }
 
