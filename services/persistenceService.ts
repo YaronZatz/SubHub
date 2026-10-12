@@ -5,6 +5,7 @@ import { listingDocumentToSublet } from '../lib/listingMap';
 import type { Sublet } from '../types';
 
 const COLLECTION = 'listings';
+const MAX_AGE_DAYS = 60;
 
 /** Result of fetching a single listing — distinguishes missing doc from errors / offline client. */
 export type FetchListingByIdResult =
@@ -12,10 +13,12 @@ export type FetchListingByIdResult =
   | { ok: false; reason: 'missing' | 'no_db' | 'error'; error?: unknown };
 
 function buildQuery() {
+  const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
   return query(
     collection(db!, COLLECTION),
     where('status', '==', 'active'),
-    orderBy('postedAt', 'desc'),
+    where('createdAt', '>', cutoff),
+    orderBy('createdAt', 'desc'),
     limit(200)
   );
 }
@@ -35,6 +38,36 @@ function hasValidCoords(s: Sublet): boolean {
   }
   // Legacy path — old listings without pin_status
   return s.lat !== 0 || s.lng !== 0;
+}
+
+/**
+ * Returns true when a listing is still relevant based on dates.
+ * - endDate in the past → irrelevant (sublet period is over)
+ * - No endDate but startDate in the past → irrelevant (likely already taken)
+ * - No dates at all → fall back to postedAt/createdAt age (max 60 days)
+ */
+function isRelevant(s: Sublet): boolean {
+  const now = Date.now();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // If endDate exists and is a real date string, check if it's in the past
+  if (s.endDate && s.endDate !== 'null' && s.endDate !== 'undefined') {
+    const end = new Date(s.endDate);
+    if (!isNaN(end.getTime()) && end < today) return false;
+  }
+
+  // If startDate exists but no endDate, check if start is more than 30 days in the past
+  if (s.startDate && s.startDate !== 'null' && (!s.endDate || s.endDate === 'null' || s.endDate === 'undefined')) {
+    const start = new Date(s.startDate);
+    if (!isNaN(start.getTime()) && (now - start.getTime()) > 30 * 24 * 60 * 60 * 1000) return false;
+  }
+
+  // No useful dates — fall back to listing age
+  const age = now - s.createdAt;
+  if (age > MAX_AGE_DAYS * 24 * 60 * 60 * 1000) return false;
+
+  return true;
 }
 
 /**
@@ -79,9 +112,10 @@ export const persistenceService = {
         listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
       );
       const deduped = deduplicateListings(docs);
-      const withCoords = deduped.filter(hasValidCoords);
-      console.log(`🔥 After dedup: ${deduped.length} unique, ${withCoords.length} with coords`);
-      return deduped;
+      const relevant = deduped.filter(isRelevant);
+      const withCoords = relevant.filter(hasValidCoords);
+      console.log(`🔥 After dedup: ${deduped.length} unique, ${relevant.length} relevant, ${withCoords.length} with coords`);
+      return relevant;
     } catch (e) {
       console.error('❌ Failed to fetch listings from Firestore:', e);
       return [];
@@ -105,7 +139,7 @@ export const persistenceService = {
       const docs = snapshot.docs.map((d) =>
         listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
       );
-      return docs.sort((a, b) => b.createdAt - a.createdAt);
+      return docs.filter(isRelevant).sort((a, b) => b.createdAt - a.createdAt);
     } catch (e) {
       console.error(`❌ fetchListingsByCity(${city}) failed:`, e);
       return [];
@@ -129,9 +163,10 @@ export const persistenceService = {
           listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
         );
         const deduped = deduplicateListings(docs);
-        const withCoords = deduped.filter(hasValidCoords);
-        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${withCoords.length} with coords`);
-        callback(deduped);
+        const relevant = deduped.filter(isRelevant);
+        const withCoords = relevant.filter(hasValidCoords);
+        console.log(`🔥 Firestore snapshot: ${snapshot.docs.length} docs → ${deduped.length} unique, ${relevant.length} relevant, ${withCoords.length} with coords`);
+        callback(relevant);
       },
       (error) => {
         console.error('❌ Firestore listener error:', error);
