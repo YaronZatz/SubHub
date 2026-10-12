@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
-import admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 type AllowedStatus = 'active' | 'paused' | 'filled' | 'deleted';
 const ALLOWED: AllowedStatus[] = ['active', 'paused', 'filled', 'deleted'];
@@ -88,7 +88,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const update: Record<string, any> = { status: newStatus, updatedAt: now };
 
     if (newStatus === 'paused')  { update.paused_at  = now; }
-    if (newStatus === 'active')  { update.paused_at  = admin.firestore.FieldValue.delete(); }
+    if (newStatus === 'active')  { update.paused_at  = FieldValue.delete(); }
     if (newStatus === 'filled')  { update.filled_at  = now; }
     if (newStatus === 'deleted') { update.deleted_at = now; }
 

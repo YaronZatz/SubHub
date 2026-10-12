@@ -3,23 +3,24 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@google/genai": "^1.42.0",
+    "@google/genai": "^2.28.0",
     "@googlemaps/js-api-loader": "^2.0.2",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/dotenv": "^6.1.1",
     "@types/pg": "^8.16.0",
     "apify-client": "^2.22.0",
     "browser-image-compression": "^2.0.2",
-    "dotenv": "^17.2.3",
-    "firebase": "^10.14.1",
-    "firebase-admin": "^13.6.1",
-    "i18next": "^25.10.9",
-    "lucide-react": "^0.563.0",
+    "dotenv": "^18.0.7",
+    "firebase": "^13.0.0",
+    "firebase-admin": "^14.5.0",
+    "i18next": "^26.4.4",
+    "lucide-react": "^1.55.0",
     "next": "^16.1.6",
     "node-fetch": "^2.7.0",
     "pg": "^8.17.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-i18next": "^16.6.6"
+    "react-i18next": "^17.0.16"
   },
   "devDependencies": {
     "@types/google.maps": "^3.58.1",
@@ -29,8 +30,8 @@
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.18",
     "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.3.3"
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
   },
   "scripts": {
     "dev": "next dev",

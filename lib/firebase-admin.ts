@@ -1,6 +1,9 @@
-import admin from 'firebase-admin';
+import { initializeApp, getApps, getApp, cert, ServiceAccount, App } from 'firebase-admin/app';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage, Storage } from 'firebase-admin/storage';
+import { getAuth, Auth } from 'firebase-admin/auth';
 
-function parseAdminSdkConfig(jsonString: string | undefined): admin.ServiceAccount | null {
+function parseAdminSdkConfig(jsonString: string | undefined): ServiceAccount | null {
   if (!jsonString) {
     console.log('[firebase-admin] ADMIN_SDK_CONFIG is not set');
     return null;
@@ -25,11 +28,11 @@ function parseAdminSdkConfig(jsonString: string | undefined): admin.ServiceAccou
     console.error('[firebase-admin] ADMIN_SDK_CONFIG JSON is missing "private_key" field');
     return null;
   }
-  return parsed as admin.ServiceAccount;
+  return parsed as ServiceAccount;
 }
 
-function getAdminApp() {
-  if (admin.apps.length > 0) return admin.app();
+function getAdminApp(): App {
+  if (getApps().length > 0) return getApp();
 
   // ADMIN_SDK_CONFIG is set in production (apphosting.yaml).
   // FIREBASE_SERVICE_ACCOUNT_JSON is the local dev equivalent in .env.local.
@@ -42,8 +45,8 @@ function getAdminApp() {
     const projectId =
       serviceAccount.projectId ??
       (serviceAccount as unknown as { project_id?: string }).project_id;
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    initializeApp({
+      credential: cert(serviceAccount),
       projectId,
       storageBucket: `${projectId}.firebasestorage.app`,
     });
@@ -60,32 +63,32 @@ function getAdminApp() {
         '[firebase-admin] Cannot determine project ID. Set NEXT_PUBLIC_FIREBASE_PROJECT_ID or ADMIN_SDK_CONFIG.'
       );
     }
-    admin.initializeApp({
+    initializeApp({
       projectId,
       storageBucket: `${projectId}.firebasestorage.app`,
     });
     console.log(`[firebase-admin] Initialized with Application Default Credentials (project=${projectId})`);
   }
 
-  return admin.app();
+  return getApp();
 }
 
 // Lazy getters: initialize only when used at runtime (e.g. in API routes).
-export const adminDb = new Proxy({} as admin.firestore.Firestore, {
+export const adminDb = new Proxy({} as Firestore, {
   get(_, prop) {
     getAdminApp();
-    return (admin.firestore() as unknown as Record<string, unknown>)[prop as string];
+    return (getFirestore() as unknown as Record<string, unknown>)[prop as string];
   },
 });
-export const adminStorage = new Proxy({} as admin.storage.Storage, {
+export const adminStorage = new Proxy({} as Storage, {
   get(_, prop) {
     getAdminApp();
-    return (admin.storage() as unknown as Record<string, unknown>)[prop as string];
+    return (getStorage() as unknown as Record<string, unknown>)[prop as string];
   },
 });
-export const adminAuth = new Proxy({} as admin.auth.Auth, {
+export const adminAuth = new Proxy({} as Auth, {
   get(_, prop) {
     getAdminApp();
-    return (admin.auth() as unknown as Record<string, unknown>)[prop as string];
+    return (getAuth() as unknown as Record<string, unknown>)[prop as string];
   },
 });

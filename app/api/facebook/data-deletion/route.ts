@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
-import { adminDb } from '@/lib/firebase-admin';
-import admin from 'firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 /** Verify and decode a Facebook signed_request */
 function parseSignedRequest(
@@ -41,7 +41,7 @@ async function deleteUserData(facebookUserId: string, confirmationCode: string) 
     // Resolve Firebase UID from Facebook provider UID
     let firebaseUid: string | null = null;
     try {
-      const record = await admin.auth().getUserByProviderUid('facebook.com', facebookUserId);
+      const record = await adminAuth.getUserByProviderUid('facebook.com', facebookUserId);
       firebaseUid = record.uid;
     } catch {
       // User may not exist in Firebase Auth (already deleted or never signed up)
@@ -61,13 +61,13 @@ async function deleteUserData(facebookUserId: string, confirmationCode: string) 
       }
 
       // Delete the Firebase Auth account
-      await admin.auth().deleteUser(firebaseUid);
+      await adminAuth.deleteUser(firebaseUid);
     }
 
     await adminDb.collection('data_deletion_requests').doc(confirmationCode).update({
       status: 'completed',
       firebaseUid: firebaseUid ?? 'not_found',
-      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      completedAt: FieldValue.serverTimestamp(),
     });
   } catch (error) {
     console.error('Data deletion error:', error);
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   await adminDb.collection('data_deletion_requests').doc(confirmationCode).set({
     facebookUserId: data.user_id,
     status: 'pending',
-    requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+    requestedAt: FieldValue.serverTimestamp(),
   });
 
   // Run deletion in background — Facebook expects a fast response
