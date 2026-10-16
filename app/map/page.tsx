@@ -25,6 +25,8 @@ import {
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
 import { matchesFreeText } from '@/lib/searchMatch';
+import { homeCopy } from '@/lib/homeCopy';
+import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
 
 const MapVisualizer = dynamic(
   () => import('@/components/MapVisualizer'),
@@ -108,7 +110,7 @@ function PriceSlider({ minVal, maxVal, onChange }: {
   ].join(' ');
   return (
     <div className="relative h-5 mt-2">
-      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-slate-200 rounded-full pointer-events-none">
+      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-brand-100 rounded-full pointer-events-none">
         <div className="absolute h-full bg-brand-600 rounded-full" style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }} />
       </div>
       <input type="range" min={0} max={PRICE_MAX} step={PRICE_STEP} value={minVal}
@@ -139,25 +141,25 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
     [filters, onFiltersChange],
   );
 
-  const sLabel = 'text-xs font-bold uppercase tracking-widest text-slate-500';
+  const sLabel = 'text-xs font-semibold uppercase tracking-[0.06em] text-muted';
   const iconBtnCls = (active: boolean) =>
-    `flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${
-      active ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+    `flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors cursor-pointer select-none ${
+      active ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line text-ink hover:border-brand-200'
     }`;
   const pillCls = (active: boolean) =>
-    `whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
-      active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+    `whitespace-nowrap h-9 px-3.5 rounded-full border text-[13px] font-medium transition-colors shrink-0 ${
+      active ? 'border-brand-600 bg-brand-600 text-white' : 'border-line bg-white text-ink hover:border-brand-200'
     }`;
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-slate-900/40 z-[55] backdrop-blur-[2px]" onClick={onClose} />}
-      <aside className={`fixed top-0 right-0 bottom-0 z-[60] w-[480px] max-w-full bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      {open && <div className="fixed inset-0 bg-ink/40 z-[55]" onClick={onClose} />}
+      <aside aria-hidden={!open} className={`fixed top-0 end-0 bottom-0 z-[60] w-[440px] max-w-full bg-white shadow-[0_0_40px_rgba(17,26,36,0.18)] flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full rtl:-translate-x-full'}`}>
 
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t.filters}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+        <div className="px-6 py-5 border-b border-line flex items-center justify-between shrink-0">
+          <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{t.filters}</h2>
+          <button onClick={onClose} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -169,7 +171,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
-              <span className="text-sm font-semibold text-brand-600">
+              <span className="text-sm font-semibold tabular-nums text-brand-700">
                 ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
             </div>
@@ -214,7 +216,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex gap-2 flex-wrap">
               {([{ label: t.anyRooms, value: undefined as number | undefined }, { label: '1+', value: 1 }, { label: '2+', value: 2 }, { label: '3+', value: 3 }, { label: '4+', value: 4 }]).map(opt => (
                 <button key={opt.label} onClick={() => set({ minRooms: opt.value })}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all ${filters.minRooms === opt.value ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                  className={`h-10 px-4 rounded-full text-sm font-medium border transition-colors ${filters.minRooms === opt.value ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line text-ink hover:border-brand-200'}`}>
                   {opt.label}
                 </button>
               ))}
@@ -226,25 +228,25 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex items-center justify-between">
               <span className={sLabel}>{t.moveInDate}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">{t.flexible}</span>
+                <span className="text-xs text-muted font-medium">{t.flexible}</span>
                 <button
                   onClick={() => set({ dateMode: filters.dateMode === DateMode.FLEXIBLE ? DateMode.EXACT : DateMode.FLEXIBLE })}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-brand-600' : 'bg-slate-200'}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-brand-600' : 'bg-line'}`}
                 >
                   <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${filters.dateMode === DateMode.FLEXIBLE ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-brand-600 transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.start}</p>
+              <div className="p-3 rounded-xl border border-line focus-within:border-brand-600 transition-colors">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-1">{t.start}</p>
                 <input type="date" value={filters.startDate || ''} onChange={e => set({ startDate: e.target.value })}
-                  className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
+                  className="bg-transparent border-none p-0 text-sm font-medium text-ink outline-none w-full" />
               </div>
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-brand-600 transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.end}</p>
+              <div className="p-3 rounded-xl border border-line focus-within:border-brand-600 transition-colors">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-1">{t.end}</p>
                 <input type="date" value={filters.endDate || ''} onChange={e => set({ endDate: e.target.value })}
-                  className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
+                  className="bg-transparent border-none p-0 text-sm font-medium text-ink outline-none w-full" />
               </div>
             </div>
           </section>
@@ -265,8 +267,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <span className={sLabel}>{t.postQuality}</span>
             <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
-              <span>💰</span> {t.onlyWithPrice}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-semibold transition-colors w-full ${filters.onlyWithPrice ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line text-ink hover:border-brand-200'}`}>
+              {t.onlyWithPrice}
             </button>
           </section>
 
@@ -282,8 +284,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
               ] as Array<{ key: keyof NonNullable<Filters['amenities']>; label: string }>).map(opt => (
                 <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
                   <input type="checkbox" checked={!!(filters.amenities?.[opt.key])} onChange={e => setAmenity(opt.key, e.target.checked)}
-                    className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-600/20 cursor-pointer" />
-                  <span className="text-sm text-slate-700 font-medium group-hover:text-brand-600 transition-colors">{opt.label}</span>
+                    className="w-5 h-5 rounded border-line accent-brand-600 cursor-pointer" />
+                  <span className="text-sm text-ink group-hover:text-brand-700 transition-colors">{opt.label}</span>
                 </label>
               ))}
             </div>
@@ -291,11 +293,11 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-          <button onClick={onClear} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+        <div className="px-6 py-4 bg-white border-t border-line flex items-center justify-between shrink-0">
+          <button onClick={onClear} className="text-sm font-semibold text-muted underline-offset-2 hover:text-ink hover:underline transition-colors">
             {t.clearAll}
           </button>
-          <button onClick={onClose} className="flex items-center gap-2 px-7 py-3.5 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-600/25 hover:bg-brand-700 transition-all active:scale-95">
+          <button onClick={onClose} className="flex h-12 items-center gap-2 px-6 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors">
             {t.showResults.replace('{n}', resultCount.toLocaleString())}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </button>
@@ -353,32 +355,31 @@ interface ListingCardProps {
 
 const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
   ({ sublet: s, isSelected, isSaved, currency, onMouseEnter, onMouseLeave, onSave, onNavigate }, ref) => {
+    const { language } = useLanguage();
+    const t = translations[language];
+    const copy = homeCopy(language);
     const beds = getBedroomCount(s);
-    const baths = (s as any).parsedRooms?.bathrooms ?? (s as any).rooms?.bathrooms ?? null;
-    const dateRange = getDateRange(s);
-    const hasAI = !!(s.ai_summary || s.parsedAmenities || s.parsedRooms || s.rooms);
+    const dateRange = formatDateRange(s.startDate, s.endDate, language)
+      ?? (s.immediateAvailability ? copy.availableNow : null);
+    const timeline = timelineWindow(s.startDate, s.endDate, language);
     const isTaken = s.status === ListingStatus.TAKEN;
     const postTs = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
     const hoursAgo = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
     const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
     const isNew = hoursAgo < 24;
+    const typeLabel = t.subletTypes[s.type];
 
     return (
       <div
         ref={ref}
-        className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer
-          ${isSelected
-            ? 'shadow-xl shadow-brand-600/25 ring-2 ring-brand-600 scale-[1.01]'
-            : 'shadow-sm hover:shadow-xl hover:-translate-y-0.5'
-          }
-          ${isTaken ? 'opacity-55' : ''}`}
+        className={`group relative overflow-hidden rounded-2xl border bg-white transition-shadow ${
+          isSelected ? 'border-accent-500 ring-2 ring-accent-500' : 'border-line hover:shadow-[0_8px_24px_rgba(17,26,36,0.10)]'
+        } ${isTaken ? 'opacity-60' : ''}`}
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
       >
         <Link href={`/listing/${s.id}`} className="block" onClick={onNavigate}>
-
-          {/* Photo with gradient overlay */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
+          <div className="relative aspect-[4/3] overflow-hidden">
             <ListingCarousel
               id={s.id}
               images={s.images}
@@ -386,90 +387,62 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
               photoCount={s.photoCount}
               aspectRatio="aspect-[4/3]"
             />
-
-            {/* Gradient scrim — subtle top fade only for badge readability */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent pointer-events-none z-10" />
-
-
-            {/* Time-ago badge — bottom left */}
-            {isNew ? (
-              <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1 bg-cyan-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100 pointer-events-none">
-                <span className="w-1 h-1 bg-white rounded-full" />
-                Added {hoursAgo}h ago
-              </div>
-            ) : (
-              <div className="absolute bottom-2.5 left-2.5 z-20 bg-slate-500/80 text-white text-[9px] font-bold px-2 py-0.5 rounded-full pointer-events-none">
-                Added {daysAgo > 30 ? '30+' : daysAgo}d ago
-              </div>
-            )}
-
-            {/* Taken overlay */}
+            <span
+              className={`pointer-events-none absolute start-2.5 top-2.5 z-20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isNew ? 'bg-accent-100 text-accent-700' : 'bg-white text-ink'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${isNew ? 'bg-accent-500' : 'bg-brand-200'}`} />
+              {isNew
+                ? t.addedXhAgo.replace('{x}', String(hoursAgo))
+                : t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo))}
+            </span>
             {isTaken && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-20 pointer-events-none">
-                <span className="bg-white/10 backdrop-blur-sm border border-white/30 text-white text-xs font-bold px-4 py-1.5 rounded-full tracking-wide">
-                  Taken
-                </span>
+              <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-ink/40">
+                <span className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-ink">{copy.taken}</span>
               </div>
             )}
-
           </div>
 
-          {/* Below-photo details */}
-          <div className="px-1 pt-2 pb-1 space-y-1">
-            {/* Price row */}
-            <div className="flex items-baseline justify-between gap-1">
-              <p className="font-black text-slate-900 text-sm leading-none">
-                {formatPrice(s.price, currency as import('@/types').CurrencyCode, 'en-US', s.currency)}
-                <span className="text-slate-400 font-medium text-[11px] ml-1">/mo</span>
-              </p>
-              {/* Bed / bath inline */}
-              {(beds !== null || baths !== null) && (
-                <div className="flex items-center gap-2 shrink-0">
-                  {beds !== null && (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12h18M3 12V8a2 2 0 012-2h14a2 2 0 012 2v4M3 12v5a1 1 0 001 1h16a1 1 0 001-1v-5" />
-                      </svg>
-                      {beds} bedroom{beds !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {baths !== null && (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-                      <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h16M4 12a2 2 0 01-2-2V7a2 2 0 012-2h1m15 7a2 2 0 002-2V7a2 2 0 00-2-2h-1M4 12v5a2 2 0 002 2h12a2 2 0 002-2v-5" />
-                      </svg>
-                      {baths} shower{baths !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
+          <div className="flex flex-col gap-2 px-3.5 pb-3.5 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              {typeLabel && (
+                <span className="truncate rounded-md bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">{typeLabel}</span>
+              )}
+              {s.price > 0 ? (
+                <span className="shrink-0 text-[17px] font-bold tabular-nums text-ink">
+                  {formatPrice(s.price, currency as import('@/types').CurrencyCode, language, s.currency)}
+                  <span className="ms-0.5 text-xs font-normal text-muted">{copy.perMonth}</span>
+                </span>
+              ) : (
+                <span className="shrink-0 text-xs text-muted">{copy.priceOnRequest}</span>
               )}
             </div>
-            <p className="font-semibold text-slate-700 truncate text-xs leading-snug">
-              {getCardTitle(s)}
-            </p>
+            <div className="min-w-0">
+              <h3 className="truncate font-display text-[17px] font-bold tracking-tight text-ink">{getCardTitle(s)}</h3>
+              {beds !== null && <p className="text-[13px] text-muted">{copy.bedroomsShort(beds)}</p>}
+            </div>
             {dateRange && (
-              <p className="text-[11px] text-slate-400 font-medium truncate">{dateRange}</p>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[13px] font-medium text-ink">{dateRange}</span>
+                {timeline && (
+                  <div className="relative h-1.5 rounded-full bg-brand-100" aria-hidden="true">
+                    <div className="absolute inset-y-0 rounded-full bg-brand-600" style={{ insetInlineStart: `${timeline.left}%`, width: `${timeline.width}%` }} />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </Link>
 
-        {/* Save button */}
         <button
           onClick={onSave}
-          className={`absolute top-2.5 right-2.5 z-30 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-            isSaved
-              ? 'bg-white text-red-500 shadow-md'
-              : 'bg-black/25 backdrop-blur-sm text-white hover:bg-white hover:text-red-400'
+          className={`absolute end-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white transition-colors ${
+            isSaved ? 'text-accent-600' : 'text-ink hover:text-accent-600'
           }`}
           aria-label={isSaved ? 'Unsave listing' : 'Save listing'}
         >
-          <svg
-            className="w-3.5 h-3.5"
-            fill={isSaved ? 'currentColor' : 'none'}
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.2}
-          >
+          <svg className="h-[18px] w-[18px]" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         </button>
@@ -484,11 +457,11 @@ ListingCard.displayName = 'ListingCard';
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl overflow-hidden shadow-sm animate-pulse">
-      <div className="aspect-[4/3] bg-slate-200 rounded-2xl" />
-      <div className="px-1 pt-2 pb-1 space-y-1.5">
-        <div className="h-4 bg-slate-200 rounded-full w-3/4" />
-        <div className="h-3 bg-slate-100 rounded-full w-1/2" />
+    <div className="animate-pulse overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="aspect-[4/3] bg-brand-50" />
+      <div className="space-y-2 p-3.5">
+        <div className="h-4 w-3/4 rounded bg-brand-50" />
+        <div className="h-3 w-1/2 rounded bg-brand-50" />
       </div>
     </div>
   );
@@ -501,8 +474,10 @@ function WebMapPage() {
   const { currency } = useCurrency();
   const { language } = useLanguage();
   const t = translations[language];
+  const copy = homeCopy(language);
 
   const [sublets, setSublets] = useState<Sublet[]>([]);
+  const [sortBy, setSortBy] = useState<'newest' | 'priceAsc' | 'priceDesc'>('newest');
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>(() => _pendingWebMapState?.filters ?? INITIAL_FILTERS);
   const [searchQuery, setSearchQuery] = useState(() => _pendingWebMapState?.searchQuery ?? '');
@@ -584,6 +559,27 @@ function WebMapPage() {
     });
   }, [sublets, filters, searchQuery]);
 
+  const sortedSublets = useMemo(() => {
+    const ts = (s: Sublet) => (s.postedAt ? new Date(s.postedAt).getTime() || s.createdAt : s.createdAt);
+    const list = [...filteredSublets];
+    if (sortBy === 'newest') list.sort((a, b) => ts(b) - ts(a));
+    else list.sort((a, b) => (sortBy === 'priceAsc' ? 1 : -1) * ((a.price || Infinity) - (b.price || Infinity)));
+    return list;
+  }, [filteredSublets, sortBy]);
+
+  const quickFilters = [
+    { key: 'entire', label: t.subletTypes[SubletType.ENTIRE], active: filters.type === SubletType.ENTIRE,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.ENTIRE ? undefined : SubletType.ENTIRE })) },
+    { key: 'room', label: t.subletTypes[SubletType.ROOMMATE], active: filters.type === SubletType.ROOMMATE,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.ROOMMATE ? undefined : SubletType.ROOMMATE })) },
+    { key: 'studio', label: t.subletTypes[SubletType.STUDIO], active: filters.type === SubletType.STUDIO,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.STUDIO ? undefined : SubletType.STUDIO })) },
+    { key: 'pets', label: copy.quickPets, active: !!filters.amenities?.petFriendly,
+      toggle: () => setFilters(f => ({ ...f, amenities: { ...f.amenities, petFriendly: !f.amenities?.petFriendly } })) },
+    { key: 'today', label: copy.quickToday, active: filters.postedWithin === '24h',
+      toggle: () => setFilters(f => ({ ...f, postedWithin: f.postedWithin === '24h' ? 'all' : '24h' })) },
+  ];
+
   const activeFilterCount = useMemo(() => [
     filters.minPrice !== 0,
     filters.maxPrice !== PRICE_MAX,
@@ -624,92 +620,110 @@ function WebMapPage() {
   }, [filters, searchQuery, selectedSubletId, cityFlyTo]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[#f6f7f8]">
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
 
       {/* ── Navbar ── */}
       <div className="shrink-0">
         <WebNavbar />
       </div>
 
-      {/* ── Top Bar: Search + Filters + Saved ── */}
-      <div className="shrink-0 bg-white border-b border-slate-200 z-40 px-4 py-2.5 flex items-center gap-2">
-        {/* Search */}
+      {/* ── Search + quick filters ── */}
+      <div className="shrink-0 z-40 flex flex-wrap items-center gap-2 border-b border-line bg-white px-4 py-3">
         <SearchAutocomplete
           value={searchQuery}
           onChange={setSearchQuery}
           sublets={sublets}
-          placeholder={t.searchPlaceholder}
-          className="flex-1 max-w-xs"
-          inputClassName="w-full py-2 pl-10 pr-8 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 focus:bg-white transition-all"
+          placeholder={copy.searchPlaceholder}
+          className="w-full max-w-md flex-1"
+          inputClassName="h-11 w-full rounded-xl border border-line bg-white text-[15px] text-ink outline-none transition-colors placeholder:text-muted/70 focus:border-brand-600"
           onCitySelect={city => {
             const center = CITY_CENTERS[city];
             if (center) setCityFlyTo(center);
           }}
         />
 
-        {/* Filters button — right next to search */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 transition-all whitespace-nowrap shrink-0 ${
-            activeFilterCount > 0
-              ? 'border-brand-600 bg-brand-600/5 text-brand-600'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
+          className={`flex h-11 shrink-0 items-center gap-2 rounded-xl border px-4 text-[15px] font-semibold transition-colors ${
+            activeFilterCount > 0 ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink hover:border-brand-200'
           }`}
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h10a1 1 0 010 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h4a1 1 0 010 2H4a1 1 0 01-1-1z" />
+          <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <path strokeLinecap="round" d="M4 6h16M7 12h10M10 18h4" />
           </svg>
           {t.filters}
           {activeFilterCount > 0 && (
-            <span className="w-5 h-5 bg-brand-600 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
               {activeFilterCount}
             </span>
           )}
         </button>
 
+        <div className="scrollbar-hide flex min-w-0 items-center gap-2 overflow-x-auto">
+          {quickFilters.map(q => (
+            <button
+              key={q.key}
+              type="button"
+              aria-pressed={q.active}
+              onClick={q.toggle}
+              className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
+                q.active ? 'border-brand-600 bg-brand-600 text-white' : 'border-line bg-white text-ink hover:border-brand-200'
+              }`}
+            >
+              {q.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Content Area ── */}
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
 
-        {/* Listings Panel — 50% */}
+        {/* Listings Panel */}
         <div
           ref={panelRef}
-          className="flex-1 md:flex-none md:w-1/2 overflow-y-auto bg-[#f6f7f8] border-r border-slate-200"
+          className="flex-1 md:flex-none md:w-1/2 overflow-y-auto bg-white border-e border-line"
         >
-          {/* Count header */}
-          <div className="sticky top-0 bg-[#f6f7f8]/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3 z-10">
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-white/95 px-4 py-3">
             {isLoading ? (
-              <div className="h-4 bg-slate-200 rounded w-32 animate-pulse" />
+              <div className="h-5 w-32 animate-pulse rounded bg-brand-50" />
             ) : (
-              <p className="text-sm font-bold text-slate-700">
-                {filteredSublets.length.toLocaleString()} {t.results}
-              </p>
+              <h1 className="font-display text-xl font-extrabold tracking-tight text-ink">
+                {copy.resultsCount(filteredSublets.length)}
+              </h1>
             )}
+            <label className="flex items-center gap-2 text-sm text-muted">
+              <span className="sr-only sm:not-sr-only">{copy.sortLabel}</span>
+              <select
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as typeof sortBy)}
+                className="h-9 rounded-lg border border-line bg-white px-2 text-sm font-medium text-ink outline-none focus:border-brand-600"
+              >
+                <option value="newest">{copy.sortNewest}</option>
+                <option value="priceAsc">{copy.sortPriceLow}</option>
+                <option value="priceDesc">{copy.sortPriceHigh}</option>
+              </select>
+            </label>
           </div>
 
-          {/* Cards */}
-          <div className="p-3 grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
-            ) : filteredSublets.length === 0 ? (
-              <div className="col-span-2 py-16 text-center">
-                <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-slate-600 font-semibold">No listings found</p>
-                <p className="text-sm text-slate-400 mt-1">Try adjusting your filters</p>
-                {activeFilterCount > 0 && (
+            ) : sortedSublets.length === 0 ? (
+              <div className="col-span-full py-16 text-center">
+                <p className="font-display text-lg font-bold text-ink">{copy.noResultsTitle}</p>
+                <p className="mt-1 text-sm text-muted">{copy.noResultsBody}</p>
+                {(activeFilterCount > 0 || searchQuery) && (
                   <button
                     onClick={handleClearFilters}
-                    className="mt-4 text-sm text-brand-600 font-semibold hover:underline"
+                    className="mt-4 h-10 rounded-xl border border-line px-4 text-sm font-semibold text-brand-700 hover:border-brand-200"
                   >
-                    Clear all filters
+                    {copy.clearFilters}
                   </button>
                 )}
               </div>
             ) : (
-              filteredSublets.map(s => (
+              sortedSublets.map(s => (
                 <ListingCard
                   key={s.id}
                   ref={el => { cardRefs.current[s.id] = el; }}
@@ -727,7 +741,7 @@ function WebMapPage() {
           </div>
         </div>
 
-        {/* Map — 50% */}
+        {/* Map */}
         <div className="h-[42vh] md:h-auto md:w-1/2 shrink-0 relative">
           <MapVisualizer
             sublets={filteredSublets}

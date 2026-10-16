@@ -36,6 +36,21 @@ const en = {
   privacy: 'Privacy',
   dataDeletion: 'Data deletion',
   howItWorksLink: 'How it works',
+  // Map page
+  resultsCount: (n: number) => `${n.toLocaleString()} ${n === 1 ? 'sublet' : 'sublets'}`,
+  sortLabel: 'Sort',
+  sortNewest: 'Newest',
+  sortPriceLow: 'Price: low to high',
+  sortPriceHigh: 'Price: high to low',
+  quickPets: 'Pets ok',
+  quickToday: 'Posted today',
+  noResultsTitle: 'No sublets match',
+  noResultsBody: 'Try fewer words, other dates or a wider budget.',
+  clearFilters: 'Clear filters',
+  taken: 'Taken',
+  bedroomsShort: (n: number) => `${n} ${n === 1 ? 'bedroom' : 'bedrooms'}`,
+  availableNow: 'Available now',
+  viewDetails: 'View details',
 };
 
 type HomeCopy = typeof en;
@@ -75,6 +90,20 @@ const he: HomeCopy = {
   privacy: 'פרטיות',
   dataDeletion: 'מחיקת נתונים',
   howItWorksLink: 'איך זה עובד',
+  resultsCount: (n: number) => `${n.toLocaleString()} סאבלטים`,
+  sortLabel: 'מיון',
+  sortNewest: 'החדשים ביותר',
+  sortPriceLow: 'מחיר: מהנמוך לגבוה',
+  sortPriceHigh: 'מחיר: מהגבוה לנמוך',
+  quickPets: 'חיות מחמד',
+  quickToday: 'פורסם היום',
+  noResultsTitle: 'לא נמצאו סאבלטים',
+  noResultsBody: 'נסו פחות מילים, תאריכים אחרים או תקציב רחב יותר.',
+  clearFilters: 'ניקוי סינונים',
+  taken: 'נתפס',
+  bedroomsShort: (n: number) => `${n} חדרי שינה`,
+  availableNow: 'זמין עכשיו',
+  viewDetails: 'לפרטים',
 };
 
 export function homeCopy(language: string): HomeCopy {
