@@ -8,7 +8,7 @@ import SearchAutocomplete from '@/components/SearchAutocomplete';
 import WebNavbar from '@/components/web/WebNavbar';
 import HomeListingCard from '@/components/web/HomeListingCard';
 import CityCarousel from '@/components/shared/CityCarousel';
-import Logo from '@/components/shared/Logo';
+import SiteFooter from '@/components/shared/SiteFooter';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { homeCopy } from '@/lib/homeCopy';
 import { persistenceService } from '@/services/persistenceService';
@@ -252,17 +252,7 @@ export function WebHomePage({
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-6 px-6 py-8 text-sm text-muted">
-        <div className="flex items-center gap-4">
-          <Logo size="sm" />
-          <span>© {new Date().getFullYear()} SubHub</span>
-        </div>
-        <nav className="flex flex-wrap gap-5" aria-label="Footer">
-          <Link href="/how-it-works" className="hover:text-ink">{copy.howItWorksLink}</Link>
-          <Link href="/privacy" className="hover:text-ink">{copy.privacy}</Link>
-          <Link href="/data-deletion" className="hover:text-ink">{copy.dataDeletion}</Link>
-        </nav>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

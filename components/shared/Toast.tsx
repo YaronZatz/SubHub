@@ -25,7 +25,7 @@ export default function Toast({ message, onDismiss, duration = 2200 }: ToastProp
       aria-live="polite"
       className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[70] pointer-events-none"
     >
-      <div className="bg-slate-900 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-2xl whitespace-nowrap">
+      <div className="bg-ink text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-2xl whitespace-nowrap">
         {message}
       </div>
     </div>

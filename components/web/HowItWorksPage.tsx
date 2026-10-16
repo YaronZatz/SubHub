@@ -1,52 +1,53 @@
 'use client';
 
 import React from 'react';
+import SiteFooter from '@/components/shared/SiteFooter';
 
 export default function HowItWorksPage() {
   return (
-    <div className="font-sans bg-[#f6f7f8] text-slate-900">
+    <div className="font-sans bg-white text-ink">
 
       {/* Hero Section */}
       <header className="py-20 lg:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl lg:text-6xl font-extrabold text-[#2F6EA8] mb-6">
+          <h1 className="font-display text-4xl lg:text-6xl font-extrabold text-brand-600 mb-6 tracking-tight">
             How SubHub Works
           </h1>
-          <p className="text-xl lg:text-2xl text-slate-500 max-w-3xl mx-auto">
+          <p className="text-xl lg:text-2xl text-muted max-w-3xl mx-auto">
             The rental market lives in scattered posts. We bring it all together.
           </p>
         </div>
       </header>
 
       {/* The Problem Section */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-16 bg-brand-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-100">
+          <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-line">
             <div className="p-8 lg:p-12">
               <div className="flex flex-col lg:flex-row gap-12 items-center">
                 <div className="lg:w-1/2">
                   <span className="inline-block px-4 py-1 bg-red-100 text-red-600 rounded-full text-sm font-bold mb-4 uppercase tracking-widest">The Problem</span>
-                  <h2 className="text-3xl font-bold text-slate-800 mb-6">Social Media Chaos</h2>
-                  <p className="text-slate-600 mb-4 leading-relaxed">
+                  <h2 className="font-display text-3xl font-extrabold text-ink mb-6 tracking-tight">Social Media Chaos</h2>
+                  <p className="text-muted mb-4 leading-relaxed">
                     Renters currently waste hours scrolling through unorganized Facebook groups, WhatsApp threads, and Reddit posts. Important details are often buried, and listings disappear within minutes.
                   </p>
                   <ul className="space-y-3">
-                    <li className="flex items-start gap-3 text-slate-600">
+                    <li className="flex items-start gap-3 text-muted">
                       <svg className="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
                       No filtering options for price or dates
                     </li>
-                    <li className="flex items-start gap-3 text-slate-600">
+                    <li className="flex items-start gap-3 text-muted">
                       <svg className="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
                       Duplicate posts and outdated availability
                     </li>
-                    <li className="flex items-start gap-3 text-slate-600">
+                    <li className="flex items-start gap-3 text-muted">
                       <svg className="w-6 h-6 text-red-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
                       Fragmented communication across platforms
                     </li>
                   </ul>
                 </div>
                 <div className="lg:w-1/2">
-                  <div className="relative bg-slate-200 rounded-xl p-4 rotate-2 shadow-sm">
+                  <div className="relative bg-line rounded-xl p-4 rotate-2 shadow-sm">
                     <img
                       alt="Scattered Social Media Posts"
                       className="rounded-xl shadow-lg"
@@ -64,8 +65,8 @@ export default function HowItWorksPage() {
       <section className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-[#2F6EA8] mb-4">Journey for Tenants</h2>
-            <p className="text-slate-500">Finding your next home in four simple steps.</p>
+            <h2 className="font-display text-3xl lg:text-4xl font-extrabold text-brand-600 mb-4 tracking-tight">Journey for Tenants</h2>
+            <p className="text-muted">Finding your next home in four simple steps.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -74,10 +75,10 @@ export default function HowItWorksPage() {
               { step: 3, title: 'Map View', desc: 'Visualize every listing on an interactive map to see proximity to work, transit, or school.' },
               { step: 4, title: 'Connect', desc: 'Reach out directly to landlords or current tenants via the integrated messaging system.' },
             ].map((item) => (
-              <div key={item.step} className="bg-slate-50 p-8 rounded-xl border border-slate-100 hover:-translate-y-1 transition-all duration-300">
-                <div className="w-12 h-12 bg-[#2F6EA8] text-white rounded-full flex items-center justify-center font-bold text-xl mb-6">{item.step}</div>
-                <h3 className="text-xl font-bold mb-3 text-slate-800">{item.title}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{item.desc}</p>
+              <div key={item.step} className="bg-brand-50 p-8 rounded-xl border border-line hover:-translate-y-1 transition-all duration-300">
+                <div className="w-12 h-12 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-xl mb-6">{item.step}</div>
+                <h3 className="text-xl font-bold mb-3 text-ink">{item.title}</h3>
+                <p className="text-muted text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -85,11 +86,11 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Journey for Landlords */}
-      <section className="py-24 bg-[#1e293b] text-white">
+      <section className="py-24 bg-brand-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-[#F07B2E] mb-4">Journey for Landlords</h2>
-            <p className="text-slate-300">List your property with zero manual data entry.</p>
+            <h2 className="font-display text-3xl lg:text-4xl font-extrabold text-accent-500 mb-4 tracking-tight">Journey for Landlords</h2>
+            <p className="text-white/70">List your property with zero manual data entry.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
@@ -98,10 +99,10 @@ export default function HowItWorksPage() {
               { step: 3, title: 'Go Live', desc: 'Review the generated listing, confirm the details, and go live instantly to our active renter base.' },
               { step: 4, title: 'Manage', desc: 'Track views, manage inquiries, and mark as \'rented\' from one unified dashboard.' },
             ].map((item) => (
-              <div key={item.step} className="p-8 rounded-xl border border-slate-700 bg-slate-800/50">
-                <div className="w-12 h-12 bg-[#F07B2E] text-white rounded-full flex items-center justify-center font-bold text-xl mb-6 shadow-lg shadow-[#F07B2E]/20">{item.step}</div>
+              <div key={item.step} className="p-8 rounded-2xl border border-white/15 bg-white/[0.06]">
+                <div className="w-12 h-12 bg-accent-500 text-accent-ink rounded-full flex items-center justify-center font-bold text-xl mb-6">{item.step}</div>
                 <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                <p className="text-white/75 text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -110,11 +111,11 @@ export default function HowItWorksPage() {
 
       {/* AI Engine Section */}
       <section className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute -right-20 top-20 w-96 h-96 bg-[#2F6EA8]/5 rounded-full blur-3xl"></div>
+        <div className="absolute -right-20 top-20 w-96 h-96 bg-brand-600/5 rounded-full blur-3xl"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2">
-              <div className="p-1 rounded-2xl bg-gradient-to-br from-[#2F6EA8] to-[#F07B2E] shadow-2xl">
+              <div className="p-1 rounded-2xl bg-brand-600 shadow-2xl">
                 <div className="bg-white rounded-xl p-8">
                   <div className="flex items-center gap-4 mb-8">
                     <img
@@ -122,13 +123,13 @@ export default function HowItWorksPage() {
                       className="rounded-full w-10 h-10"
                       src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqH9jK-uzzri9MLh-SWRs61Ynyt5EA9qfHzoIxWBYdhNvtji-7tEHdh9Klg2cgXwlERusLgC_KJHLkWZk6sIfDC-WLfaf51N_oqhGLXVSSQXiJ7375rSdbVxRy9uBUJNpn0vwKd5Szg8N59ucVUcgr6NK_awFzBPxSTO3PNNEeDHmn5uB1_pj8D8OZ6JWwtVUzG70u8Yu-S-n4x7YD1KQryx-HSymuuu1DMZugw6qT7dTSzN7ifGJlCy-sH6rFIXnuyO2CUcjlPuc"
                     />
-                    <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Powered by Google Gemini AI</span>
+                    <span className="text-sm font-bold text-muted uppercase tracking-widest">Powered by Google Gemini AI</span>
                   </div>
-                  <h2 className="text-4xl font-bold text-[#2F6EA8] mb-8">The AI Engine</h2>
+                  <h2 className="font-display text-4xl font-extrabold text-brand-600 mb-8 tracking-tight">The AI Engine</h2>
                   <div className="grid grid-cols-2 gap-4">
                     {['Price Detection', 'Geolocation', 'Availability Dates', 'Utility Inclusion', 'Amenity Listing', 'Roommate Info'].map((feature) => (
-                      <div key={feature} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                        <div className="w-2 h-2 rounded-full bg-[#F07B2E]"></div>
+                      <div key={feature} className="flex items-center gap-2 p-3 bg-brand-50 rounded-lg">
+                        <div className="w-2 h-2 rounded-full bg-accent-500"></div>
                         <span className="text-sm font-medium">{feature}</span>
                       </div>
                     ))}
@@ -137,22 +138,22 @@ export default function HowItWorksPage() {
               </div>
             </div>
             <div className="lg:w-1/2">
-              <h3 className="text-3xl font-bold text-slate-800 mb-6">Unstructured Data, Organized.</h3>
-              <p className="text-slate-600 leading-relaxed text-lg mb-6">
+              <h3 className="text-3xl font-bold text-ink mb-6">Unstructured Data, Organized.</h3>
+              <p className="text-muted leading-relaxed text-lg mb-6">
                 Our integration with Google Gemini AI translates messy natural language into structured, searchable data. We don&apos;t just copy text—we understand it.
               </p>
               <div className="space-y-4">
                 <div className="flex gap-4">
-                  <div className="shrink-0 w-8 h-8 rounded bg-[#2F6EA8]/10 flex items-center justify-center text-[#2F6EA8]">
+                  <div className="shrink-0 w-8 h-8 rounded bg-brand-600/10 flex items-center justify-center text-brand-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
                   </div>
-                  <p className="text-slate-600"><strong className="text-slate-800">Precision:</strong> Identify specific unit numbers and lease terms automatically.</p>
+                  <p className="text-muted"><strong className="text-ink">Precision:</strong> Identify specific unit numbers and lease terms automatically.</p>
                 </div>
                 <div className="flex gap-4">
-                  <div className="shrink-0 w-8 h-8 rounded bg-[#2F6EA8]/10 flex items-center justify-center text-[#2F6EA8]">
+                  <div className="shrink-0 w-8 h-8 rounded bg-brand-600/10 flex items-center justify-center text-brand-600">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} /></svg>
                   </div>
-                  <p className="text-slate-600"><strong className="text-slate-800">Validation:</strong> Flags inconsistencies in price or descriptions across platforms.</p>
+                  <p className="text-muted"><strong className="text-ink">Validation:</strong> Flags inconsistencies in price or descriptions across platforms.</p>
                 </div>
               </div>
             </div>
@@ -161,23 +162,23 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Comparison Table */}
-      <section className="py-24 bg-slate-50">
+      <section className="py-24 bg-brand-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-slate-800">Why SubHub?</h2>
-            <p className="text-slate-500 mt-4">The difference is in the details.</p>
+            <h2 className="font-display text-3xl font-extrabold text-ink tracking-tight">Why SubHub?</h2>
+            <p className="text-muted mt-4">The difference is in the details.</p>
           </div>
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-line">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-slate-800 text-white">
+                <thead className="bg-ink text-white">
                   <tr>
                     <th className="px-6 py-4 font-semibold uppercase text-xs tracking-wider">Feature</th>
                     <th className="px-6 py-4 font-semibold uppercase text-xs tracking-wider text-center">Facebook Groups</th>
-                    <th className="px-6 py-4 font-semibold uppercase text-xs tracking-wider text-center bg-[#2F6EA8]">SubHub</th>
+                    <th className="px-6 py-4 font-semibold uppercase text-xs tracking-wider text-center bg-brand-600">SubHub</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-line">
                   {[
                     { feature: 'Searchability', fb: 'Poor (Linear Feed)', sh: 'Excellent (Advanced Filter)' },
                     { feature: 'Map Navigation', fb: 'None', sh: 'Built-in Interactive Map' },
@@ -185,10 +186,10 @@ export default function HowItWorksPage() {
                     { feature: 'Scam Protection', fb: 'Community Moderated', sh: 'Verified Listings & Users' },
                     { feature: 'Notification Alerts', fb: 'Inconsistent', sh: 'Real-time Smart Alerts' },
                   ].map((row, i) => (
-                    <tr key={row.feature} className={i % 2 === 1 ? 'bg-slate-50' : ''}>
-                      <td className="px-6 py-5 text-slate-700 font-medium">{row.feature}</td>
-                      <td className="px-6 py-5 text-center text-slate-500">{row.fb}</td>
-                      <td className="px-6 py-5 text-center text-[#2F6EA8] font-bold">{row.sh}</td>
+                    <tr key={row.feature} className={i % 2 === 1 ? 'bg-brand-50' : ''}>
+                      <td className="px-6 py-5 text-ink font-medium">{row.feature}</td>
+                      <td className="px-6 py-5 text-center text-muted">{row.fb}</td>
+                      <td className="px-6 py-5 text-center text-brand-600 font-bold">{row.sh}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -198,40 +199,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#1e293b] py-16 text-slate-400">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-6">
-                <img src="/logo.png" alt="SubHub Logo" className="h-16 w-auto mix-blend-screen opacity-90" />
-              </div>
-              <p className="max-w-xs mb-6">Making the rental market transparent, organized, and accessible for everyone.</p>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-6">Platform</h4>
-              <ul className="space-y-4 text-sm">
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Browse Listings</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Post a Listing</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Success Stories</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">FAQs</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-6">Company</h4>
-              <ul className="space-y-4 text-sm">
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">About Us</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Privacy Policy</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Terms of Service</a></li>
-                <li><a className="hover:text-[#F07B2E] transition-colors" href="#">Contact Support</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="pt-8 border-t border-slate-800 text-sm text-center">
-            © {new Date().getFullYear()} SubHub Technologies Inc. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

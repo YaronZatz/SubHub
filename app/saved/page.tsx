@@ -73,17 +73,17 @@ function EmptyState() {
   const { language } = useLanguage();
   const t = translations[language];
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 py-20 flex flex-col items-center text-center px-4">
+    <div className="bg-white rounded-2xl border border-line py-20 flex flex-col items-center text-center px-4">
       <div className="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-5">
         <svg className="w-8 h-8 text-red-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
         </svg>
       </div>
-      <h2 className="text-lg font-bold text-slate-900 mb-2">{t.shortlistEmpty}</h2>
-      <p className="text-sm text-slate-500 max-w-xs mb-8">{t.shortlistEmptyDesc}</p>
+      <h2 className="text-lg font-bold text-ink mb-2">{t.shortlistEmpty}</h2>
+      <p className="text-sm text-muted max-w-xs mb-8">{t.shortlistEmptyDesc}</p>
       <Link
         href="/map"
-        className="inline-flex items-center gap-2 px-6 py-3 bg-[#2F6EA8] text-white font-bold rounded-xl hover:bg-[#2F6EA8]/90 transition-colors shadow-sm"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-600/90 transition-colors shadow-sm"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -121,9 +121,9 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
 
   if (isUnavailable) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm opacity-60">
-        <div className="relative aspect-[4/3] bg-slate-100 flex items-center justify-center">
-          <span className="text-slate-400 text-xs font-semibold">{t.unavailable}</span>
+      <div className="bg-white rounded-2xl border border-line overflow-hidden shadow-sm opacity-60">
+        <div className="relative aspect-[4/3] bg-brand-50 flex items-center justify-center">
+          <span className="text-muted text-xs font-semibold">{t.unavailable}</span>
           <button
             onClick={(e) => { e.preventDefault(); onUnsave(); }}
             className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
@@ -133,10 +133,10 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
           </button>
         </div>
         <div className="p-4 flex items-center justify-between">
-          <p className="text-sm text-slate-500 font-medium">{t.noLongerAvailable}</p>
+          <p className="text-sm text-muted font-medium">{t.noLongerAvailable}</p>
           <button
             onClick={onUnsave}
-            className="p-2 rounded-full hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-full hover:bg-brand-50 transition-colors"
             title="Remove from saved"
           >
             <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
@@ -147,9 +147,9 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
+    <div className="bg-white rounded-2xl border border-line overflow-hidden shadow-sm hover:shadow-md transition-shadow group">
       {/* Image */}
-      <div className="relative aspect-[4/3] bg-slate-100">
+      <div className="relative aspect-[4/3] bg-brand-50">
         <ListingCarousel
           id={sublet.id}
           images={sublet.images}
@@ -171,20 +171,20 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
       <Link href={`/listing/${sublet.id}`} className="block p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-bold text-slate-900 truncate">{title}</p>
+            <p className="font-bold text-ink truncate">{title}</p>
             {dateRange && (
-              <p className="text-xs text-slate-500 mt-0.5">{dateRange}</p>
+              <p className="text-xs text-muted mt-0.5">{dateRange}</p>
             )}
           </div>
           {sublet.price > 0 && (
-            <p className="shrink-0 text-sm font-black text-slate-900">
+            <p className="shrink-0 text-sm font-bold text-ink">
               {formatPrice(sublet.price, (sublet.currency ?? currency) as CurrencyCode)}
-              <span className="text-xs font-normal text-slate-400">/mo</span>
+              <span className="text-xs font-normal text-muted">/mo</span>
             </p>
           )}
         </div>
         {sublet.type && (
-          <span className="inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+          <span className="inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-muted">
             {t.subletTypes[sublet.type]}
           </span>
         )}
@@ -226,7 +226,7 @@ function SavedContent() {
   const isLoading = savedLoading || listingsLoading;
 
   return (
-    <div className="min-h-screen bg-[#f6f7f8]">
+    <div className="min-h-screen bg-white">
       <WebNavbar />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-24 md:pb-10">
@@ -234,11 +234,11 @@ function SavedContent() {
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black text-slate-900">{t.savedListings}</h1>
-            <p className="text-slate-500 text-sm mt-1">{t.shortlistSubtitle}</p>
+            <h1 className="font-display text-2xl font-extrabold text-ink tracking-tight">{t.savedListings}</h1>
+            <p className="text-muted text-sm mt-1">{t.shortlistSubtitle}</p>
           </div>
           {!isLoading && savedIds.size > 0 && (
-            <span className="text-sm font-semibold text-slate-500">
+            <span className="text-sm font-semibold text-muted">
               {savedIds.size} saved
             </span>
           )}
@@ -248,11 +248,11 @@ function SavedContent() {
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-pulse">
-                <div className="aspect-[4/3] bg-slate-100" />
+              <div key={i} className="bg-white rounded-2xl border border-line overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] bg-brand-50" />
                 <div className="p-4 space-y-2">
-                  <div className="h-4 bg-slate-100 rounded w-3/4" />
-                  <div className="h-3 bg-slate-100 rounded w-1/2" />
+                  <div className="h-4 bg-brand-50 rounded w-3/4" />
+                  <div className="h-3 bg-brand-50 rounded w-1/2" />
                 </div>
               </div>
             ))}

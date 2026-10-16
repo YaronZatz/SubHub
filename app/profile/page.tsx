@@ -60,15 +60,15 @@ function ProfileContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f6f7f8]">
+    <div className="min-h-screen bg-white">
       <WebNavbar />
 
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-24 md:pb-10">
 
-        <h1 className="text-2xl font-black text-slate-900 mb-8">{t.profile}</h1>
+        <h1 className="font-display text-2xl font-extrabold text-ink mb-8 tracking-tight">{t.profile}</h1>
 
         {/* Avatar + identity */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-4">
+        <div className="bg-white rounded-2xl border border-line p-6 mb-4">
           <div className="flex items-center gap-5">
             {firebaseUser.photoURL ? (
               <img
@@ -77,46 +77,46 @@ function ProfileContent() {
                 className="w-16 h-16 rounded-full shadow-sm object-cover"
               />
             ) : (
-              <div className="w-16 h-16 rounded-full bg-brand-600 text-white flex items-center justify-center text-xl font-black shadow-sm">
+              <div className="w-16 h-16 rounded-full bg-brand-600 text-white flex items-center justify-center text-xl font-bold shadow-sm">
                 {initials}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold text-slate-900 truncate">{displayName}</p>
-              <p className="text-sm text-slate-500 truncate">{user.email}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Member since {memberSince}</p>
+              <p className="text-lg font-bold text-ink truncate">{displayName}</p>
+              <p className="text-sm text-muted truncate">{user.email}</p>
+              <p className="text-xs text-muted mt-0.5">Member since {memberSince}</p>
             </div>
           </div>
         </div>
 
         {/* Quick links */}
-        <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100 mb-4">
+        <div className="bg-white rounded-2xl border border-line divide-y divide-line mb-4">
           <Link
             href="/saved"
-            className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors group"
+            className="flex items-center justify-between px-6 py-4 hover:bg-brand-50 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-5 h-5 text-muted group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="text-sm font-semibold text-slate-700">{t.savedListings}</span>
+              <span className="text-sm font-semibold text-ink">{t.savedListings}</span>
             </div>
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
 
           <Link
             href="/messages"
-            className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 transition-colors group"
+            className="flex items-center justify-between px-6 py-4 hover:bg-brand-50 transition-colors group"
           >
             <div className="flex items-center gap-3">
-              <svg className="w-5 h-5 text-slate-400 group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-5 h-5 text-muted group-hover:text-brand-600 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
-              <span className="text-sm font-semibold text-slate-700">{t.messages}</span>
+              <span className="text-sm font-semibold text-ink">{t.messages}</span>
             </div>
-            <svg className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -131,17 +131,17 @@ function ProfileContent() {
           const tabListings = activeTab === 'active' ? activeListings : pastListings;
 
           const statusBadge = (status: ListingStatus) => {
-            if (status === ListingStatus.AVAILABLE) return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">{t.statusActive}</span>;
-            if (status === ListingStatus.PAUSED)    return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">{t.statusPaused}</span>;
-            if (status === ListingStatus.FILLED)    return <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{t.statusFilled}</span>;
+            if (status === ListingStatus.AVAILABLE) return <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700">{t.statusActive}</span>;
+            if (status === ListingStatus.PAUSED)    return <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-accent-100 text-accent-700">{t.statusPaused}</span>;
+            if (status === ListingStatus.FILLED)    return <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-brand-50 text-muted">{t.statusFilled}</span>;
             return null;
           };
 
           return (
-            <div className="bg-white rounded-2xl border border-slate-200 mb-4">
+            <div className="bg-white rounded-2xl border border-line mb-4">
               {/* Header + Tabs */}
-              <div className="px-6 pt-4 pb-0 border-b border-slate-100">
-                <h3 className="text-sm font-bold text-slate-900 mb-3">{t.myListings}</h3>
+              <div className="px-6 pt-4 pb-0 border-b border-line">
+                <h3 className="text-sm font-bold text-ink mb-3">{t.myListings}</h3>
                 <div className="flex gap-1 -mb-px">
                   {(['active', 'past'] as const).map(tab => (
                     <button
@@ -150,13 +150,13 @@ function ProfileContent() {
                       onClick={() => setActiveTab(tab)}
                       className={`px-4 py-2 text-xs font-bold rounded-t-lg border-b-2 transition-colors ${
                         activeTab === tab
-                          ? 'border-cyan-600 text-cyan-700'
-                          : 'border-transparent text-slate-400 hover:text-slate-600'
+                          ? 'border-brand-600 text-brand-700'
+                          : 'border-transparent text-muted hover:text-muted'
                       }`}
                     >
                       {tab === 'active' ? t.activeListingsTab : t.pastListingsTab}
                       {tab === 'active' && activeListings.length > 0 && (
-                        <span className="ml-1.5 bg-slate-100 text-slate-500 text-[10px] font-black px-1.5 py-0.5 rounded-full">{activeListings.length}</span>
+                        <span className="ml-1.5 bg-brand-50 text-muted text-[10px] font-bold px-1.5 py-0.5 rounded-full">{activeListings.length}</span>
                       )}
                     </button>
                   ))}
@@ -165,20 +165,20 @@ function ProfileContent() {
 
               {/* Body */}
               {listingsLoading ? (
-                <div className="px-6 py-4 flex items-center gap-2 text-sm text-slate-400">
-                  <div className="w-4 h-4 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin" />
+                <div className="px-6 py-4 flex items-center gap-2 text-sm text-muted">
+                  <div className="w-4 h-4 border-2 border-line border-t-muted rounded-full animate-spin" />
                   Loading…
                 </div>
               ) : tabListings.length === 0 ? (
-                <div className="px-6 py-4 text-sm text-slate-400">{t.noListingsYet}</div>
+                <div className="px-6 py-4 text-sm text-muted">{t.noListingsYet}</div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-line">
                   {tabListings.map(listing => {
                     const canEdit = listing.status !== ListingStatus.FILLED && listing.status !== ListingStatus.DELETED;
                     return (
                       <div key={listing.id} className="flex items-center gap-3 px-6 py-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-slate-800 truncate">
+                          <p className="text-sm font-semibold text-ink truncate">
                             {listing.location}{listing.city ? `, ${listing.city}` : ''}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
@@ -188,7 +188,7 @@ function ProfileContent() {
                         {canEdit && (
                           <button
                             onClick={() => setEditListing(listing)}
-                            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-xl border border-line text-muted hover:bg-brand-50 transition-colors"
                           >
                             {t.edit}
                           </button>
@@ -210,7 +210,7 @@ function ProfileContent() {
         })()}
 
         {/* Sign out */}
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-white rounded-2xl border border-line overflow-hidden">
           <button
             onClick={handleSignOut}
             disabled={isSigningOut}

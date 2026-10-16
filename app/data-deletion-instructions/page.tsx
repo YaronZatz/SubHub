@@ -1,3 +1,4 @@
+import Logo from '@/components/shared/Logo';
 export const metadata = {
   title: 'Data Deletion Instructions — SubHub',
   description: 'How to request deletion of your SubHub data connected via Facebook.',
@@ -40,15 +41,15 @@ const RETAINED_DATA = [
 
 export default function DataDeletionInstructionsPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-brand-50">
 
       {/* Header */}
-      <div className="bg-slate-900 px-6 py-10 text-center">
-        <p className="text-cyan-400 text-xs font-black uppercase tracking-widest mb-2">SubHub</p>
-        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+      <div className="border-b border-line bg-white px-6 py-10 text-center">
+        <a href="/" className="mb-4 inline-flex" aria-label="SubHub home"><Logo /></a>
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">
           Data Deletion Instructions
         </h1>
-        <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+        <p className="text-muted text-sm mt-2 max-w-md mx-auto">
           How to remove your SubHub account and all associated data from our systems.
         </p>
       </div>
@@ -57,18 +58,18 @@ export default function DataDeletionInstructionsPage() {
 
         {/* Step-by-step */}
         <section>
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-5">
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest mb-5">
             Step-by-step via Facebook
           </h2>
           <div className="space-y-3">
             {STEPS.map(step => (
-              <div key={step.number} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex gap-4">
-                <span className="text-2xl font-black text-slate-200 shrink-0 leading-none mt-0.5">
+              <div key={step.number} className="bg-white rounded-2xl border border-line shadow-sm p-5 flex gap-4">
+                <span className="text-2xl font-bold text-brand-200 shrink-0 leading-none mt-0.5">
                   {step.number}
                 </span>
                 <div>
-                  <p className="font-black text-slate-900 text-sm">{step.title}</p>
-                  <p className="text-slate-500 text-sm mt-0.5 leading-relaxed">{step.body}</p>
+                  <p className="font-bold text-ink text-sm">{step.title}</p>
+                  <p className="text-muted text-sm mt-0.5 leading-relaxed">{step.body}</p>
                 </div>
               </div>
             ))}
@@ -76,18 +77,18 @@ export default function DataDeletionInstructionsPage() {
         </section>
 
         {/* Manual email request */}
-        <section className="bg-cyan-50 rounded-2xl border border-cyan-100 p-6 space-y-3">
-          <h2 className="text-xs font-black text-cyan-400 uppercase tracking-widest">
+        <section className="bg-brand-50 rounded-2xl border border-brand-100 p-6 space-y-3">
+          <h2 className="text-xs font-semibold text-brand-700 uppercase tracking-[0.06em]">
             Prefer to contact us directly?
           </h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="text-sm text-muted leading-relaxed">
             Send an email with the subject line{' '}
-            <strong className="text-slate-800">"Data Deletion Request"</strong>{' '}
+            <strong className="text-ink">"Data Deletion Request"</strong>{' '}
             from the address linked to your SubHub account. We will process it within 30 days.
           </p>
           <a
             href="mailto:support@subhub.app?subject=Data%20Deletion%20Request"
-            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-brand-600 hover:underline"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -98,16 +99,16 @@ export default function DataDeletionInstructionsPage() {
 
         {/* What gets deleted */}
         <section>
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest mb-4">
             What gets deleted
           </h2>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-50">
+          <div className="bg-white rounded-2xl border border-line shadow-sm divide-y divide-line">
             {DELETED_DATA.map(item => (
               <div key={item} className="flex items-start gap-3 px-5 py-3.5">
                 <svg className="w-4 h-4 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
-                <span className="text-sm text-slate-600">{item}</span>
+                <span className="text-sm text-muted">{item}</span>
               </div>
             ))}
           </div>
@@ -115,29 +116,29 @@ export default function DataDeletionInstructionsPage() {
 
         {/* What is retained */}
         <section>
-          <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">
+          <h2 className="text-xs font-bold text-muted uppercase tracking-widest mb-4">
             What may be retained
           </h2>
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm divide-y divide-slate-50">
+          <div className="bg-white rounded-2xl border border-line shadow-sm divide-y divide-line">
             {RETAINED_DATA.map(item => (
               <div key={item} className="flex items-start gap-3 px-5 py-3.5">
-                <svg className="w-4 h-4 text-slate-300 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm text-slate-500">{item}</span>
+                <span className="text-sm text-muted">{item}</span>
               </div>
             ))}
           </div>
         </section>
 
         {/* Timeline */}
-        <section className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex items-start gap-4">
-          <svg className="w-6 h-6 text-cyan-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <section className="bg-white rounded-2xl border border-line shadow-sm p-6 flex items-start gap-4">
+          <svg className="w-6 h-6 text-brand-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <p className="font-black text-slate-900 text-sm">Processing time</p>
-            <p className="text-slate-500 text-sm mt-0.5 leading-relaxed">
+            <p className="font-bold text-ink text-sm">Processing time</p>
+            <p className="text-muted text-sm mt-0.5 leading-relaxed">
               Deletion requests triggered via Facebook are processed automatically and typically
               complete within minutes. Manual email requests are processed within <strong>30 days</strong>.
             </p>
@@ -146,18 +147,18 @@ export default function DataDeletionInstructionsPage() {
 
         {/* Track status */}
         <section className="text-center space-y-2">
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-muted">
             Have a confirmation code from a previous deletion request?
           </p>
           <a
             href="/data-deletion"
-            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-brand-600 hover:underline"
           >
             Check deletion status →
           </a>
         </section>
 
-        <p className="text-xs text-slate-400 text-center pb-4">
+        <p className="text-xs text-muted text-center pb-4">
           SubHub · Last updated February 2026
         </p>
       </div>

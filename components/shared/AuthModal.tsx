@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Logo from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   validateAuthEmail,
@@ -128,16 +129,16 @@ export default function AuthModal({
 
   return (
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-ink/50"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 fade-in duration-200">
 
         {/* Close button */}
         <div className="flex justify-end pt-4 pr-4">
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+            className="text-muted hover:text-muted p-1.5 rounded-full hover:bg-brand-50 transition-colors"
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -150,16 +151,16 @@ export default function AuthModal({
 
           {/* Logo */}
           <div className="flex justify-center mb-5">
-            <img src="/logo.png" alt="SubHub" className="h-12 w-auto" />
+            <Logo />
           </div>
 
           {/* Heading */}
           <div className="text-center mb-6">
-            <h2 className="text-xl font-black text-slate-900 leading-snug">
+            <h2 className="font-display text-xl font-extrabold text-ink leading-snug tracking-tight">
               {view === 'email' && formMode === 'login' ? 'Welcome back' : copy.title}
             </h2>
             {!(view === 'email' && formMode === 'login') && (
-              <p className="text-sm text-slate-500 mt-1">{copy.subtitle}</p>
+              <p className="text-sm text-muted mt-1">{copy.subtitle}</p>
             )}
           </div>
 
@@ -171,10 +172,10 @@ export default function AuthModal({
               <button
                 onClick={handleGoogle}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border-2 border-slate-200 rounded-2xl font-bold text-sm text-slate-800 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-50 transition-all shadow-sm active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border-2 border-line rounded-2xl font-bold text-sm text-ink hover:bg-brand-50 hover:border-line disabled:opacity-50 transition-all shadow-sm active:scale-[0.98]"
               >
                 {loading ? (
-                  <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-line border-t-muted rounded-full animate-spin" />
                 ) : (
                   <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -189,13 +190,13 @@ export default function AuthModal({
               {/* Email — secondary */}
               <button
                 onClick={() => { setView('email'); setFormMode('signup'); }}
-                className="w-full py-3.5 px-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 transition-colors active:scale-[0.98]"
+                className="w-full h-12 px-4 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors"
               >
                 Continue with Email
               </button>
 
               {/* Sign in link */}
-              <p className="text-center text-sm text-slate-500 pt-1">
+              <p className="text-center text-sm text-muted pt-1">
                 Already have an account?{' '}
                 <button
                   onClick={() => { setView('email'); setFormMode('login'); }}
@@ -206,7 +207,7 @@ export default function AuthModal({
               </p>
 
               {/* Tagline */}
-              <p className="text-center text-xs text-slate-400 pt-1">
+              <p className="text-center text-xs text-muted pt-1">
                 Takes 10 seconds. Free forever.
               </p>
             </div>
@@ -217,14 +218,14 @@ export default function AuthModal({
             <div className="space-y-3">
 
               {/* Mode toggle */}
-              <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+              <div className="flex bg-brand-50 rounded-xl p-1 gap-1">
                 <button
                   type="button"
                   onClick={() => switchFormMode('signup')}
                   className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
                     formMode === 'signup'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white text-ink shadow-sm'
+                      : 'text-muted hover:text-ink'
                   }`}
                 >
                   Sign up
@@ -234,8 +235,8 @@ export default function AuthModal({
                   onClick={() => switchFormMode('login')}
                   className={`flex-1 py-2 rounded-lg text-sm font-bold transition-colors ${
                     formMode === 'login'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                      ? 'bg-white text-ink shadow-sm'
+                      : 'text-muted hover:text-ink'
                   }`}
                 >
                   Log in
@@ -250,7 +251,7 @@ export default function AuthModal({
                     onChange={e => setName(e.target.value)}
                     placeholder="Full name"
                     autoComplete="name"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
+                    className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                   />
                 )}
 
@@ -261,7 +262,7 @@ export default function AuthModal({
                   placeholder="Email address"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
+                  className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                 />
 
                 <input
@@ -271,7 +272,7 @@ export default function AuthModal({
                   placeholder="Password"
                   autoComplete={formMode === 'signup' ? 'new-password' : 'current-password'}
                   required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
+                  className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                 />
 
                 {error && (
@@ -283,7 +284,7 @@ export default function AuthModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-brand-600 text-white rounded-2xl font-black text-sm hover:bg-brand-700 disabled:opacity-50 transition-all shadow-lg shadow-brand-600/20 active:scale-[0.98]"
+                  className="w-full py-3.5 bg-brand-600 text-white rounded-2xl font-bold text-sm hover:bg-brand-700 disabled:opacity-50 transition-all shadow-lg active:scale-[0.98]"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
@@ -296,7 +297,7 @@ export default function AuthModal({
               {/* Back to other options */}
               <button
                 onClick={() => { setView('main'); setError(null); }}
-                className="w-full text-center text-xs text-slate-400 hover:text-slate-600 transition-colors pt-1"
+                className="w-full text-center text-xs text-muted hover:text-muted transition-colors pt-1"
               >
                 ← Other sign-in options
               </button>

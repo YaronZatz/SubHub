@@ -22,16 +22,16 @@ export default function ConfirmModal({
   isLoading = false,
 }: ConfirmModalProps) {
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center px-4 bg-slate-900/60 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 animate-in zoom-in-95 fade-in duration-200">
-        <h3 className="text-base font-black text-slate-900">{title}</h3>
-        <p className="text-sm text-slate-600">{body}</p>
+    <div className="fixed inset-0 z-[150] flex items-center justify-center px-4 bg-ink/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 animate-in zoom-in-95 fade-in duration-200">
+        <h3 className="text-base font-bold text-ink">{title}</h3>
+        <p className="text-sm text-muted">{body}</p>
         <div className="flex gap-3 mt-1">
           <button
             type="button"
             onClick={onCancel}
             disabled={isLoading}
-            className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all disabled:opacity-40"
+            className="flex-1 py-3 bg-white border border-line text-muted rounded-2xl font-bold text-sm hover:bg-brand-50 transition-all disabled:opacity-40"
           >
             Cancel
           </button>
@@ -39,10 +39,10 @@ export default function ConfirmModal({
             type="button"
             onClick={onConfirm}
             disabled={isLoading}
-            className={`flex-1 py-3 rounded-2xl font-black text-sm text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg ${
+            className={`flex-1 py-3 rounded-2xl font-bold text-sm text-white transition-all disabled:opacity-40 flex items-center justify-center gap-2 shadow-lg ${
               danger
                 ? 'bg-red-600 hover:bg-red-700 shadow-red-100/50'
-                : 'bg-cyan-600 hover:bg-cyan-700 shadow-cyan-100/50'
+                : 'bg-brand-600 hover:bg-brand-700'
             }`}
           >
             {isLoading && (
