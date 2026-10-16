@@ -65,6 +65,7 @@ const en = {
   errorHint: 'Check your connection and try again.',
   postedIn: 'Posted in',
   flexible: 'Flexible',
+  yourListing: 'Your listing',
 };
 
 type HomeCopy = typeof en;
@@ -131,6 +132,7 @@ const he: HomeCopy = {
   errorHint: 'בדקו את החיבור ונסו שוב.',
   postedIn: 'פורסם ב',
   flexible: 'גמיש',
+  yourListing: 'המודעה שלך',
 };
 
 export function homeCopy(language: string): HomeCopy {

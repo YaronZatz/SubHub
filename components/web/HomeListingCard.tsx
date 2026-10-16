@@ -7,7 +7,7 @@ import { HeartIcon } from '@/components/Icons';
 import { formatPrice } from '@/utils/formatters';
 import ListingCarousel from '@/components/ListingCarousel';
 import { translations } from '@/translations';
-import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { listingTitle, localizedCity, localizedNeighborhood } from '@/lib/locationUtils';
 import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
 import { homeCopy } from '@/lib/homeCopy';
 
@@ -36,11 +36,11 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
   const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
   const isNew = hoursAgo < 24;
 
+  // Neighborhood as the title with the city underneath, both in the UI language.
   const neighborhood = localizedNeighborhood(sublet, language);
-  const location = localizedLocation(sublet, language);
-  const title = neighborhood || location;
-  const subtitleRaw = neighborhood && location && !location.includes(neighborhood) ? location : sublet.city;
-  const subtitle = subtitleRaw && subtitleRaw.trim().toLowerCase() !== title?.trim().toLowerCase() ? subtitleRaw : undefined;
+  const city = localizedCity(sublet, language);
+  const title = neighborhood || city || listingTitle(sublet, language);
+  const subtitle = neighborhood && city && neighborhood !== city ? city : undefined;
   const dateRange = formatDateRange(sublet.startDate, sublet.endDate, language);
   const timeline = timelineWindow(sublet.startDate, sublet.endDate, language);
   const typeLabel = t.subletTypes[sublet.type];

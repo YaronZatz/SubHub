@@ -12,7 +12,7 @@ import { formatPrice, formatDate } from '@/utils/formatters';
 import { HeartIcon } from '@/components/Icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
-import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { localizedLocation, localizedNeighborhood, listingTitle } from '@/lib/locationUtils';
 import { normalizeCurrencyCode } from '@/utils/formatters';
 import { Sublet, CurrencyCode, ListingStatus } from '@/types';
 
@@ -109,7 +109,7 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
     ListingStatus.EXPIRED,
   ].includes(sublet.status);
 
-  const title = [localizedNeighborhood(sublet, language), sublet.city].filter(Boolean).join(', ') || localizedLocation(sublet, language) || t.unknownLocation;
+  const title = listingTitle(sublet, language, t.unknownLocation);
   const dateRange = (() => {
     const s = typeof sublet.startDate === 'string' && sublet.startDate ? formatDate(sublet.startDate) : '';
     const e = typeof sublet.endDate === 'string' && sublet.endDate ? formatDate(sublet.endDate) : '';

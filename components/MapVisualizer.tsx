@@ -12,6 +12,7 @@ import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
 import { MAP_STYLES } from '../lib/mapStyles';
+import { listingTitle } from '../lib/locationUtils';
 
 interface MapVisualizerProps {
   sublets: Sublet[];
@@ -362,7 +363,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
 
   const selectedSublet = selectedSubletId ? sublets.find(s => s.id === selectedSubletId) : null;
   const popupTitle = selectedSublet
-    ? [selectedSublet.neighborhood, selectedSublet.city].filter(Boolean).join(', ') || selectedSublet.location || 'Unknown location'
+    ? listingTitle(selectedSublet, language, 'Unknown location')
     : '';
   const popupBeds = selectedSublet
     ? (selectedSublet as any).parsedRooms?.bedrooms ?? (selectedSublet as any).rooms?.bedrooms ?? null

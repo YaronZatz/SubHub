@@ -23,6 +23,7 @@ import {
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
 import { matchesFreeText } from '@/lib/searchMatch';
+import { listingTitle } from '@/lib/locationUtils';
 import { homeCopy } from '@/lib/homeCopy';
 import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
 import Logo from '@/components/shared/Logo';
@@ -70,9 +71,8 @@ function getBedroomCount(s: Sublet): number | null {
   return s.parsedRooms?.bedrooms ?? s.rooms?.bedrooms ?? null;
 }
 
-function getCardTitle(s: Sublet, unknownLocation: string): string {
-  const parts = [s.neighborhood, s.city].filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : (s.location || unknownLocation);
+function getCardTitle(s: Sublet, unknownLocation: string, lang: string): string {
+  return listingTitle(s, lang, unknownLocation);
 }
 
 function getDateRange(s: Sublet, t: { fromDate: string; availableNow: string }): string {
@@ -417,7 +417,7 @@ function useCardModel(s: Sublet) {
       : t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo)),
     dateRange: formatDateRange(s.startDate, s.endDate, language) ?? (s.immediateAvailability ? copy.availableNow : null),
     timeline: timelineWindow(s.startDate, s.endDate, language),
-    title: getCardTitle(s, t.unknownLocation),
+    title: getCardTitle(s, t.unknownLocation, language),
   };
 }
 

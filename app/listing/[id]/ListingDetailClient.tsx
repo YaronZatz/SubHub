@@ -15,7 +15,10 @@ import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
-import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { useRouter } from 'next/navigation';
+import { localizedLocation, listingTitle } from '@/lib/locationUtils';
+import EditListingModal from '@/components/EditListingModal';
+import ListingActionMenu from '@/components/ListingActionMenu';
 import { TranslatedText } from '@/components/TranslatedText';
 import { translateText } from '@/lib/translationService';
 import { formatPrice, formatDate } from '@/utils/formatters';
@@ -40,9 +43,8 @@ const MiniMap = dynamic(() => import('@/components/listing/MiniMap'), { ssr: fal
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getPageTitle(s: Sublet): string {
-  const parts = [s.neighborhood, s.city].filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : (s.location || 'Listing');
+function getPageTitle(s: Sublet, lang: string): string {
+  return listingTitle(s, lang);
 }
 
 function getDateRange(s: Sublet, t: { availableNow: string }, locale: string): string {
@@ -164,6 +166,8 @@ export default function ListingDetailClient({
   const [pendingAction, setPendingAction] = useState<'contact' | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const router = useRouter();
 
   const isSaved = listingId ? savedIds.has(listingId) : false;
   const { language: lang } = useLanguage();
@@ -262,7 +266,7 @@ export default function ListingDetailClient({
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: sublet ? getPageTitle(sublet) : 'SubHub listing', url });
+        await navigator.share({ title: sublet ? getPageTitle(sublet, lang) : 'SubHub listing', url });
       } else {
         await navigator.clipboard.writeText(url);
         setShareCopied(true);
@@ -271,18 +275,23 @@ export default function ListingDetailClient({
     } catch {
       // cancelled by user
     }
-  }, [sublet]);
+  }, [sublet, lang]);
 
   const isTaken = sublet?.status === ListingStatus.TAKEN;
+  // Owners manage their listing here (this used to live only on the old /listings overlay).
+  const isOwner = !!user && !!sublet?.ownerId && sublet.ownerId === user.id;
+  const canEdit = isOwner && !!sublet && ![
+    ListingStatus.FILLED, ListingStatus.DELETED, ListingStatus.TAKEN, ListingStatus.EXPIRED,
+  ].includes(sublet.status);
   const amenities = sublet ? getActiveAmenities(sublet) : [];
   const beds = sublet ? getBeds(sublet) : null;
   const dateRange = sublet ? getDateRange(sublet, t, lang) : '';
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
-  const pageTitleText = sublet ? getPageTitle(sublet) : '';
+  const pageTitleText = sublet ? getPageTitle(sublet, lang) : '';
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
   const addressLine = sublet ? (sublet.fullAddress || localizedLocation(sublet, lang) || '') : '';
   // Hide the address line when it just repeats the title.
-  const showAddress = !!addressLine && addressLine.trim().toLowerCase() !== (sublet ? getPageTitle(sublet) : '').trim().toLowerCase();
+  const showAddress = !!addressLine && addressLine.trim().toLowerCase() !== (sublet ? getPageTitle(sublet, lang) : '').trim().toLowerCase();
   const addressDir = contentTextDir(addressLine || null);
   const summaryDir = contentTextDir(translatedSummary ?? sublet?.ai_summary ?? null);
   const originalDir = contentTextDir(sublet?.originalText ?? null);
@@ -508,7 +517,7 @@ export default function ListingDetailClient({
                   <h2 className={sectionTitle}>{t.locationHeading}</h2>
                   <div className="flex flex-wrap items-center gap-2 text-[15px] text-muted">
                     <span>
-                      {[localizedNeighborhood(sublet, lang), sublet.city, sublet.country].filter(Boolean).join(', ') || localizedLocation(sublet, lang)}
+                      {listingTitle(sublet, lang)}
                     </span>
                     {sublet.pin_status === 'approximate' && (
                       <span className="rounded-full bg-accent-100 px-2.5 py-0.5 text-xs font-semibold text-accent-700">{copy.approxLocation}</span>
@@ -558,9 +567,29 @@ export default function ListingDetailClient({
                     </div>
                   )}
 
-                  <button onClick={handleContact} disabled={isTaken} className={contactBtn}>
-                    {isTaken ? t.noLongerAvailable : t.contactLandlord}
-                  </button>
+                  {isOwner ? (
+                    <div className="flex flex-col gap-2">
+                      <span className="self-start rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">{copy.yourListing}</span>
+                      <div className="flex items-center gap-2">
+                        {canEdit && (
+                          <button onClick={() => setEditOpen(true)} className={contactBtn}>
+                            {t.edit}
+                          </button>
+                        )}
+                        <ListingActionMenu
+                          listing={sublet}
+                          language={lang}
+                          onStatusChange={updated => setSublet(updated)}
+                          onDelete={() => router.push('/profile')}
+                          onToast={msg => setToastMessage(msg)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <button onClick={handleContact} disabled={isTaken} className={contactBtn}>
+                      {isTaken ? t.noLongerAvailable : t.contactLandlord}
+                    </button>
+                  )}
 
                   <button
                     onClick={handleSave}
@@ -593,13 +622,30 @@ export default function ListingDetailClient({
             )}
             {dateRange && <p className="truncate text-xs text-muted">{dateRange}</p>}
           </div>
-          <button
-            onClick={handleContact}
-            disabled={isTaken}
-            className="h-12 shrink-0 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors active:bg-brand-700 disabled:opacity-50"
-          >
-            {isTaken ? t.unavailable : t.contactLandlord}
-          </button>
+          {isOwner ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {canEdit && (
+                <button onClick={() => setEditOpen(true)} className="h-12 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white active:bg-brand-700">
+                  {t.edit}
+                </button>
+              )}
+              <ListingActionMenu
+                listing={sublet}
+                language={lang}
+                onStatusChange={updated => setSublet(updated)}
+                onDelete={() => router.push('/profile')}
+                onToast={msg => setToastMessage(msg)}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={handleContact}
+              disabled={isTaken}
+              className="h-12 shrink-0 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors active:bg-brand-700 disabled:opacity-50"
+            >
+              {isTaken ? t.unavailable : t.contactLandlord}
+            </button>
+          )}
         </div>
       )}
 
@@ -681,6 +727,21 @@ export default function ListingDetailClient({
           initialMode="signup"
           onSuccess={closeSavedAuthModal}
           onClose={closeSavedAuthModal}
+        />
+      )}
+
+      {/* ── Edit (owner) ── */}
+      {editOpen && sublet && (
+        <EditListingModal
+          listing={sublet}
+          language={lang}
+          onClose={() => setEditOpen(false)}
+          onUpdate={updated => setSublet(updated)}
+          onSuccess={(msg, updated) => {
+            setEditOpen(false);
+            setSublet(updated);
+            setToastMessage(msg);
+          }}
         />
       )}
 

@@ -355,7 +355,7 @@ export default function WebNavbar() {
           onClose={() => setIsPostModalOpen(false)}
           onViewOnMap={() => {
             setIsPostModalOpen(false);
-            router.push('/listings');
+            router.push('/map');
           }}
           language={language}
           currentUserId={user.id}

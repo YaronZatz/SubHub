@@ -25,6 +25,7 @@ import {
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
 import { matchesFreeText } from '@/lib/searchMatch';
+import { listingTitle } from '@/lib/locationUtils';
 import { homeCopy } from '@/lib/homeCopy';
 import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
 
@@ -71,9 +72,8 @@ function getBedroomCount(s: Sublet): number | null {
   return s.parsedRooms?.bedrooms ?? s.rooms?.bedrooms ?? null;
 }
 
-function getCardTitle(s: Sublet): string {
-  const parts = [s.neighborhood, s.city].filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : (s.location || 'Unknown location');
+function getCardTitle(s: Sublet, lang: string): string {
+  return listingTitle(s, lang, 'Unknown location');
 }
 
 function getDateRange(s: Sublet): string {
@@ -419,7 +419,7 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="truncate font-display text-[17px] font-bold tracking-tight text-ink">{getCardTitle(s)}</h3>
+              <h3 className="truncate font-display text-[17px] font-bold tracking-tight text-ink">{getCardTitle(s, language)}</h3>
               {beds !== null && <p className="text-[13px] text-muted">{copy.bedroomsShort(beds)}</p>}
             </div>
             {dateRange && (
