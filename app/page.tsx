@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSaved } from '../contexts/SavedContext';
 
 import PostListingModal from '../components/PostListingModal';
-import AuthModal from '../components/AuthModal';
+import AuthModal from '../components/shared/AuthModal';
 import { useLanguage } from '../contexts/LanguageContext';
 
 import PlatformWrapper from '@/components/shared/PlatformWrapper';

@@ -1,3 +1,4 @@
+import Logo from '@/components/shared/Logo';
 export const metadata = {
   title: 'Privacy Policy — SubHub',
   description: 'How SubHub collects, uses, and protects your personal information.',
@@ -12,19 +13,19 @@ interface Section {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-brand-50">
 
       {/* Header */}
-      <div className="bg-slate-900 px-6 py-10 text-center">
-        <p className="text-cyan-400 text-xs font-black uppercase tracking-widest mb-2">SubHub</p>
-        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Privacy Policy</h1>
-        <p className="text-slate-400 text-sm mt-2">Last updated: {LAST_UPDATED}</p>
+      <div className="border-b border-line bg-white px-6 py-10 text-center">
+        <a href="/" className="mb-4 inline-flex" aria-label="SubHub home"><Logo /></a>
+        <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-ink tracking-tight">Privacy Policy</h1>
+        <p className="text-muted text-sm mt-2">Last updated: {LAST_UPDATED}</p>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-12 space-y-8">
 
         {/* Intro */}
-        <p className="text-sm text-slate-600 leading-relaxed bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <p className="text-sm text-muted leading-relaxed bg-white rounded-2xl border border-line shadow-sm p-6">
           SubHub ("we", "us", or "our") operates a short-term rental listing platform. This Privacy
           Policy explains what personal information we collect, how we use it, and your rights
           regarding your data. By using SubHub you agree to the practices described here.
@@ -125,15 +126,15 @@ export default function PrivacyPolicyPage() {
             ],
           },
         ].map(section => (
-          <section key={section.title} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-50">
-              <h2 className="text-sm font-black text-slate-900">{section.title}</h2>
+          <section key={section.title} className="bg-white rounded-2xl border border-line shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-line">
+              <h2 className="text-sm font-bold text-ink">{section.title}</h2>
             </div>
-            <div className="divide-y divide-slate-50">
+            <div className="divide-y divide-line">
               {section.items.map(item => (
                 <div key={item.label} className="px-6 py-4">
-                  <p className="text-xs font-black text-slate-500 uppercase tracking-wider mb-1">{item.label}</p>
-                  <p className="text-sm text-slate-600 leading-relaxed">{item.text}</p>
+                  <p className="text-xs font-bold text-muted uppercase tracking-wider mb-1">{item.label}</p>
+                  <p className="text-sm text-muted leading-relaxed">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -141,14 +142,14 @@ export default function PrivacyPolicyPage() {
         ))}
 
         {/* Contact */}
-        <section className="bg-cyan-50 rounded-2xl border border-cyan-100 p-6 space-y-2">
-          <h2 className="text-xs font-black text-cyan-400 uppercase tracking-widest">Contact Us</h2>
-          <p className="text-sm text-slate-600 leading-relaxed">
+        <section className="bg-brand-50 rounded-2xl border border-brand-100 p-6 space-y-2">
+          <h2 className="text-xs font-semibold text-brand-700 uppercase tracking-[0.06em]">Contact Us</h2>
+          <p className="text-sm text-muted leading-relaxed">
             For any privacy-related questions or to exercise your rights, contact us at:
           </p>
           <a
             href="mailto:support@subhub.app?subject=Privacy%20Request"
-            className="inline-flex items-center gap-2 text-sm font-bold text-cyan-600 hover:underline"
+            className="inline-flex items-center gap-2 text-sm font-bold text-brand-600 hover:underline"
           >
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -158,9 +159,9 @@ export default function PrivacyPolicyPage() {
         </section>
 
         {/* Data deletion link */}
-        <p className="text-xs text-slate-400 text-center pb-4">
+        <p className="text-xs text-muted text-center pb-4">
           To delete your data, visit our{' '}
-          <a href="/data-deletion-instructions" className="underline hover:text-slate-600">
+          <a href="/data-deletion-instructions" className="underline hover:text-muted">
             Data Deletion Instructions
           </a>{' '}
           page.

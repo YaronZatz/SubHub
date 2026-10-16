@@ -31,7 +31,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       <div className="min-h-screen flex flex-col">
         <WebNavbar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#4A7CC7]/20 border-t-[#4A7CC7] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-brand-600/20 border-t-brand-600 rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -41,10 +41,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     return (
       <>
         {/* Auth wall — visible briefly behind the modal */}
-        <div className="min-h-screen flex flex-col bg-slate-50">
+        <div className="min-h-screen flex flex-col bg-brand-50">
           <WebNavbar />
           <div className="flex-1 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-slate-200 rounded-full" />
+            <div className="w-8 h-8 border-4 border-line rounded-full" />
           </div>
         </div>
 

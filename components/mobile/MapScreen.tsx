@@ -22,6 +22,11 @@ import {
   DateMode, RentTerm, Language, CurrencyCode,
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
+import { matchesFreeText } from '@/lib/searchMatch';
+import { listingTitle } from '@/lib/locationUtils';
+import { homeCopy } from '@/lib/homeCopy';
+import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
+import Logo from '@/components/shared/Logo';
 
 const MapVisualizer = dynamic(
   () => import('@/components/MapVisualizer'),
@@ -66,9 +71,8 @@ function getBedroomCount(s: Sublet): number | null {
   return s.parsedRooms?.bedrooms ?? s.rooms?.bedrooms ?? null;
 }
 
-function getCardTitle(s: Sublet, unknownLocation: string): string {
-  const parts = [s.neighborhood, s.city].filter(Boolean);
-  return parts.length > 0 ? parts.join(', ') : (s.location || unknownLocation);
+function getCardTitle(s: Sublet, unknownLocation: string, lang: string): string {
+  return listingTitle(s, lang, unknownLocation);
 }
 
 function getDateRange(s: Sublet, t: { fromDate: string; availableNow: string }): string {
@@ -91,16 +95,16 @@ function PriceSlider({ minVal, maxVal, onChange }: {
     'absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer pointer-events-none',
     '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none',
     '[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full',
-    '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#4A7CC7]',
+    '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-brand-600',
     '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-runnable-track]:bg-transparent',
     '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5',
-    '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2',
-    '[&::-moz-range-thumb]:border-[#4A7CC7] [&::-moz-range-thumb]:shadow-md [&::-moz-range-track]:bg-transparent',
+    '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border',
+    '[&::-moz-range-thumb]:border-brand-600 [&::-moz-range-thumb]:shadow-md [&::-moz-range-track]:bg-transparent',
   ].join(' ');
   return (
     <div className="relative h-5 mt-2">
-      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-slate-200 rounded-full pointer-events-none">
-        <div className="absolute h-full bg-[#4A7CC7] rounded-full"
+      <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-brand-100 rounded-full pointer-events-none">
+        <div className="absolute h-full bg-brand-600 rounded-full"
           style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }} />
       </div>
       <input type="range" min={0} max={PRICE_MAX} step={PRICE_STEP} value={minVal}
@@ -131,23 +135,23 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
   const { language } = useLanguage();
   const t = translations[language];
 
-  const sLabel = 'text-xs font-bold uppercase tracking-widest text-slate-500';
+  const sLabel = 'text-xs font-semibold uppercase tracking-[0.06em] text-muted';
   const iconBtnCls = (active: boolean) =>
-    `flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${
-      active ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600'
+    `flex flex-col items-center gap-2 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+      active ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line text-ink'
     }`;
   const pillCls = (active: boolean) =>
     `whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
-      active ? 'bg-[#4A7CC7] text-white shadow-sm' : 'bg-slate-100 text-slate-600'
+      active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600'
     }`;
 
   return (
     <>
-      {open && <div className="fixed inset-0 bg-slate-900/40 z-[55] backdrop-blur-[2px]" onClick={onClose} />}
-      <aside className={`fixed top-0 right-0 bottom-0 z-[60] w-full max-w-[480px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">{t.refineSearch}</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors">
+      {open && <div className="fixed inset-0 bg-ink/40 z-[55]" onClick={onClose} />}
+      <aside className={`fixed top-0 right-0 bottom-0 z-[60] w-full max-w-[480px] bg-white shadow-[0_0_40px_rgba(17,26,36,0.18)] flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="px-6 py-5 border-b border-line flex items-center justify-between shrink-0">
+          <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{t.refineSearch}</h2>
+          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -159,7 +163,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
-              <span className="text-sm font-semibold text-[#4A7CC7]">
+              <span className="text-sm font-semibold tabular-nums text-brand-700">
                 ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
             </div>
@@ -212,10 +216,10 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
                 { label: '3+', value: 3 }, { label: '4+', value: 4 },
               ]).map(opt => (
                 <button key={opt.label} onClick={() => set({ minRooms: opt.value })}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all ${
+                  className={`px-5 py-2 rounded-full text-sm font-semibold border transition-all ${
                     filters.minRooms === opt.value
-                      ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]'
-                      : 'border-slate-200 text-slate-600'
+                      ? 'border-brand-600 bg-brand-50 text-brand-700'
+                      : 'border-line text-ink'
                   }`}>
                   {opt.label}
                 </button>
@@ -228,24 +232,24 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex items-center justify-between">
               <span className={sLabel}>{t.moveInDate}</span>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">{t.flexible}</span>
+                <span className="text-xs text-muted font-medium">{t.flexible}</span>
                 <button
                   onClick={() => set({ dateMode: filters.dateMode === DateMode.FLEXIBLE ? DateMode.EXACT : DateMode.FLEXIBLE })}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-[#4A7CC7]' : 'bg-slate-200'}`}>
+                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-brand-600' : 'bg-line'}`}>
                   <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${filters.dateMode === DateMode.FLEXIBLE ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.start}</p>
+              <div className="p-3 rounded-xl border border-line focus-within:border-brand-600 transition-colors">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-1">{t.start}</p>
                 <input type="date" value={filters.startDate || ''} onChange={e => set({ startDate: e.target.value })}
-                  className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
+                  className="bg-transparent border-none p-0 text-sm font-medium text-ink outline-none w-full" />
               </div>
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.end}</p>
+              <div className="p-3 rounded-xl border border-line focus-within:border-brand-600 transition-colors">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted mb-1">{t.end}</p>
                 <input type="date" value={filters.endDate || ''} onChange={e => set({ endDate: e.target.value })}
-                  className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
+                  className="bg-transparent border-none p-0 text-sm font-medium text-ink outline-none w-full" />
               </div>
             </div>
           </section>
@@ -271,8 +275,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <span className={sLabel}>{t.postQuality}</span>
             <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600'}`}>
-              <span>💰</span> {t.onlyWithPrice}
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line text-ink'}`}>
+              {t.onlyWithPrice}
             </button>
           </section>
 
@@ -289,20 +293,20 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
                 <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
                   <input type="checkbox" checked={!!(filters.amenities?.[opt.key])}
                     onChange={e => setAmenity(opt.key, e.target.checked)}
-                    className="w-5 h-5 rounded border-slate-300 text-[#4A7CC7] focus:ring-[#4A7CC7]/20 cursor-pointer" />
-                  <span className="text-sm text-slate-700 font-medium group-hover:text-[#4A7CC7] transition-colors">{opt.label}</span>
+                    className="w-5 h-5 rounded border-line accent-brand-600 cursor-pointer" />
+                  <span className="text-sm text-ink group-hover:text-brand-700 transition-colors">{opt.label}</span>
                 </label>
               ))}
             </div>
           </section>
         </div>
 
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
-          <button onClick={onClear} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
+        <div className="px-6 py-4 bg-white border-t border-line flex items-center justify-between shrink-0">
+          <button onClick={onClear} className="text-sm font-semibold text-muted hover:text-ink transition-colors">
             {t.clearAll}
           </button>
           <button onClick={onClose}
-            className="flex items-center gap-2 px-7 py-3.5 bg-[#4A7CC7] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#4A7CC7]/25 hover:bg-[#3b66a6] transition-all active:scale-95">
+            className="flex items-center gap-2 h-12 px-6 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors">
             {t.showResults.replace('{n}', resultCount.toLocaleString())}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -333,7 +337,7 @@ function MiniPicker({ value, options, onChange }: {
       )}
       <button
         onClick={() => setOpen(v => !v)}
-        className="relative z-50 flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-200 rounded-full text-xs font-bold text-slate-700 transition-colors">
+        className="relative z-50 flex h-10 items-center gap-1.5 rounded-[10px] border border-line bg-white px-2.5 text-[13px] font-medium text-ink transition-colors">
         {selected?.display ?? selected?.label ?? value}
         <svg className={`w-2.5 h-2.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
@@ -341,14 +345,14 @@ function MiniPicker({ value, options, onChange }: {
         </svg>
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-1.5 bg-white border border-slate-200 rounded-2xl shadow-xl py-1.5 z-50 min-w-[90px] overflow-hidden">
+        <div className="absolute top-full end-0 mt-1.5 bg-white border border-line rounded-xl shadow-[0_12px_32px_rgba(17,26,36,0.14)] py-1.5 z-50 min-w-[90px] overflow-hidden">
           {options.map(opt => (
             <button key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`w-full text-left px-3.5 py-2.5 text-xs font-bold transition-colors flex items-center gap-2 ${
                 opt.value === value
-                  ? 'text-[#4A7CC7] bg-[#4A7CC7]/5'
-                  : 'text-slate-700 hover:bg-slate-50'
+                  ? 'text-brand-700 bg-brand-50'
+                  : 'text-ink hover:bg-brand-50'
               }`}>
               {opt.display ?? opt.label}
             </button>
@@ -374,6 +378,21 @@ export function setInitialMobileMapCity(city: string, center: { lat: number; lng
   };
 }
 
+/** Call before router.push('/map') to pre-seed a free-text search with optional dates / budget. */
+export function setInitialMobileMapSearch(
+  query: string,
+  extra: Partial<Pick<Filters, 'startDate' | 'endDate' | 'maxPrice'>> = {},
+  center: { lat: number; lng: number; zoom?: number } | null = null,
+) {
+  _pendingMobileMapState = {
+    filters: { ...INITIAL_FILTERS, ...extra },
+    searchQuery: query,
+    selectedId: undefined,
+    cityFlyTo: center,
+    sheetHeight: SNAP_HANDLE,
+  };
+}
+
 interface MobileMapSavedState {
   filters: Filters;
   searchQuery: string;
@@ -382,65 +401,89 @@ interface MobileMapSavedState {
   sheetHeight: number;
 }
 
+function useCardModel(s: Sublet) {
+  const { language } = useLanguage();
+  const t = translations[language];
+  const copy = homeCopy(language);
+  const postTs = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
+  const hoursAgo = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
+  const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
+  const isNew = hoursAgo < 24;
+  return {
+    language, t, copy, isNew,
+    typeLabel: t.subletTypes[s.type],
+    freshLabel: isNew
+      ? t.addedXhAgo.replace('{x}', String(hoursAgo))
+      : t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo)),
+    dateRange: formatDateRange(s.startDate, s.endDate, language) ?? (s.immediateAvailability ? copy.availableNow : null),
+    timeline: timelineWindow(s.startDate, s.endDate, language),
+    title: getCardTitle(s, t.unknownLocation, language),
+  };
+}
+
+function FreshBadge({ isNew, label, className = '' }: { isNew: boolean; label: string; className?: string }) {
+  return (
+    <span className={`pointer-events-none inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-semibold ${isNew ? 'bg-accent-100 text-accent-700' : 'bg-white text-ink'} ${className}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${isNew ? 'bg-accent-500' : 'bg-brand-200'}`} />
+      {label}
+    </span>
+  );
+}
+
+function HeartButton({ isSaved, onSave, className = '' }: { isSaved: boolean; onSave: (e: React.MouseEvent) => void; className?: string }) {
+  return (
+    <button
+      onClick={onSave}
+      aria-label={isSaved ? 'Unsave listing' : 'Save listing'}
+      className={`flex h-9 w-9 items-center justify-center rounded-full bg-white transition-colors ${isSaved ? 'text-accent-600' : 'text-ink'} ${className}`}
+    >
+      <svg className="h-4 w-4" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+      </svg>
+    </button>
+  );
+}
+
 function SelectedCard({ sublet: s, currency, isSaved, onSave, onNavigate }: {
   sublet: Sublet; currency: string; isSaved: boolean;
   onSave: (e: React.MouseEvent) => void;
   onNavigate: () => void;
 }) {
-  const { language } = useLanguage();
-  const t = translations[language];
-  const hasAI    = !!(s.ai_summary || s.parsedAmenities || s.parsedRooms || s.rooms);
-  const dateRange = getDateRange(s, t);
+  const m = useCardModel(s);
 
   return (
-    <div className="px-3 pt-0 pb-2">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 flex gap-3 p-2.5">
-        {/* Photo */}
-        <div className="relative w-[100px] aspect-square rounded-xl overflow-hidden shrink-0">
+    <div className="px-4 pb-2">
+      <div className="flex gap-3 rounded-2xl border border-line bg-white p-2.5">
+        <div className="relative aspect-square w-[104px] shrink-0 overflow-hidden rounded-xl">
           <ListingCarousel id={s.id} images={s.images} sourceUrl={s.sourceUrl}
             photoCount={s.photoCount} aspectRatio="aspect-square" />
+          <FreshBadge isNew={m.isNew} label={m.freshLabel} className="absolute start-1.5 top-1.5 z-20" />
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between">
-          <div className="flex items-start justify-between gap-1">
-            <p className="font-black text-slate-900 text-sm leading-snug">{getCardTitle(s, t.unknownLocation)}</p>
-            <button onClick={onSave}
-              className={`w-7 h-7 shrink-0 flex items-center justify-center transition-colors ${
-                isSaved ? 'text-red-500' : 'text-slate-300'
-              }`}>
-              <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'}
-                viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            </button>
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-1.5">
+            {m.typeLabel && <span className="truncate rounded-md bg-brand-100 px-1.5 py-px text-[11px] font-semibold text-brand-700">{m.typeLabel}</span>}
+            <HeartButton isSaved={isSaved} onSave={onSave} className="-me-1 -mt-1 shrink-0 border border-line" />
           </div>
-
-          {s.location && (
-            <p className="text-xs text-slate-500 truncate mt-0.5">{s.location}</p>
+          <p className="truncate font-display text-[17px] font-bold leading-tight text-ink">{m.title}</p>
+          {s.price > 0 ? (
+            <p className="text-base font-bold tabular-nums text-ink">
+              {formatPrice(s.price, currency as CurrencyCode, m.language, s.currency)}
+              <span className="ms-0.5 text-xs font-normal text-muted">{m.copy.perMonth}</span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted">{m.copy.priceOnRequest}</p>
           )}
-
-          {dateRange && (
-            <div className="inline-flex items-center gap-1 bg-slate-100 rounded-full px-2.5 py-1 w-fit mt-1.5">
-              <svg className="w-3 h-3 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <span className="text-[10px] font-semibold text-slate-600 whitespace-nowrap">{dateRange}</span>
+          {m.dateRange && <p className="text-xs text-muted">{m.dateRange}</p>}
+          {m.timeline && (
+            <div className="relative h-1.5 rounded-full bg-brand-100" aria-hidden="true">
+              <div className="absolute inset-y-0 rounded-full bg-brand-600" style={{ insetInlineStart: `${m.timeline.left}%`, width: `${m.timeline.width}%` }} />
             </div>
           )}
-
-          <div className="mt-2 space-y-2">
-            <div>
-              <span className="text-base font-black text-[#4A7CC7]">
-                {formatPrice(s.price, currency as CurrencyCode, 'en-US', s.currency)}
-              </span>
-              <span className="text-slate-400 text-xs ml-1">/mo</span>
-            </div>
-            <Link href={`/listing/${s.id}`} onClick={onNavigate}
-              className="block text-center py-1.5 bg-[#F5831F] text-white text-xs font-black rounded-full shadow-sm active:opacity-80 transition-opacity">
-              View Details
-            </Link>
-          </div>
+          <Link href={`/listing/${s.id}`} onClick={onNavigate}
+            className="mt-1 flex h-10 items-center justify-center rounded-[10px] bg-brand-600 text-sm font-semibold text-white active:bg-brand-700">
+            {m.copy.viewDetails}
+          </Link>
         </div>
       </div>
     </div>
@@ -453,63 +496,38 @@ function MiniCard({ sublet: s, isSelected, isSaved, currency, onTap, onSave, onN
   sublet: Sublet; isSelected: boolean; isSaved: boolean; currency: string;
   onTap: () => void; onSave: (e: React.MouseEvent) => void; onNavigate: () => void;
 }) {
-  const { language } = useLanguage();
-  const t = translations[language];
-  const isTaken   = s.status === ListingStatus.TAKEN;
-  const dateRange = getDateRange(s, t);
-  const postTs    = s.postedAt ? (new Date(s.postedAt).getTime() || s.createdAt) : s.createdAt;
-  const hoursAgo  = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
-  const daysAgo   = Math.max(1, Math.floor(hoursAgo / 24));
-  const isNew     = hoursAgo < 24;
+  const m = useCardModel(s);
+  const isTaken = s.status === ListingStatus.TAKEN;
 
   return (
     <div
-      className={`relative rounded-2xl overflow-hidden shadow-md flex-shrink-0 w-48 cursor-pointer transition-all duration-200
-        ${isSelected ? 'ring-2 ring-[#4A7CC7] shadow-xl shadow-[#4A7CC7]/25 scale-[1.02]' : ''}
-        ${isTaken ? 'opacity-55' : ''}`}
+      className={`relative w-52 flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border bg-white transition-colors ${
+        isSelected ? 'border-accent-500 ring-2 ring-accent-500' : 'border-line'
+      } ${isTaken ? 'opacity-60' : ''}`}
       onClick={onTap}>
       <Link href={`/listing/${s.id}`} className="block" onClick={e => { e.stopPropagation(); onNavigate(); }}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <ListingCarousel id={s.id} images={s.images} sourceUrl={s.sourceUrl}
             photoCount={s.photoCount} aspectRatio="aspect-[4/3]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/30 pointer-events-none z-10" />
-          <div className="absolute bottom-2 left-2 z-20 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-0.5">
-            <span className="text-[11px] font-black text-slate-900">
-              {formatPrice(s.price, currency as CurrencyCode, 'en-US', s.currency)}
-              <span className="text-slate-400 font-normal text-[10px] ml-0.5">/mo</span>
-            </span>
-          </div>
-          {/* Time-ago badge — top left */}
-          {isNew ? (
-            <div className="absolute top-2 left-2 z-20 flex items-center gap-1 bg-cyan-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100 pointer-events-none">
-              <span className="w-1 h-1 bg-white rounded-full" />
-              {t.addedXhAgo.replace('{x}', String(hoursAgo))}
-            </div>
-          ) : (
-            <div className="absolute top-2 left-2 z-20 bg-slate-500/80 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
-              {t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo))}
-            </div>
-          )}
+          <FreshBadge isNew={m.isNew} label={m.freshLabel} className="absolute start-2 top-2 z-20" />
           {isTaken && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30 pointer-events-none">
-              <span className="text-white text-[10px] font-bold border border-white/40 rounded-full px-3 py-1">Taken</span>
+            <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-ink/40">
+              <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-ink">{m.copy.taken}</span>
             </div>
           )}
         </div>
-        <div className="p-2.5 bg-white">
-          <p className="font-bold text-slate-900 text-xs truncate">{getCardTitle(s, t.unknownLocation)}</p>
-          {dateRange && <p className="text-[10px] text-slate-400 mt-0.5 truncate">{dateRange}</p>}
+        <div className="flex flex-col gap-1 p-2.5">
+          <div className="flex items-center justify-between gap-1.5">
+            {m.typeLabel && <span className="truncate rounded-[5px] bg-brand-100 px-1.5 py-px text-[11px] font-semibold text-brand-700">{m.typeLabel}</span>}
+            {s.price > 0
+              ? <span className="shrink-0 text-[15px] font-bold tabular-nums text-ink">{formatPrice(s.price, currency as CurrencyCode, m.language, s.currency)}</span>
+              : <span className="shrink-0 text-[11px] text-muted">{m.copy.priceOnRequest}</span>}
+          </div>
+          <p className="truncate font-display text-[15px] font-bold text-ink">{m.title}</p>
+          {m.dateRange && <p className="truncate text-[11px] text-muted">{m.dateRange}</p>}
         </div>
       </Link>
-      <button onClick={onSave}
-        className={`absolute top-2 right-2 z-30 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
-          isSaved ? 'bg-white text-red-500 shadow-sm' : 'bg-black/25 backdrop-blur-sm text-white'
-        }`}>
-        <svg className="w-3 h-3" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24"
-          stroke="currentColor" strokeWidth={2.2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-        </svg>
-      </button>
+      <HeartButton isSaved={isSaved} onSave={onSave} className="absolute end-2 top-2 z-30" />
     </div>
   );
 }
@@ -720,12 +738,7 @@ export default function MapScreen() {
   // ── Filtering ───────────────────────────────────────────────────────────────
   const filteredSublets = useMemo(() => {
     return sublets.filter(s => {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch = !q
-        || s.location.toLowerCase().includes(q)
-        || s.originalText.toLowerCase().includes(q)
-        || (s.city?.toLowerCase().includes(q))
-        || (s.neighborhood?.toLowerCase().includes(q));
+      const matchesSearch = matchesFreeText(s, searchQuery);
 
       const matchesPrice  = s.price >= filters.minPrice && s.price <= filters.maxPrice;
       const matchesStatus = filters.showTaken || s.status !== ListingStatus.TAKEN;
@@ -833,9 +846,19 @@ export default function MapScreen() {
   const showListingStrip = showList || (showCard && !selectedSublet && !isDragging);
 
   // ── Filter chip active states ────────────────────────────────────────────────
-  const typeActive  = !!filters.type;
-  const priceActive = filters.minPrice !== 0 || filters.maxPrice !== PRICE_MAX;
-  const datesActive = !!filters.startDate || !!filters.endDate;
+  const copy = homeCopy(language);
+  const quickFilters = [
+    { key: 'entire', label: t.subletTypes[SubletType.ENTIRE], active: filters.type === SubletType.ENTIRE,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.ENTIRE ? undefined : SubletType.ENTIRE })) },
+    { key: 'room', label: t.subletTypes[SubletType.ROOMMATE], active: filters.type === SubletType.ROOMMATE,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.ROOMMATE ? undefined : SubletType.ROOMMATE })) },
+    { key: 'studio', label: t.subletTypes[SubletType.STUDIO], active: filters.type === SubletType.STUDIO,
+      toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.STUDIO ? undefined : SubletType.STUDIO })) },
+    { key: 'pets', label: copy.quickPets, active: !!filters.amenities?.petFriendly,
+      toggle: () => setFilters(f => ({ ...f, amenities: { ...f.amenities, petFriendly: !f.amenities?.petFriendly } })) },
+    { key: 'today', label: copy.quickToday, active: filters.postedWithin === '24h',
+      toggle: () => setFilters(f => ({ ...f, postedWithin: f.postedWithin === '24h' ? 'all' : '24h' })) },
+  ];
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -843,12 +866,12 @@ export default function MapScreen() {
     <div className="h-full flex flex-col overflow-hidden bg-white">
 
       {/* ── Header ── */}
-      <div className="bg-white shrink-0 px-4 pt-4 pb-3 space-y-3 border-b border-slate-100">
+      <div className="bg-white shrink-0 px-4 pt-3 pb-3 space-y-2.5 border-b border-line">
 
         {/* Row 1: Logo + Pickers + Avatar */}
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center shrink-0">
-            <img src="/logo.png" alt="SubHub" className="h-16 w-auto mix-blend-multiply" />
+          <Link href="/" className="flex items-center shrink-0" aria-label="SubHub home">
+            <Logo size="sm" />
           </Link>
 
           <div className="flex-1" />
@@ -856,10 +879,10 @@ export default function MapScreen() {
           <MiniPicker
             value={currency}
             options={[
-              { value: CurrencyCode.ILS, label: '₪ ILS', display: <><span className="font-black text-[#4A7CC7]">₪</span> ILS</> },
-              { value: CurrencyCode.USD, label: '$ USD', display: <><span className="font-black text-[#4A7CC7]">$</span> USD</> },
-              { value: CurrencyCode.EUR, label: '€ EUR', display: <><span className="font-black text-[#4A7CC7]">€</span> EUR</> },
-              { value: CurrencyCode.GBP, label: '£ GBP', display: <><span className="font-black text-[#4A7CC7]">£</span> GBP</> },
+              { value: CurrencyCode.ILS, label: '₪ ILS', display: <span className="font-semibold text-brand-600">₪</span> },
+              { value: CurrencyCode.USD, label: '$ USD', display: <span className="font-semibold text-brand-600">$</span> },
+              { value: CurrencyCode.EUR, label: '€ EUR', display: <span className="font-semibold text-brand-600">€</span> },
+              { value: CurrencyCode.GBP, label: '£ GBP', display: <span className="font-semibold text-brand-600">£</span> },
             ]}
             onChange={v => setCurrency(v as CurrencyCode)}
           />
@@ -883,11 +906,11 @@ export default function MapScreen() {
           {user ? (
             <div className="relative">
               <button onClick={() => setProfileOpen(v => !v)}
-                className="w-9 h-9 rounded-full overflow-hidden border-2 border-slate-200 focus:outline-none">
+                className="w-10 h-10 rounded-full overflow-hidden border border-line focus:outline-none" aria-label="Account menu">
                 {firebaseUser?.photoURL ? (
                   <img src={firebaseUser.photoURL} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-[#4A7CC7] flex items-center justify-center text-white text-xs font-black">
+                  <div className="w-full h-full bg-brand-600 flex items-center justify-center text-white text-xs font-black">
                     {initials}
                   </div>
                 )}
@@ -916,7 +939,7 @@ export default function MapScreen() {
             </div>
           ) : (
             <button onClick={() => setHeaderAuthOpen(true)}
-              className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
+              className="w-10 h-10 rounded-full border border-line bg-white flex items-center justify-center text-ink" aria-label="Sign in">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -924,68 +947,51 @@ export default function MapScreen() {
           )}
         </div>
 
-        {/* Row 2: Search */}
-        <SearchAutocomplete
-          value={searchQuery}
-          onChange={setSearchQuery}
-          sublets={sublets}
-          placeholder={t.searchPlaceholder}
-          className="w-full"
-          inputClassName="w-full py-3 pl-11 pr-4 text-sm bg-slate-100 rounded-2xl border-2 border-transparent focus:border-[#4A7CC7] focus:bg-white transition-all focus:outline-none font-medium text-slate-700 placeholder:text-slate-400"
-          onCitySelect={city => {
-            const center = CITY_CENTERS[city];
-            if (center) setCityFlyTo(center);
-          }}
-        />
-
-        {/* Row 3: Filter chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {/* All Filters — leftmost */}
+        {/* Row 2: Search + filters */}
+        <div className="flex gap-2">
+          <SearchAutocomplete
+            value={searchQuery}
+            onChange={setSearchQuery}
+            sublets={sublets}
+            placeholder={copy.searchPlaceholderShort}
+            className="min-w-0 flex-1"
+            inputClassName="h-12 w-full rounded-[14px] border border-line bg-white text-[15px] font-medium text-ink outline-none transition-colors placeholder:text-muted/70 focus:border-brand-600"
+            onCitySelect={city => {
+              const center = CITY_CENTERS[city];
+              if (center) setCityFlyTo(center);
+            }}
+          />
           <button
             onClick={() => setDrawerOpen(true)}
-            className={`relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full shrink-0 transition-all duration-150 active:scale-95 text-[13px] font-medium ${
-              activeFilterCount > 0
-                ? 'bg-[#4A7CC7] text-white font-semibold shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border transition-colors ${
+              activeFilterCount > 0 ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-line bg-white text-ink'
             }`}
-            aria-label="All filters"
+            aria-label={activeFilterCount > 0 ? `${t.filters} (${activeFilterCount})` : t.filters}
           >
-            <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              <circle cx="8"  cy="6"  r="1.5" fill="currentColor" stroke="none" />
-              <circle cx="16" cy="12" r="1.5" fill="currentColor" stroke="none" />
-              <circle cx="10" cy="18" r="1.5" fill="currentColor" stroke="none" />
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path strokeLinecap="round" d="M4 6h16M7 12h10M10 18h4" />
             </svg>
-            Filters
             {activeFilterCount > 0 && (
-              <span className="w-4 h-4 bg-white/20 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-500 px-1 text-[11px] font-bold text-accent-ink">
                 {activeFilterCount}
               </span>
             )}
           </button>
+        </div>
 
-          {/* Divider */}
-          <div className="w-px h-5 bg-slate-200 shrink-0 mx-0.5" />
-
-          {([
-            { label: 'Type',  active: typeActive },
-            { label: 'Price', active: priceActive },
-            { label: 'Dates', active: datesActive },
-          ] as Array<{ label: string; active: boolean }>).map(chip => (
+        {/* Row 3: Quick filters */}
+        <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {quickFilters.map(q => (
             <button
-              key={chip.label}
-              onClick={() => setDrawerOpen(true)}
-              className={`flex items-center gap-1 px-3.5 py-1.5 rounded-full text-[13px] whitespace-nowrap shrink-0 transition-all duration-150 active:scale-95 ${
-                chip.active
-                  ? 'bg-[#4A7CC7] text-white font-semibold shadow-sm'
-                  : 'bg-slate-100 text-slate-600 font-medium hover:bg-slate-200'
+              key={q.key}
+              type="button"
+              aria-pressed={q.active}
+              onClick={q.toggle}
+              className={`h-9 shrink-0 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-medium transition-colors ${
+                q.active ? 'border-brand-600 bg-brand-600 text-white' : 'border-line bg-white text-ink'
               }`}
             >
-              {chip.active && <span className="w-1.5 h-1.5 rounded-full bg-white/70 shrink-0" />}
-              {chip.label}
-              <svg className={`w-3 h-3 shrink-0 ${chip.active ? 'opacity-70' : 'opacity-40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
+              {q.label}
             </button>
           ))}
         </div>
@@ -1018,10 +1024,10 @@ export default function MapScreen() {
 
         {/* Bottom Sheet */}
         <div
-          className="absolute left-0 right-0 bottom-0 bg-white rounded-t-3xl z-10 flex flex-col overflow-hidden"
+          className="absolute left-0 right-0 bottom-0 bg-white rounded-t-[20px] z-10 flex flex-col overflow-hidden"
           style={{
             height: sheetHeight,
-            boxShadow: sheetHeight > SNAP_HANDLE + 10 ? '0 -8px 32px rgba(0,0,0,0.12)' : 'none',
+            boxShadow: '0 -8px 24px rgba(0,0,0,0.08)',
             transition: isDragging
               ? 'none'
               : 'height 0.3s cubic-bezier(0.4,0,0.2,1), box-shadow 0.3s',
@@ -1031,7 +1037,7 @@ export default function MapScreen() {
           <div
             ref={handleRef}
             className="flex justify-center py-4 shrink-0 touch-none cursor-grab active:cursor-grabbing select-none">
-            <div className="w-9 h-1.5 bg-slate-300 rounded-full" />
+            <div className="w-10 h-1 bg-line rounded-full" />
           </div>
 
           {/* Card zone */}
@@ -1051,14 +1057,14 @@ export default function MapScreen() {
           {showListingStrip && (
             <>
               <div className="px-4 pb-2 shrink-0 flex items-center justify-between">
-                <p className="text-sm font-bold text-slate-800">
+                <p className="font-display text-lg font-extrabold text-ink">
                   {isLoading
-                    ? <span className="inline-block w-24 h-4 bg-slate-200 rounded-full animate-pulse" />
-                    : `${filteredSublets.length} rental${filteredSublets.length !== 1 ? 's' : ''}`}
+                    ? <span className="inline-block w-24 h-4 bg-brand-50 rounded animate-pulse" />
+                    : copy.resultsCount(filteredSublets.length)}
                 </p>
                 {activeFilterCount > 0 && (
-                  <button onClick={handleClearFilters} className="text-xs text-[#4A7CC7] font-semibold">
-                    Clear filters
+                  <button onClick={handleClearFilters} className="py-2 text-[13px] font-semibold text-brand-700">
+                    {copy.clearFilters}
                   </button>
                 )}
               </div>
@@ -1070,11 +1076,11 @@ export default function MapScreen() {
                 <div className="flex gap-3 h-full items-start">
                   {isLoading
                     ? Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="flex-shrink-0 w-48 rounded-2xl overflow-hidden animate-pulse">
-                          <div className="aspect-[4/3] bg-slate-200" />
-                          <div className="p-2.5 bg-white space-y-1.5">
-                            <div className="h-3 bg-slate-200 rounded w-3/4" />
-                            <div className="h-2 bg-slate-100 rounded w-1/2" />
+                        <div key={i} className="flex-shrink-0 w-52 overflow-hidden rounded-2xl border border-line bg-white animate-pulse">
+                          <div className="aspect-[4/3] bg-brand-50" />
+                          <div className="p-2.5 space-y-1.5">
+                            <div className="h-3 bg-brand-50 rounded w-3/4" />
+                            <div className="h-2 bg-brand-50 rounded w-1/2" />
                           </div>
                         </div>
                       ))
@@ -1082,14 +1088,12 @@ export default function MapScreen() {
                     ? (
                         <div className="flex items-center justify-center w-full py-8">
                           <div className="text-center">
-                            <svg className="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-slate-600 font-semibold text-sm">No listings found</p>
-                            {activeFilterCount > 0 && (
+                            <p className="font-display text-base font-bold text-ink">{copy.noResultsTitle}</p>
+                            <p className="mt-1 text-xs text-muted">{copy.noResultsBody}</p>
+                            {(activeFilterCount > 0 || searchQuery) && (
                               <button onClick={handleClearFilters}
-                                className="mt-2 text-xs text-[#4A7CC7] font-semibold">
-                                Clear filters
+                                className="mt-3 h-10 rounded-[10px] border border-line px-4 text-[13px] font-semibold text-brand-700">
+                                {copy.clearFilters}
                               </button>
                             )}
                           </div>

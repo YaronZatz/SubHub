@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { importLibrary } from '@/lib/googleMapsLoader';
+import { MAP_STYLES } from '@/lib/mapStyles';
 
 interface MiniMapProps {
   lat: number;
@@ -34,6 +35,8 @@ export default function MiniMap({ lat, lng, price, currency }: MiniMapProps) {
         fullscreenControl: false,
         zoomControl: false,
         gestureHandling: 'cooperative',
+        clickableIcons: false,
+        styles: MAP_STYLES,
       });
 
       // Price pill marker
@@ -47,7 +50,7 @@ export default function MiniMap({ lat, lng, price, currency }: MiniMapProps) {
       pin.onAdd = function () {
         const div = document.createElement('div');
         div.style.cssText = 'position:absolute;transform:translate(-50%,-50%);pointer-events:none';
-        div.innerHTML = `<div style="display:inline-flex;align-items:center;padding:5px 10px;background:#4A7CC7;color:white;border-radius:99px;font-size:11px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.25);border:2px solid white;white-space:nowrap;">${priceStr}</div>`;
+        div.innerHTML = `<div style="display:inline-flex;align-items:center;padding:6px 12px;background:#F6A54C;color:#3A2205;border-radius:99px;font-size:14px;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,0.22);white-space:nowrap;font-variant-numeric:tabular-nums;">${priceStr}</div>`;
         this._div = div;
         this.getPanes()!.floatPane.appendChild(div);
       };

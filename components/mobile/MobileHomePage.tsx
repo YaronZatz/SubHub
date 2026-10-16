@@ -1,21 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import WebNavbar from '@/components/web/WebNavbar';
 import MobileTabBar from '@/components/shared/MobileTabBar';
 import HomeListingCard from '@/components/web/HomeListingCard';
-import { setInitialMapCity } from '@/app/map/page';
-import { setInitialMobileMapCity } from '@/components/mobile/MapScreen';
-import { CITY_CENTERS } from '@/constants';
+import CityCarousel from '@/components/shared/CityCarousel';
+import { useMapSearch } from '@/hooks/useMapSearch';
+import { homeCopy } from '@/lib/homeCopy';
 import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
 const FEATURED_CITIES = ['Tel Aviv', 'Berlin', 'London'];
-const CITY_CHIP_CITIES = ['Tel Aviv', 'Berlin', 'London', 'Amsterdam', 'Paris'];
 
 interface MobileHomePageProps {
   onPostClick?: () => void;
@@ -33,26 +31,39 @@ interface MobileHomePageProps {
   activeFilterCount: number;
 }
 
+function CardSkeleton() {
+  return (
+    <div className="w-[220px] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="h-[130px] bg-brand-50" />
+      <div className="space-y-2 p-3">
+        <div className="flex justify-between gap-2">
+          <div className="h-4 w-16 rounded bg-brand-50" />
+          <div className="h-4 w-12 rounded bg-brand-50" />
+        </div>
+        <div className="h-3.5 w-28 rounded bg-brand-50" />
+        <div className="h-1.5 w-full rounded bg-brand-50" />
+      </div>
+    </div>
+  );
+}
+
 export function MobileHomePage({
   searchQuery,
   setSearchQuery,
-  handleCityFlyTo,
-  filteredSublets,
   toggleSaved,
   savedListingIds,
   onPostClick,
-  filters: _filters,
-  setFilters: _setFilters,
-  cityFlyTo: _cityFlyTo,
-  mapSelectedSubletId: _mapSelectedSubletId,
-  setMapSelectedSubletId: _setMapSelectedSubletId,
-  activeFilterCount: _activeFilterCount,
 }: MobileHomePageProps) {
   const { currency } = useCurrency();
   const { language } = useLanguage();
-  const router = useRouter();
+  const copy = homeCopy(language);
+  const { openCity, search } = useMapSearch();
   const [listingsByCity, setListingsByCity] = useState<Record<string, Sublet[]>>({});
   const [loading, setLoading] = useState(true);
+  const [openPanel, setOpenPanel] = useState<'dates' | 'budget' | null>(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budget, setBudget] = useState('');
 
   useEffect(() => {
     Promise.all(
@@ -67,133 +78,112 @@ export function MobileHomePage({
     });
   }, []);
 
-  const navigateToCity = (city: string) => {
-    const center = CITY_CENTERS[city];
-    if (center) {
-      setInitialMapCity(city, center);       // web map
-      setInitialMobileMapCity(city, center); // mobile map
-    }
-    setSearchQuery(city);
-    handleCityFlyTo(city);
-    router.push('/map');
+  const submitSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const maxPrice = Number(budget);
+    search(searchQuery, {
+      ...(startDate && endDate ? { startDate, endDate } : {}),
+      ...(maxPrice > 0 ? { maxPrice } : {}),
+    });
   };
 
   const activeCities = loading ? FEATURED_CITIES : FEATURED_CITIES.filter(city => (listingsByCity[city]?.length ?? 0) > 0);
+  const datesLabel = startDate && endDate ? `${startDate.slice(5)} → ${endDate.slice(5)}` : copy.anyDates;
+  const budgetLabel = Number(budget) > 0 ? `≤ ${Number(budget).toLocaleString()}` : copy.anyBudget;
+  const toggleBtn = (active: boolean) =>
+    `h-10 flex-1 rounded-[10px] border text-[13px] font-medium transition-colors ${
+      active ? 'border-brand-600 bg-brand-100 text-brand-700' : 'border-line bg-white text-ink'
+    }`;
 
   return (
-    <div className="font-sans bg-[#f6f7f8] text-slate-900 min-h-screen flex flex-col">
-      {/* Existing sticky navbar (logo + auth + currency/language) */}
+    <div className="flex min-h-screen flex-col bg-white font-sans text-ink">
       <WebNavbar />
 
-      {/* Scrollable content — padded for fixed tab bar */}
       <div className="flex-1 overflow-y-auto pb-24">
-
-        {/* Search hero */}
-        <div className="bg-[#0F172A] px-4 pt-6 pb-8">
-          <h1 className="text-2xl font-black text-white text-center mb-1">
-            Find your next sublet.
+        {/* Hero + search */}
+        <div className="flex flex-col gap-3.5 bg-brand-50 px-4 pb-5 pt-4">
+          <h1 className="font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.03em]">
+            {copy.headlineMobileLead}{' '}
+            <span className="text-brand-600 [box-shadow:inset_0_-8px_0_var(--color-accent-100)]">{copy.headlineMobileAccent}</span>
           </h1>
-          <p className="text-slate-400 text-xs text-center mb-5">
-            AI-structured listings from Facebook groups.
-          </p>
 
-          <SearchAutocomplete
-            value={searchQuery}
-            onChange={setSearchQuery}
-            sublets={[]}
-            onCitySelect={(city) => {
-              const center = CITY_CENTERS[city];
-              if (center) {
-                setInitialMapCity(city, center);
-                setInitialMobileMapCity(city, center);
-              }
-              setSearchQuery(city);
-              handleCityFlyTo(city);
-              router.push('/map');
-            }}
-            className="w-full"
-            inputClassName="w-full py-3.5 px-4 bg-white rounded-2xl text-sm font-medium focus:ring-4 focus:ring-[#4A7CC7]/30 outline-none border-2 border-transparent focus:border-[#4A7CC7] transition-all shadow-xl"
-            placeholder="Search cities, neighborhoods..."
-          />
-
-          {/* City chips */}
-          <div className="flex flex-wrap gap-2 mt-4 justify-center">
-            {CITY_CHIP_CITIES.map(city => (
-              <button
-                key={city}
-                onClick={() => navigateToCity(city)}
-                className="px-3 py-1 rounded-full bg-white/10 text-white text-xs font-semibold hover:bg-white/20 active:bg-white/30 transition-colors border border-white/10"
-              >
-                {city}
+          <form onSubmit={submitSearch} className="flex flex-col gap-2">
+            <div className="flex min-h-14 items-center gap-2 rounded-[14px] border border-line bg-white py-2 pe-2 shadow-[0_6px_18px_rgba(0,0,0,0.06)]">
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                sublets={[]}
+                onCitySelect={(city) => search(city)}
+                className="min-w-0 flex-1"
+                inputClassName="w-full border-0 bg-transparent py-1 text-[15px] font-medium text-ink outline-none placeholder:text-muted/70"
+                placeholder={copy.searchPlaceholderShort}
+              />
+              <button type="submit" className="h-10 shrink-0 rounded-[10px] bg-brand-600 px-3.5 text-sm font-semibold text-white">
+                {copy.search}
               </button>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Stats strip */}
-        <div className="bg-[#0F172A] border-t border-slate-800 py-3 px-4">
-          <div className="flex justify-center items-center gap-5 text-xs font-medium text-slate-400">
-            <span><span className="text-[#F5831F] font-black">12,470+</span> posts</span>
-            <span className="w-px h-4 bg-slate-700" />
-            <span><span className="text-[#F5831F] font-black">10+</span> cities</span>
-            <span className="w-px h-4 bg-slate-700" />
-            <span className="text-[#F5831F] font-black">Daily</span>
-          </div>
-        </div>
+            <div className="flex gap-2">
+              <button type="button" aria-expanded={openPanel === 'dates'} onClick={() => setOpenPanel(p => (p === 'dates' ? null : 'dates'))} className={toggleBtn(openPanel === 'dates' || !!(startDate && endDate))}>
+                {datesLabel}
+              </button>
+              <button type="button" aria-expanded={openPanel === 'budget'} onClick={() => setOpenPanel(p => (p === 'budget' ? null : 'budget'))} className={toggleBtn(openPanel === 'budget' || Number(budget) > 0)}>
+                {budgetLabel}
+              </button>
+            </div>
 
-        {/* City listing rows */}
-        <main className="px-4 py-8 space-y-10">
-          {activeCities.map(city => (
-            <section key={city}>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-black text-slate-900">
-                  {city}
-                  {!loading && (listingsByCity[city]?.length ?? 0) > 0 && (
-                    <span className="ml-1.5 text-sm font-semibold text-slate-400">
-                      ({listingsByCity[city].length}+)
-                    </span>
-                  )}
-                </h2>
-                <button
-                  onClick={() => navigateToCity(city)}
-                  className="flex items-center gap-1 text-[#4A7CC7] text-xs font-bold"
-                >
-                  See all
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-3.5 h-3.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </button>
+            {openPanel === 'dates' && (
+              <div className="flex items-center gap-2 rounded-[10px] border border-line bg-white p-2">
+                <input type="date" aria-label={copy.whenLabel} value={startDate} onChange={e => setStartDate(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+                <span className="text-muted" aria-hidden="true">→</span>
+                <input type="date" aria-label={copy.whenLabel} value={endDate} min={startDate || undefined} onChange={e => setEndDate(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
               </div>
+            )}
+            {openPanel === 'budget' && (
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={500}
+                aria-label={copy.budgetLabel}
+                value={budget}
+                onChange={e => setBudget(e.target.value)}
+                placeholder={copy.budgetLabel}
+                className="h-11 rounded-[10px] border border-line bg-white px-3 text-sm outline-none focus:border-brand-600"
+              />
+            )}
+          </form>
+        </div>
 
-              <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 scrollbar-hide">
+        {/* City carousels */}
+        <main className="flex flex-col gap-6 px-4 pt-5">
+          {activeCities.map(city => {
+            const listings = listingsByCity[city] ?? [];
+            return (
+              <CityCarousel
+                key={city}
+                size="md"
+                title={city}
+                countLabel={!loading && listings.length > 0 ? String(listings.length >= 20 ? '20+' : listings.length) : undefined}
+                seeAllLabel={copy.seeAll}
+                onSeeAll={() => openCity(city)}
+              >
                 {loading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="w-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-md animate-pulse">
-                        <div className="h-36 bg-slate-200" />
-                        <div className="p-3 space-y-2">
-                          <div className="flex justify-between gap-2">
-                            <div className="h-4 w-16 bg-slate-200 rounded-full" />
-                            <div className="h-4 w-12 bg-slate-200 rounded-full" />
-                          </div>
-                          <div className="h-3 w-36 bg-slate-200 rounded" />
-                          <div className="h-3 w-24 bg-slate-200 rounded" />
-                        </div>
-                      </div>
-                    ))
-                  : (listingsByCity[city] ?? []).map(sublet => (
+                  ? Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
+                  : listings.map(sublet => (
                       <HomeListingCard
                         key={sublet.id}
+                        size="md"
                         sublet={sublet}
                         isSaved={savedListingIds.has(sublet.id)}
                         onToggleSave={(e) => toggleSaved(e, sublet.id)}
                         currency={currency}
                         language={language}
                       />
-                    ))
-                }
-              </div>
-            </section>
-          ))}
+                    ))}
+              </CityCarousel>
+            );
+          })}
         </main>
       </div>
 

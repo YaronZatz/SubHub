@@ -37,3 +37,5 @@ gen-lang-client-*.json
 # Claude Code
 .claude/
 *API Key*.txt
+# Playwright MCP screenshots/logs
+.playwright-mcp/

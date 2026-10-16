@@ -1,11 +1,16 @@
 import React from "react";
 import type { Metadata } from "next";
+import { Bricolage_Grotesque, IBM_Plex_Sans, IBM_Plex_Sans_Hebrew } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { CurrencyProvider } from "../contexts/CurrencyContext";
 import { LanguageProvider } from "../contexts/LanguageContext";
 import { SavedProvider } from "../contexts/SavedContext";
 import PlatformWrapper from "../components/shared/PlatformWrapper";
+
+const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
+const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-plex", display: "swap" });
+const plexHebrew = IBM_Plex_Sans_Hebrew({ subsets: ["hebrew"], weight: ["400", "500", "600", "700"], variable: "--font-plex-hebrew", display: "swap" });
 
 function getMetadataBase(): URL | undefined {
   try {
@@ -57,10 +62,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${bricolage.variable} ${plexSans.variable} ${plexHebrew.variable}`}>
       <head>
         <meta charSet="utf-8" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
         <script dangerouslySetInnerHTML={{
           __html: `window.process = window.process || { env: {} };`
         }} />

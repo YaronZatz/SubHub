@@ -1,7 +1,37 @@
 @import "tailwindcss";
 
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   One brand hue (SubHub blue) + one accent (apricot). Accent is reserved for
+   "post a sublet", "new" badges, the selected map pin and small highlights. */
 @theme {
-  --color-cyan-600: #3382C9;
+  --color-brand-50: #F3F8FD;
+  --color-brand-100: #E1EDFA;
+  --color-brand-200: #BDD6F2;
+  --color-brand-500: #3382C9;
+  --color-brand-600: #1F6BB3;
+  --color-brand-700: #18568F;
+  --color-brand-800: #134673;
+  --color-brand-900: #0D2A45;
+
+  --color-accent-50: #FFF8EF;
+  --color-accent-100: #FEF0E1;
+  --color-accent-200: #FBD9B0;
+  --color-accent-500: #F6A54C;
+  --color-accent-600: #E8902F;
+  --color-accent-700: #8A4B0B;
+  --color-accent-ink: #3A2205;
+
+  --color-ink: #111A24;
+  --color-muted: #56606B;
+  --color-line: #E4E8EC;
+
+  /* Legacy alias: older components use cyan-600 as the primary blue. */
+  --color-cyan-600: #1F6BB3;
+}
+
+@theme inline {
+  --font-sans: var(--font-plex), var(--font-plex-hebrew), system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-plex-hebrew), system-ui, sans-serif;
 }
 
 @utility scrollbar-hide {
@@ -10,27 +40,10 @@
   &::-webkit-scrollbar { display: none; }
 }
 
-:root {
-  --foreground-rgb: 15, 23, 42;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 248, 250, 252;
-}
-
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  font-family: 'Inter', sans-serif;
-}
-
-@media (max-width: 767px) {
-  body {
-    background: #fff;
-  }
+  color: var(--color-ink);
+  background: #fff;
+  font-family: var(--font-sans);
 }
 
 /* Critical layout fallbacks so main content shows in production if Tailwind is delayed or purged */
@@ -118,7 +131,7 @@ body {
 }
 
 .price-marker.selected {
-  transform: scale(1.2) translateY(-4px);
+  transform: scale(1.05) translateY(-2px);
   z-index: 1001 !important;
 }
 

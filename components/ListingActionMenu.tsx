@@ -133,18 +133,18 @@ export default function ListingActionMenu({
           type="button"
           onClick={() => setOpen(v => !v)}
           aria-label="Listing actions"
-          className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-lg font-bold"
+          className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-brand-50 rounded-xl transition-colors text-lg font-bold"
         >
           ···
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 min-w-[160px]">
+          <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-2xl shadow-xl border border-line py-1.5 min-w-[160px]">
             {canPause && (
               <button
                 type="button"
                 onClick={handlePause}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.pauseListing}
               </button>
@@ -153,7 +153,7 @@ export default function ListingActionMenu({
               <button
                 type="button"
                 onClick={handleResume}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.resumeListing}
               </button>
@@ -162,7 +162,7 @@ export default function ListingActionMenu({
               <button
                 type="button"
                 onClick={() => { setOpen(false); setPendingAction('fill'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.markAsFilled}
               </button>

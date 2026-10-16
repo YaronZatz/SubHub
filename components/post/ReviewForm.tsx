@@ -61,13 +61,13 @@ export default function ReviewForm({
             </select>
           </FL>
           <FL label={pm.typeLabel} required error={te(errors.type)}>
-            <select value={data.type} onChange={e => s('type', e.target.value as SubletType | '')} className={(errors.type ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
+            <select value={data.type} onChange={e => s('type', e.target.value as SubletType | '')} className={(errors.type ? 'border-red-300 bg-red-50 ' : 'border-line bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none  focus:border-brand-600 transition-all cursor-pointer'}>
               <option value="">—</option>
               {Object.values(SubletType).map(v => <option key={v} value={v}>{subletTypeLabels[v]}</option>)}
             </select>
           </FL>
           <FL label={pm.rentalDurationLabel} required error={te(errors.rentalDuration)}>
-            <select value={data.rentalDuration} onChange={e => s('rentalDuration', e.target.value as RentalDuration | '')} className={(errors.rentalDuration ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
+            <select value={data.rentalDuration} onChange={e => s('rentalDuration', e.target.value as RentalDuration | '')} className={(errors.rentalDuration ? 'border-red-300 bg-red-50 ' : 'border-line bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none  focus:border-brand-600 transition-all cursor-pointer'}>
               <option value="">—</option>
               <option value={RentalDuration.SUBLET}>{pm.rentalDurationSublet}</option>
               <option value={RentalDuration.SHORT_TERM}>{pm.rentalDurationShortTerm}</option>
@@ -91,10 +91,10 @@ export default function ReviewForm({
           )}
         </div>
         <label className="flex items-center gap-3 cursor-pointer select-none">
-          <div onClick={() => s('openEnded', !data.openEnded)} className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${data.openEnded ? 'bg-cyan-600' : 'bg-slate-200'}`}>
+          <div onClick={() => s('openEnded', !data.openEnded)} className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${data.openEnded ? 'bg-brand-600' : 'bg-brand-50'}`}>
             <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${data.openEnded ? 'translate-x-5' : 'translate-x-0'}`} />
           </div>
-          <span className="text-sm text-slate-600 font-medium">{pm.openEndedLabel}</span>
+          <span className="text-sm text-muted font-medium">{pm.openEndedLabel}</span>
         </label>
       </div>
 
@@ -109,7 +109,7 @@ export default function ReviewForm({
         <SectionHeading>{pm.descriptionLabel}</SectionHeading>
         <div className="space-y-3">
           <FL label={pm.descriptionLabel}>
-            <textarea value={data.description} onChange={e => s('description', e.target.value)} rows={3} className="w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all resize-none" />
+            <textarea value={data.description} onChange={e => s('description', e.target.value)} rows={3} className="w-full px-3.5 py-3 bg-white border border-line rounded-xl text-sm text-ink placeholder:text-muted/60 focus:outline-none focus:border-brand-600 transition-all resize-none" />
           </FL>
           <FL label={pm.sourceUrlLabel}>
             <input type="url" value={data.sourceUrl} onChange={e => s('sourceUrl', e.target.value)} placeholder="https://…" className={ic} />
@@ -123,10 +123,10 @@ export default function ReviewForm({
         {photosReadOnly ? (
           <div className="flex flex-wrap gap-2">
             {photos.map((src, i) => (
-              <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-100 group">
+              <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-brand-50 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt="" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => onPhotosChange(photos.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-black/60 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors">×</button>
+                <button type="button" onClick={() => onPhotosChange(photos.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-ink/70 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors">×</button>
               </div>
             ))}
           </div>
