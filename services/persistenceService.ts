@@ -124,22 +124,26 @@ export const persistenceService = {
 
   /**
    * Fetch a small set of active listings for a specific city — used by the homepage carousels.
-   * No orderBy to avoid needing a composite index; sorted client-side by createdAt.
+   * Uses the same createdAt cutoff as buildQuery so stale listings don't crowd out fresh ones
+   * (requires the status + city + createdAt composite index).
    */
   async fetchListingsByCity(city: string, count = 20): Promise<Sublet[]> {
     if (!db) return [];
     try {
+      const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
       const q = query(
         collection(db!, COLLECTION),
         where('status', '==', 'active'),
         where('city', '==', city),
+        where('createdAt', '>', cutoff),
+        orderBy('createdAt', 'desc'),
         limit(count)
       );
       const snapshot = await getDocs(q);
       const docs = snapshot.docs.map((d) =>
         listingDocumentToSublet(d.id, d.data() as Record<string, unknown>)
       );
-      return docs.filter(isRelevant).sort((a, b) => b.createdAt - a.createdAt);
+      return docs.filter(isRelevant);
     } catch (e) {
       console.error(`❌ fetchListingsByCity(${city}) failed:`, e);
       return [];
