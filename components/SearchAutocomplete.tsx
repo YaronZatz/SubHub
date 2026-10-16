@@ -108,11 +108,12 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         setHighlightedIndex(i => Math.max(i - 1, -1));
         break;
       case 'Enter':
-        e.preventDefault();
         if (highlightedIndex >= 0) {
+          e.preventDefault();
           const item = flatItems[highlightedIndex];
           if (item) select(item.label, item.sectionLabel);
         } else {
+          // Let Enter fall through so a surrounding <form> can submit free text.
           setIsOpen(false);
         }
         break;

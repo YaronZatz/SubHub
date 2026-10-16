@@ -53,7 +53,7 @@ function MobileInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors ${props.className ?? ''}`}
+      className={`w-full px-3 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/10 transition-colors ${props.className ?? ''}`}
     />
   );
 }
@@ -72,9 +72,9 @@ function ProgressDots({ step }: { step: number }) {
           key={s}
           className={`rounded-full transition-all duration-300 ${
             s === step
-              ? 'w-6 h-2 bg-[#4A7CC7]'
+              ? 'w-6 h-2 bg-brand-600'
               : s < step
-              ? 'w-2 h-2 bg-[#4A7CC7]/40'
+              ? 'w-2 h-2 bg-brand-600/40'
               : 'w-2 h-2 bg-slate-200'
           }`}
         />
@@ -112,7 +112,7 @@ function AiFields({
   );
 
   return (
-    <div className="mt-3 bg-[#4A7CC7]/5 border border-[#4A7CC7]/20 rounded-2xl p-4 space-y-3">
+    <div className="mt-3 bg-brand-600/5 border border-brand-600/20 rounded-2xl p-4 space-y-3">
       <div className="flex items-center gap-2">
         <span className="text-xs font-bold text-green-600">✓ AI extracted</span>
         <span className="text-xs text-slate-400">— tap any field to edit</span>
@@ -126,7 +126,7 @@ function AiFields({
               key={i}
               src={url}
               alt=""
-              className="h-16 w-24 object-cover rounded-xl shrink-0 border border-[#4A7CC7]/20"
+              className="h-16 w-24 object-cover rounded-xl shrink-0 border border-brand-600/20"
             />
           ))}
         </div>
@@ -172,7 +172,7 @@ function PreviewCard({
       {/* Image */}
       <div className="w-full h-44 relative" style={{ backgroundColor: '#d0dff5' }}>
         <div className="w-full h-full flex items-center justify-center">
-          <svg className="w-10 h-10 text-[#4A7CC7]/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <svg className="w-10 h-10 text-brand-600/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
@@ -189,7 +189,7 @@ function PreviewCard({
               {form.location || '—'}
             </p>
           </div>
-          <p className="text-lg font-black shrink-0" style={{ color: '#4A7CC7' }}>
+          <p className="text-lg font-black shrink-0" style={{ color: '#1F6BB3' }}>
             {sym}{form.price ? Number(form.price).toLocaleString() : '—'}
             <span className="text-xs font-medium text-slate-400">/mo</span>
           </p>
@@ -203,7 +203,7 @@ function PreviewCard({
           </p>
         )}
 
-        <span className="inline-block px-2.5 py-0.5 bg-[#4A7CC7]/10 text-[#4A7CC7] text-[11px] font-bold rounded-full">
+        <span className="inline-block px-2.5 py-0.5 bg-brand-600/10 text-brand-600 text-[11px] font-bold rounded-full">
           {typeLabel[form.type]}
         </span>
       </div>
@@ -211,7 +211,7 @@ function PreviewCard({
       {/* Contact summary */}
       {user && (
         <div className="mx-4 mb-4 px-3 py-2.5 bg-slate-50 rounded-xl flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#4A7CC7] flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
             {user.name?.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'U'}
           </div>
           <div className="min-w-0">
@@ -344,7 +344,7 @@ export function MobilePostScreen() {
   if (published) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-white px-6 pb-24 text-center">
-        <div className="w-16 h-16 rounded-full bg-[#4A7CC7] flex items-center justify-center mb-5">
+        <div className="w-16 h-16 rounded-full bg-brand-600 flex items-center justify-center mb-5">
           <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -354,7 +354,7 @@ export function MobilePostScreen() {
         <div className="w-full space-y-3">
           <button
             onClick={handleReset}
-            className="w-full py-3 rounded-2xl border border-[#4A7CC7] text-[#4A7CC7] text-sm font-bold hover:bg-blue-50 transition-colors"
+            className="w-full py-3 rounded-2xl border border-brand-600 text-brand-600 text-sm font-bold hover:bg-blue-50 transition-colors"
           >
             Post another listing
           </button>
@@ -408,14 +408,14 @@ export function MobilePostScreen() {
               <p className="text-lg font-black text-slate-900">What are you posting?</p>
 
               {/* Option A — selected */}
-              <div className="bg-white border-2 border-[#4A7CC7] rounded-2xl p-4 flex items-start gap-4" style={{ backgroundColor: '#f0f5ff' }}>
-                <div className="w-12 h-12 rounded-xl bg-[#4A7CC7]/15 flex items-center justify-center text-2xl shrink-0">🏠</div>
+              <div className="bg-white border-2 border-brand-600 rounded-2xl p-4 flex items-start gap-4" style={{ backgroundColor: '#f0f5ff' }}>
+                <div className="w-12 h-12 rounded-xl bg-brand-600/15 flex items-center justify-center text-2xl shrink-0">🏠</div>
                 <div>
                   <p className="font-black text-slate-900 text-sm">I have a place to rent</p>
                   <p className="text-xs text-slate-500 mt-0.5">List your flat, sublet or room</p>
                 </div>
-                <div className="ml-auto mt-0.5 w-5 h-5 rounded-full border-2 border-[#4A7CC7] flex items-center justify-center shrink-0">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#4A7CC7]" />
+                <div className="ml-auto mt-0.5 w-5 h-5 rounded-full border-2 border-brand-600 flex items-center justify-center shrink-0">
+                  <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />
                 </div>
               </div>
 
@@ -435,7 +435,7 @@ export function MobilePostScreen() {
           {step === 2 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 bg-[#4A7CC7]/10 text-[#4A7CC7] text-xs font-black rounded-full">✨ Gemini AI</span>
+                <span className="px-2.5 py-1 bg-brand-600/10 text-brand-600 text-xs font-black rounded-full">✨ Gemini AI</span>
                 <span className="text-xs text-slate-400">powered extraction</span>
               </div>
 
@@ -456,7 +456,7 @@ export function MobilePostScreen() {
               <button
                 onClick={handleAnalyze}
                 disabled={isAnalyzing || !pasteUrl.trim()}
-                className="w-full py-3 bg-[#4A7CC7] text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 bg-brand-600 text-white text-sm font-bold rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isAnalyzing ? (
                   <>
@@ -485,7 +485,7 @@ export function MobilePostScreen() {
                 <div
                   onClick={() => setConfirmed(v => !v)}
                   className={`mt-0.5 w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
-                    confirmed ? 'bg-[#4A7CC7] border-[#4A7CC7]' : 'border-slate-300 bg-white'
+                    confirmed ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'
                   }`}
                 >
                   {confirmed && (
@@ -496,7 +496,7 @@ export function MobilePostScreen() {
                 </div>
                 <span className="text-sm text-slate-600 leading-snug">
                   I confirm this is my listing and I have the right to publish it. I agree to SubHub's{' '}
-                  <span className="text-[#4A7CC7] font-semibold">terms of service</span>.
+                  <span className="text-brand-600 font-semibold">terms of service</span>.
                 </span>
               </label>
 
@@ -516,7 +516,7 @@ export function MobilePostScreen() {
         {step === 1 && (
           <button
             onClick={() => setStep(2)}
-            className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors hover:bg-[#3b66a6]"
+            className="flex-1 py-3.5 rounded-2xl bg-brand-600 text-white text-sm font-bold transition-colors hover:bg-brand-700"
           >
             Next →
           </button>
@@ -532,7 +532,7 @@ export function MobilePostScreen() {
             </button>
             <button
               onClick={() => setStep(3)}
-              className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold transition-colors hover:bg-[#3b66a6]"
+              className="flex-1 py-3.5 rounded-2xl bg-brand-600 text-white text-sm font-bold transition-colors hover:bg-brand-700"
             >
               Preview →
             </button>
@@ -550,7 +550,7 @@ export function MobilePostScreen() {
             <button
               onClick={handlePublish}
               disabled={isPublishing || !confirmed}
-              className="flex-1 py-3.5 rounded-2xl bg-[#4A7CC7] text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-3.5 rounded-2xl bg-brand-600 text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
               {isPublishing ? (
                 <>

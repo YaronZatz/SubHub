@@ -59,7 +59,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className={`w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#4A7CC7] focus:ring-2 focus:ring-[#4A7CC7]/10 transition-colors ${props.className ?? ''}`}
+      className={`w-full px-3 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-600/10 transition-colors ${props.className ?? ''}`}
     />
   );
 }
@@ -110,7 +110,7 @@ function AiExtractedFields({
   );
 
   return (
-    <div className="mt-4 bg-[#4A7CC7]/5 border border-[#4A7CC7]/20 rounded-xl p-4">
+    <div className="mt-4 bg-brand-600/5 border border-brand-600/20 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-4">
         <span className="text-green-600 font-bold text-sm">✓ AI extracted</span>
         <span className="text-slate-400 text-xs">— edit any field if needed</span>
@@ -277,7 +277,7 @@ export function WebPostPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-10 max-w-md w-full text-center space-y-5">
-          <div className="w-16 h-16 bg-[#4A7CC7] rounded-full flex items-center justify-center mx-auto">
+          <div className="w-16 h-16 bg-brand-600 rounded-full flex items-center justify-center mx-auto">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
@@ -289,7 +289,7 @@ export function WebPostPage() {
           <div className="flex flex-col gap-2 pt-2">
             <button
               onClick={() => { setPublishedId(null); setForm(BLANK_FORM); setPasteUrl(''); setAiResult(null); }}
-              className="w-full py-2.5 rounded-lg border border-[#4A7CC7] text-[#4A7CC7] text-sm font-bold hover:bg-blue-50 transition-colors"
+              className="w-full py-2.5 rounded-lg border border-brand-600 text-brand-600 text-sm font-bold hover:bg-blue-50 transition-colors"
             >
               Post another listing
             </button>
@@ -320,7 +320,7 @@ export function WebPostPage() {
         <Card>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">I want to…</p>
           <div className="flex gap-2">
-            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#4A7CC7] text-white text-sm font-bold">
+            <button className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-brand-600 text-white text-sm font-bold">
               🏠 List my place
             </button>
             <button disabled className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-100 text-slate-400 text-sm font-medium cursor-not-allowed">
@@ -349,7 +349,7 @@ export function WebPostPage() {
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing || !pasteUrl.trim()}
-            className="px-5 py-2.5 bg-[#4A7CC7] text-white text-sm font-bold rounded-lg hover:bg-[#3b66a6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-5 py-2.5 bg-brand-600 text-white text-sm font-bold rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {isAnalyzing ? (
               <>
@@ -378,10 +378,10 @@ export function WebPostPage() {
                 <div
                   onClick={() => setContactMode(mode)}
                   className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                    contactMode === mode ? 'border-[#4A7CC7]' : 'border-slate-300'
+                    contactMode === mode ? 'border-brand-600' : 'border-slate-300'
                   }`}
                 >
-                  {contactMode === mode && <div className="w-2 h-2 rounded-full bg-[#4A7CC7]" />}
+                  {contactMode === mode && <div className="w-2 h-2 rounded-full bg-brand-600" />}
                 </div>
                 <span className="text-sm text-slate-700">{label}</span>
               </label>
@@ -406,7 +406,7 @@ export function WebPostPage() {
           <div
             onClick={() => setConfirmed(v => !v)}
             className={`mt-0.5 w-5 h-5 rounded border-2 shrink-0 flex items-center justify-center transition-colors ${
-              confirmed ? 'bg-[#4A7CC7] border-[#4A7CC7]' : 'border-slate-300 bg-white'
+              confirmed ? 'bg-brand-600 border-brand-600' : 'border-slate-300 bg-white'
             }`}
           >
             {confirmed && (
@@ -417,7 +417,7 @@ export function WebPostPage() {
           </div>
           <span className="text-sm text-slate-600 leading-snug">
             I confirm this is my listing and I have the right to publish it. I agree to SubHub's{' '}
-            <span className="text-[#4A7CC7] font-semibold">terms of service</span>.
+            <span className="text-brand-600 font-semibold">terms of service</span>.
           </span>
         </label>
 
@@ -431,14 +431,14 @@ export function WebPostPage() {
         <div className="flex gap-3 pb-10">
           <button
             onClick={() => router.back()}
-            className="px-6 py-3 rounded-lg border border-[#4A7CC7] text-[#4A7CC7] text-sm font-bold hover:bg-blue-50 transition-colors"
+            className="px-6 py-3 rounded-lg border border-brand-600 text-brand-600 text-sm font-bold hover:bg-blue-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handlePublish}
             disabled={isPublishing || !confirmed}
-            className="flex-1 py-3 rounded-lg bg-[#4A7CC7] text-white text-sm font-bold hover:bg-[#3b66a6] disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-lg bg-brand-600 text-white text-sm font-bold hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
           >
             {isPublishing ? (
               <>

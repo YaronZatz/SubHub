@@ -11,6 +11,7 @@ import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 import MobileTabBar from '@/components/shared/MobileTabBar';
 import PostListingModal from '@/components/PostListingModal';
+import Logo from '@/components/shared/Logo';
 
 // ─── Small pill dropdown (currency / language) ────────────────────────────────
 
@@ -47,7 +48,7 @@ function PillDropdown({
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-colors bg-slate-100"
+        className="flex h-10 md:h-11 items-center gap-1.5 rounded-[10px] border border-line bg-white px-2.5 md:px-3 text-sm font-medium text-ink transition-colors hover:border-brand-200"
       >
         {selected?.display ?? selected?.label ?? value}
         <svg className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -61,7 +62,7 @@ function PillDropdown({
               key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false); }}
               className={`w-full text-left px-4 py-2.5 text-sm font-semibold transition-colors flex items-center gap-2 ${
-                opt.value === value ? 'bg-[#4A7CC7]/10 text-[#4A7CC7]' : 'text-slate-700 hover:bg-slate-50'
+                opt.value === value ? 'bg-brand-600/10 text-brand-600' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
               {opt.display ?? opt.label}
@@ -76,7 +77,7 @@ function PillDropdown({
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 
 // Flag image helper
-function Flag({ code, className = 'w-6 h-4 rounded-[2px] object-cover shadow-sm' }: { code: string; className?: string }) {
+function Flag({ code, className = 'hidden sm:block w-6 h-4 rounded-[2px] object-cover shadow-sm' }: { code: string; className?: string }) {
   return <img src={`https://flagcdn.com/w40/${code}.png`} alt={code} className={className} />;
 }
 
@@ -84,17 +85,17 @@ function Flag({ code, className = 'w-6 h-4 rounded-[2px] object-cover shadow-sm'
 function CurrencyDisplay({ symbol, code, color }: { symbol: string; code: string; color: string }) {
   return (
     <span className="flex items-center gap-1">
-      <span className="font-black" style={{ color }}>{symbol}</span>
-      <span>{code}</span>
+      <span className="font-semibold" style={{ color }}>{symbol}</span>
+      <span className="hidden sm:inline">{code}</span>
     </span>
   );
 }
 
 const CURRENCY_OPTIONS: PillOption[] = [
-  { value: CurrencyCode.ILS, label: '₪ ILS', display: <CurrencyDisplay symbol="₪" code="ILS" color="#4A7CC7" /> },
-  { value: CurrencyCode.USD, label: '$ USD', display: <CurrencyDisplay symbol="$" code="USD" color="#4A7CC7" /> },
-  { value: CurrencyCode.EUR, label: '€ EUR', display: <CurrencyDisplay symbol="€" code="EUR" color="#4A7CC7" /> },
-  { value: CurrencyCode.GBP, label: '£ GBP', display: <CurrencyDisplay symbol="£" code="GBP" color="#4A7CC7" /> },
+  { value: CurrencyCode.ILS, label: '₪ ILS', display: <CurrencyDisplay symbol="₪" code="ILS" color="#1F6BB3" /> },
+  { value: CurrencyCode.USD, label: '$ USD', display: <CurrencyDisplay symbol="$" code="USD" color="#1F6BB3" /> },
+  { value: CurrencyCode.EUR, label: '€ EUR', display: <CurrencyDisplay symbol="€" code="EUR" color="#1F6BB3" /> },
+  { value: CurrencyCode.GBP, label: '£ GBP', display: <CurrencyDisplay symbol="£" code="GBP" color="#1F6BB3" /> },
 ];
 
 const LANGUAGE_OPTIONS: PillOption[] = [
@@ -178,13 +179,13 @@ export default function WebNavbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
+      <nav className={`sticky top-0 z-50 w-full ${isOnHome ? 'bg-brand-50' : 'bg-white border-b border-line'}`}>
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4 h-20">
+          <div className="flex items-center gap-2 sm:gap-4 h-16 md:h-[72px]">
 
             {/* Logo — larger */}
             <Link href="/" className="shrink-0 flex items-center">
-              <img src="/logo.png" alt="SubHub" className="h-16 w-auto mix-blend-multiply" />
+              <Logo />
             </Link>
 
             {/* Search bar — non-home, non-map pages */}
@@ -200,7 +201,7 @@ export default function WebNavbar() {
                     onChange={e => setSearchQuery(e.target.value)}
                     onFocus={() => { if (!searchQuery) router.push('/map'); }}
                     placeholder={t.searchPlaceholder}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-100 hover:bg-slate-200 focus:bg-white border border-transparent focus:border-slate-300 rounded-full text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-[#4A7CC7]/20"
+                    className="w-full pl-10 pr-4 py-2 bg-slate-100 hover:bg-slate-200 focus:bg-white border border-transparent focus:border-slate-300 rounded-full text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-brand-600/20"
                   />
                 </div>
               </form>
@@ -209,12 +210,12 @@ export default function WebNavbar() {
             )}
 
             {/* Right side */}
-            <div className="flex items-center gap-2 shrink-0 ml-auto md:ml-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ms-auto md:ms-0">
 
               {/* How it Works */}
               <Link
                 href="/how-it-works"
-                className="hidden lg:block text-sm font-semibold text-slate-600 hover:text-[#4A7CC7] transition-colors px-3 py-2 whitespace-nowrap"
+                className="hidden lg:block text-[15px] font-medium text-ink hover:text-brand-700 transition-colors px-3 py-2 whitespace-nowrap"
               >
                 {t.howItWorks}
               </Link>
@@ -222,7 +223,7 @@ export default function WebNavbar() {
               {/* Post a Listing */}
               <button
                 onClick={handlePostListingClick}
-                className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4A7CC7] text-white text-sm font-bold hover:bg-[#3b66a6] transition-colors whitespace-nowrap shrink-0"
+                className="hidden md:flex h-11 items-center gap-1.5 px-4 rounded-[10px] bg-accent-500 text-accent-ink text-[15px] font-semibold hover:bg-accent-600 transition-colors whitespace-nowrap shrink-0"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -233,7 +234,7 @@ export default function WebNavbar() {
               {/* Saved Listings — always visible in header */}
               <Link
                 href="/saved"
-                className="hidden md:flex items-center gap-1.5 px-2 py-2 text-sm font-semibold text-slate-500 hover:text-red-500 transition-colors whitespace-nowrap group"
+                className="hidden md:flex items-center gap-1.5 px-2 py-2 text-[15px] font-medium text-ink hover:text-brand-700 transition-colors whitespace-nowrap group"
               >
                 <svg className="w-4 h-4 transition-transform group-hover:scale-110" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -260,7 +261,7 @@ export default function WebNavbar() {
               </div>
 
               {/* Divider */}
-              <div className="hidden md:block w-px h-6 bg-slate-200 mx-1" />
+              <div className="hidden md:block w-px h-6 bg-line mx-1" />
 
               {user ? (
                 /* ── Logged-in avatar + dropdown ── */
@@ -273,7 +274,7 @@ export default function WebNavbar() {
                     {firebaseUser?.photoURL ? (
                       <img src={firebaseUser.photoURL} alt={displayName} className="w-10 h-10 rounded-full shadow-sm object-cover" />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#4A7CC7] text-white flex items-center justify-center font-bold text-sm shadow-sm select-none">
+                      <div className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-sm shadow-sm select-none">
                         {initials}
                       </div>
                     )}
@@ -315,7 +316,7 @@ export default function WebNavbar() {
                 /* ── Logged-out buttons ── */
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="px-5 py-2.5 text-sm font-black text-white bg-gradient-to-r from-[#4A7CC7] to-[#3a63a8] hover:from-[#3b66a6] hover:to-[#2d5090] rounded-xl shadow-sm transition-all"
+                  className="h-10 md:h-11 px-4 text-[15px] font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-[10px] transition-colors"
                 >
                   {t.signIn}
                 </button>

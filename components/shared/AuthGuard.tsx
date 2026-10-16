@@ -31,7 +31,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
       <div className="min-h-screen flex flex-col">
         <WebNavbar />
         <div className="flex-1 flex items-center justify-center">
-          <div className="w-8 h-8 border-4 border-[#4A7CC7]/20 border-t-[#4A7CC7] rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-brand-600/20 border-t-brand-600 rounded-full animate-spin" />
         </div>
       </div>
     );

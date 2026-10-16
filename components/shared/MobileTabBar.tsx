@@ -33,8 +33,8 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
 
   const tab = (href: string, label: string, requiresAuth: boolean, icon: React.ReactNode) => {
     const isActive = pathname === href || pathname.startsWith(href + '/');
-    const cls = `flex flex-col items-center gap-0.5 flex-1 min-h-[44px] justify-end py-1.5 text-[10px] font-bold transition-colors ${
-      isActive ? 'text-[#4A7CC7]' : 'text-slate-500'
+    const cls = `flex flex-col items-center gap-0.5 flex-1 min-h-[44px] justify-end py-1.5 text-[11px] transition-colors ${
+      isActive ? 'font-semibold text-brand-600' : 'font-medium text-muted'
     }`;
     const handleClick = () => {
       if (requiresAuth && !user) {
@@ -62,7 +62,7 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
   };
 
   const navBase =
-    'w-full bg-white border-t border-slate-200 flex md:hidden items-end justify-around';
+    'w-full bg-white border-t border-line flex md:hidden items-end justify-around';
   const navClass =
     variant === 'fixed'
       ? `${navBase} fixed bottom-0 left-0 right-0 z-[9999]`
@@ -101,10 +101,10 @@ export default function MobileTabBar({ variant = 'fixed', onPostClick, onAuthReq
         <button
           type="button"
           onClick={handlePost}
-          className="flex flex-col items-center gap-0.5 flex-1 min-h-[44px] justify-end py-1.5 text-[10px] font-bold text-slate-500"
+          className="flex flex-col items-center gap-0.5 flex-1 min-h-[44px] justify-end py-1.5 text-[11px] font-medium text-muted"
         >
-          <div className="w-8 h-8 rounded-full bg-[#4A7CC7] flex items-center justify-center shadow-md shrink-0">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <div className="w-10 h-10 rounded-2xl bg-accent-500 flex items-center justify-center shrink-0">
+            <svg className="w-5 h-5 text-accent-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           </div>

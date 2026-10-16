@@ -199,7 +199,7 @@ export default function AuthModal({
                 Already have an account?{' '}
                 <button
                   onClick={() => { setView('email'); setFormMode('login'); }}
-                  className="text-[#4A7CC7] font-bold hover:underline"
+                  className="text-brand-600 font-bold hover:underline"
                 >
                   Sign in
                 </button>
@@ -250,7 +250,7 @@ export default function AuthModal({
                     onChange={e => setName(e.target.value)}
                     placeholder="Full name"
                     autoComplete="name"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4A7CC7]/20 focus:border-[#4A7CC7] transition-all"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                   />
                 )}
 
@@ -261,7 +261,7 @@ export default function AuthModal({
                   placeholder="Email address"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4A7CC7]/20 focus:border-[#4A7CC7] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                 />
 
                 <input
@@ -271,7 +271,7 @@ export default function AuthModal({
                   placeholder="Password"
                   autoComplete={formMode === 'signup' ? 'new-password' : 'current-password'}
                   required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4A7CC7]/20 focus:border-[#4A7CC7] transition-all"
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                 />
 
                 {error && (
@@ -283,7 +283,7 @@ export default function AuthModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 bg-[#4A7CC7] text-white rounded-2xl font-black text-sm hover:bg-[#3b66a6] disabled:opacity-50 transition-all shadow-lg shadow-[#4A7CC7]/20 active:scale-[0.98]"
+                  className="w-full py-3.5 bg-brand-600 text-white rounded-2xl font-black text-sm hover:bg-brand-700 disabled:opacity-50 transition-all shadow-lg shadow-brand-600/20 active:scale-[0.98]"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />

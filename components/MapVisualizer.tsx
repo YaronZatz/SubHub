@@ -348,7 +348,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
                     {popupBeds} {popupBeds !== 1 ? t.bedrooms : t.bedroom}
                   </p>
                 )}
-                <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-[#4A7CC7]">
+                <span className="inline-flex items-center gap-1 mt-2 text-[11px] font-bold text-brand-600">
                   View listing
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

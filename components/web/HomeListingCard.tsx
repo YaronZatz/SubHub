@@ -8,6 +8,8 @@ import { formatPrice } from '@/utils/formatters';
 import ListingCarousel from '@/components/ListingCarousel';
 import { translations } from '@/translations';
 import { localizedLocation, localizedNeighborhood } from '@/lib/locationUtils';
+import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
+import { homeCopy } from '@/lib/homeCopy';
 
 interface HomeListingCardProps {
   sublet: Sublet;
@@ -15,6 +17,8 @@ interface HomeListingCardProps {
   onToggleSave: (e: React.MouseEvent) => void;
   currency: CurrencyCode;
   language: Language;
+  /** lg: desktop carousels, md: mobile carousels */
+  size?: 'md' | 'lg';
 }
 
 const HomeListingCard: React.FC<HomeListingCardProps> = ({
@@ -23,6 +27,7 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
   onToggleSave,
   currency,
   language,
+  size = 'lg',
 }) => {
   const router = useRouter();
   const t = translations[language];
@@ -31,17 +36,24 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
   const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
   const isNew = hoursAgo < 24;
 
-  const handleClick = () => {
-    router.push(`/listing/${sublet.id}`);
-  };
+  const neighborhood = localizedNeighborhood(sublet, language);
+  const location = localizedLocation(sublet, language);
+  const title = neighborhood || location;
+  const subtitleRaw = neighborhood && location && !location.includes(neighborhood) ? location : sublet.city;
+  const subtitle = subtitleRaw && subtitleRaw.trim().toLowerCase() !== title?.trim().toLowerCase() ? subtitleRaw : undefined;
+  const dateRange = formatDateRange(sublet.startDate, sublet.endDate, language);
+  const timeline = timelineWindow(sublet.startDate, sublet.endDate, language);
+  const typeLabel = t.subletTypes[sublet.type];
+  const copy = homeCopy(language);
+
+  const lg = size === 'lg';
 
   return (
-    <div
-      onClick={handleClick}
-      className="w-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl cursor-pointer transition-shadow duration-200 active:scale-[0.98]"
+    <article
+      onClick={() => router.push(`/listing/${sublet.id}`)}
+      className={`${lg ? 'w-[272px]' : 'w-[220px]'} shrink-0 snap-start cursor-pointer overflow-hidden rounded-2xl border border-line bg-white transition-shadow hover:shadow-[0_8px_24px_rgba(17,26,36,0.10)]`}
     >
-      {/* Photo */}
-      <div className="relative h-36">
+      <div className={`relative ${lg ? 'aspect-[4/3]' : 'h-[130px]'}`}>
         <ListingCarousel
           id={sublet.id}
           images={sublet.images}
@@ -50,49 +62,71 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
           aspectRatio=""
           className="h-full"
         />
-        {/* Save button */}
+        <span
+          className={`pointer-events-none absolute start-2.5 top-2.5 z-20 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+            isNew ? 'bg-accent-100 text-accent-700' : 'bg-white text-ink'
+          }`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${isNew ? 'bg-accent-500' : 'bg-brand-200'}`} />
+          {isNew
+            ? t.addedXhAgo.replace('{x}', String(hoursAgo))
+            : t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo))}
+        </span>
         <button
           onClick={(e) => { e.stopPropagation(); onToggleSave(e); }}
-          className="absolute top-2 right-2 z-20 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-slate-400 hover:text-red-500 transition-colors shadow-sm"
+          className={`absolute end-2 top-2 z-20 flex items-center justify-center rounded-full bg-white transition-colors ${
+            lg ? 'h-10 w-10' : 'h-9 w-9'
+          } ${isSaved ? 'text-accent-600' : 'text-ink hover:text-accent-600'}`}
           aria-label={isSaved ? 'Unsave' : 'Save'}
         >
-          <HeartIcon className="w-3.5 h-3.5" filled={isSaved} />
+          <HeartIcon className="h-[18px] w-[18px]" filled={isSaved} />
         </button>
-        {/* Time-ago badge — top left */}
-        {isNew ? (
-          <div className="absolute top-2 left-2 z-20 flex items-center gap-1 bg-cyan-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse ring-2 ring-cyan-100 pointer-events-none">
-            <span className="w-1 h-1 bg-white rounded-full" />
-            {t.addedXhAgo.replace('{x}', String(hoursAgo))}
-          </div>
-        ) : (
-          <div className="absolute top-2 left-2 z-20 bg-slate-500/80 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full pointer-events-none">
-            {t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo))}
-          </div>
-        )}
       </div>
 
-      {/* Details */}
-      <div className="p-3">
-        <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase tracking-wider truncate">
-            {t.subletTypes[sublet.type]}
-          </span>
+      <div className={`flex flex-col ${lg ? 'gap-2.5 px-4 pb-4 pt-3.5' : 'gap-1.5 px-3 pb-3 pt-2.5'}`}>
+        <div className="flex items-center justify-between gap-2">
+          {typeLabel && (
+            <span className={`truncate rounded-md bg-brand-100 font-semibold text-brand-700 ${lg ? 'px-2 py-0.5 text-xs' : 'px-1.5 py-px text-[11px]'}`}>
+              {typeLabel}
+            </span>
+          )}
           {sublet.price > 0 ? (
-            <span className="text-sm font-black text-cyan-600 shrink-0">
+            <span className={`shrink-0 font-bold tabular-nums ${lg ? 'text-lg' : 'text-base'}`}>
               {formatPrice(sublet.price, currency, language, sublet.currency)}
+              {lg && <span className="ms-0.5 text-xs font-normal text-muted">{copy.perMonth}</span>}
             </span>
           ) : (
-            <span className="text-[10px] font-medium text-slate-400 shrink-0">Price on request</span>
+            <span className="shrink-0 text-xs text-muted">{copy.priceOnRequest}</span>
           )}
         </div>
-        <p className="text-xs font-semibold text-slate-800 line-clamp-1">{localizedLocation(sublet, language)}</p>
-        {sublet.neighborhood && (
-          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 line-clamp-1">
-            {localizedNeighborhood(sublet, language)}
-          </p>
+
+        <div className="min-w-0">
+          <h3 className={`truncate font-display font-bold tracking-tight ${lg ? 'text-[19px]' : 'text-base'}`}>{title}</h3>
+          {lg && subtitle && <p className="truncate text-sm text-muted">{subtitle}</p>}
+        </div>
+
+        {dateRange && (
+          <div className="flex flex-col gap-1.5">
+            <span className={`font-medium text-ink ${lg ? 'text-[13px]' : 'text-[11px] text-muted'}`}>{dateRange}</span>
+            {timeline && (
+              <>
+                <div className="relative h-1.5 rounded-full bg-brand-100" aria-hidden="true">
+                  <div
+                    className="absolute inset-y-0 rounded-full bg-brand-600"
+                    style={{ insetInlineStart: `${timeline.left}%`, width: `${timeline.width}%` }}
+                  />
+                </div>
+                {lg && (
+                  <div className="flex justify-between text-[11px] uppercase text-muted" aria-hidden="true">
+                    {timeline.months.map(m => <span key={m}>{m}</span>)}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
       </div>
-    </div>
+    </article>
   );
 };
 

@@ -178,7 +178,7 @@ export default function ListingsPage() {
                 if (center) setCityFlyTo({ ...center });
               }}
               className="w-full"
-              inputClassName="w-full py-2 bg-slate-50 rounded-lg text-sm font-medium focus:ring-2 focus:ring-[#4A7CC7]/20 outline-none border border-slate-200 focus:border-[#4A7CC7] transition-all"
+              inputClassName="w-full py-2 bg-slate-50 rounded-lg text-sm font-medium focus:ring-2 focus:ring-brand-600/20 outline-none border border-slate-200 focus:border-brand-600 transition-all"
               placeholder="Search cities, neighborhoods..."
             />
           </div>
@@ -361,7 +361,7 @@ export default function ListingsPage() {
                   onMouseEnter={() => setMapSelectedSubletId(sublet.id)}
                   onMouseLeave={() => setMapSelectedSubletId(undefined)}
                   className={`group cursor-pointer bg-white rounded-2xl border transition-all duration-200 overflow-hidden hover:shadow-lg ${
-                    mapSelectedSubletId === sublet.id ? 'border-[#4A7CC7] shadow-lg ring-2 ring-[#4A7CC7]/20' : 'border-slate-200'
+                    mapSelectedSubletId === sublet.id ? 'border-brand-600 shadow-lg ring-2 ring-brand-600/20' : 'border-slate-200'
                   }`}
                 >
                   <div className="relative">
@@ -400,13 +400,13 @@ export default function ListingsPage() {
                   <div className="p-4">
                     <div className="flex justify-between items-start mb-1">
                       <h3 className="font-bold text-slate-900 text-sm truncate pr-2">{localizedLocation(sublet, language)}</h3>
-                      <span className="text-[#4A7CC7] font-black text-sm whitespace-nowrap">
+                      <span className="text-brand-600 font-black text-sm whitespace-nowrap">
                         {formatPrice(sublet.price, currency, language, sublet.currency)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mb-2 truncate">{localizedNeighborhood(sublet, language) || sublet.city}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#4A7CC7]/10 text-[#4A7CC7]">
+                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-brand-600/10 text-brand-600">
                         {t.subletTypes[sublet.type]}
                       </span>
                       {sublet.startDate && (

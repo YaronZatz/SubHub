@@ -2,21 +2,19 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import AuthModal from '@/components/AuthModal';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
 import WebNavbar from '@/components/web/WebNavbar';
 import HomeListingCard from '@/components/web/HomeListingCard';
-import { setInitialMapCity } from '@/app/map/page';
-import { CITY_CENTERS } from '@/constants';
+import CityCarousel from '@/components/shared/CityCarousel';
+import Logo from '@/components/shared/Logo';
+import { useMapSearch } from '@/hooks/useMapSearch';
+import { homeCopy } from '@/lib/homeCopy';
 import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
 const FEATURED_CITIES = ['Tel Aviv', 'Berlin', 'London'];
-
-const CITY_CHIP_CITIES = ['Tel Aviv', 'Berlin', 'London', 'Amsterdam', 'Paris', 'New York'];
 
 interface WebHomePageProps {
   onPostClick?: () => void;
@@ -36,41 +34,66 @@ interface WebHomePageProps {
 
 function CardSkeleton() {
   return (
-    <div className="w-56 shrink-0 rounded-2xl overflow-hidden bg-white shadow-md animate-pulse">
-      <div className="h-36 bg-slate-200" />
-      <div className="p-3 space-y-2">
+    <div className="w-[272px] shrink-0 animate-pulse overflow-hidden rounded-2xl border border-line bg-white">
+      <div className="aspect-[4/3] bg-brand-50" />
+      <div className="space-y-2.5 p-4">
         <div className="flex justify-between gap-2">
-          <div className="h-4 w-16 bg-slate-200 rounded-full" />
-          <div className="h-4 w-12 bg-slate-200 rounded-full" />
+          <div className="h-4 w-20 rounded bg-brand-50" />
+          <div className="h-4 w-14 rounded bg-brand-50" />
         </div>
-        <div className="h-3 w-36 bg-slate-200 rounded" />
-        <div className="h-3 w-24 bg-slate-200 rounded" />
+        <div className="h-4 w-32 rounded bg-brand-50" />
+        <div className="h-1.5 w-full rounded bg-brand-50" />
       </div>
     </div>
+  );
+}
+
+/** Decorative map card in the hero — links to the real map. */
+function HeroMapCard({ label }: { label: string }) {
+  const pin = 'absolute rounded-full bg-white px-2.5 py-1 text-[13px] font-bold tabular-nums shadow-[0_1px_4px_rgba(0,0,0,0.16)]';
+  return (
+    <Link
+      href="/map"
+      aria-label={label}
+      className="relative block h-[380px] min-w-0 flex-[1_1_420px] overflow-hidden rounded-[20px] border border-brand-100 bg-[#F5F6F7] transition-shadow hover:shadow-[0_12px_32px_rgba(17,26,36,0.10)]"
+    >
+      <svg viewBox="0 0 560 380" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <path d="M0 0 L120 0 L95 120 L70 240 L40 380 L0 380 Z" className="fill-brand-200" />
+        <rect x="300" y="40" width="110" height="70" rx="10" className="fill-brand-100" />
+        <rect x="420" y="250" width="90" height="80" rx="10" className="fill-brand-100" />
+        <g stroke="#fff" strokeWidth="9" fill="none" strokeLinecap="round">
+          <path d="M160 0 L130 380" /><path d="M250 0 L235 380" /><path d="M370 0 L380 380" /><path d="M480 0 L520 380" />
+          <path d="M110 80 L560 60" /><path d="M100 170 L560 165" /><path d="M85 260 L560 275" />
+        </g>
+        <g stroke="#fff" strokeWidth="4" fill="none">
+          <path d="M200 0 L185 380" /><path d="M310 0 L305 380" /><path d="M430 0 L450 380" />
+          <path d="M120 125 L560 115" /><path d="M95 215 L560 222" /><path d="M70 320 L560 330" />
+        </g>
+      </svg>
+      <span className={pin} style={{ left: '26%', top: '18%' }} dir="ltr">₪4.5k</span>
+      <span className={pin} style={{ left: '54%', top: '30%' }} dir="ltr">₪6.8k</span>
+      <span className="absolute rounded-full bg-accent-500 px-3.5 py-1.5 text-[15px] font-bold tabular-nums text-accent-ink shadow-[0_6px_16px_rgba(0,0,0,0.2)]" style={{ left: '36%', top: '50%' }} dir="ltr">₪3.2k</span>
+      <span className={pin} style={{ left: '70%', top: '62%' }} dir="ltr">₪9k</span>
+      <span className="absolute rounded-full bg-brand-900 px-2.5 py-1 text-[13px] font-bold text-white" style={{ left: '22%', top: '74%' }}>12</span>
+    </Link>
   );
 }
 
 export function WebHomePage({
   searchQuery,
   setSearchQuery,
-  handleCityFlyTo,
   toggleSaved,
   savedListingIds,
-  onPostClick: _onPostClick,
-  filters: _filters,
-  setFilters: _setFilters,
-  cityFlyTo: _cityFlyTo,
-  filteredSublets: _filteredSublets,
-  mapSelectedSubletId: _mapSelectedSubletId,
-  setMapSelectedSubletId: _setMapSelectedSubletId,
-  activeFilterCount: _activeFilterCount,
 }: WebHomePageProps) {
   const { currency } = useCurrency();
   const { language } = useLanguage();
-  const router = useRouter();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const copy = homeCopy(language);
+  const { openCity, search } = useMapSearch();
   const [listingsByCity, setListingsByCity] = useState<Record<string, Sublet[]>>({});
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budget, setBudget] = useState('');
 
   useEffect(() => {
     Promise.all(
@@ -85,198 +108,161 @@ export function WebHomePage({
     });
   }, []);
 
-  const navigateToCity = (city: string) => {
-    const center = CITY_CENTERS[city];
-    if (center) setInitialMapCity(city, center);
-    setSearchQuery(city);
-    handleCityFlyTo(city);
-    router.push('/map');
+  const submitSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const maxPrice = Number(budget);
+    search(searchQuery, {
+      ...(startDate && endDate ? { startDate, endDate } : {}),
+      ...(maxPrice > 0 ? { maxPrice } : {}),
+    });
   };
 
+  const activeCities = loading ? FEATURED_CITIES : FEATURED_CITIES.filter(city => (listingsByCity[city]?.length ?? 0) > 0);
+  const fieldLabel = 'text-xs font-medium uppercase tracking-[0.06em] text-muted';
+  const fieldInput = 'w-full border-0 bg-transparent p-0 text-[17px] font-medium text-ink outline-none placeholder:text-muted/70';
+
   return (
-    <div className="font-sans bg-[#f6f7f8] text-slate-900 min-h-screen">
+    <div className="min-h-screen bg-white font-sans text-ink">
       <WebNavbar />
 
       {/* Hero */}
-      <header className="relative bg-[#0F172A] pt-20 pb-16 overflow-hidden">
-        {/* Subtle gradient orbs */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#4A7CC7]/20 rounded-full blur-3xl -z-0 pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-[#F5831F]/10 rounded-full blur-3xl -z-0 pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl mx-auto px-4 text-center">
-          {/* AI pill */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A7CC7]/20 text-[#93bbf0] text-xs font-bold uppercase tracking-wider mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4A7CC7] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#4A7CC7]" />
+      <section className="bg-brand-50">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-12 px-6 pt-10">
+          <div className="flex min-w-0 flex-[1_1_460px] flex-col gap-5">
+            <span className="inline-flex items-center gap-2 self-start rounded-full border border-brand-100 bg-white px-3 py-1 text-[13px] font-medium text-muted">
+              <span className="h-2 w-2 rounded-full bg-accent-500" />
+              {copy.badge}
             </span>
-            AI-structured listings · Updated daily
+            <h1 className="font-display text-[44px] font-extrabold leading-[1.02] tracking-[-0.035em] lg:text-[66px]">
+              {copy.headlineLead}{' '}
+              <span className="text-brand-600 [box-shadow:inset_0_-12px_0_var(--color-accent-100)]">{copy.headlineAccent}</span>
+            </h1>
+            <p className="max-w-[520px] text-[19px] text-muted">{copy.subhead}</p>
           </div>
+          <HeroMapCard label={copy.showOnMap} />
+        </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-white leading-tight tracking-tight mb-4">
-            Find your next sublet.
-          </h1>
-          <p className="text-slate-400 text-lg mb-10 max-w-xl mx-auto">
-            Every rental post from Facebook groups — structured by AI, searchable on one map.
-          </p>
-
-          {/* Search bar */}
-          <div className="relative z-20 max-w-2xl mx-auto">
-            <SearchAutocomplete
-              value={searchQuery}
-              onChange={setSearchQuery}
-              sublets={[]}
-              onCitySelect={(city) => {
-                const center = CITY_CENTERS[city];
-                if (center) setInitialMapCity(city, center);
-                setSearchQuery(city);
-                handleCityFlyTo(city);
-                router.push('/map');
-              }}
-              className="w-full"
-              inputClassName="w-full py-4 px-5 bg-white rounded-2xl text-base font-medium focus:ring-4 focus:ring-[#4A7CC7]/30 outline-none border-2 border-transparent focus:border-[#4A7CC7] transition-all shadow-2xl"
-              placeholder="Search cities, neighborhoods, streets..."
-            />
-          </div>
-
-          {/* City chips */}
-          <div className="flex flex-wrap justify-center gap-2 mt-6">
-            {CITY_CHIP_CITIES.map(city => (
+        {/* Search — overlaps the hero edge */}
+        <div className="relative top-9 mx-auto max-w-[1200px] px-6 pt-10">
+          <form
+            onSubmit={submitSearch}
+            className="relative flex flex-wrap items-stretch rounded-2xl border border-line bg-white shadow-[0_10px_30px_rgba(0,0,0,0.08)]"
+          >
+            <div className="flex min-w-0 flex-[3_1_320px] flex-col gap-0.5 border-line px-5 py-3.5 sm:border-e">
+              <span className={`${fieldLabel} ps-10`} aria-hidden="true">{copy.searchLabel}</span>
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                sublets={[]}
+                onCitySelect={(city) => search(city)}
+                className="w-full"
+                inputClassName={`${fieldInput} py-0.5`}
+                placeholder={copy.searchPlaceholder}
+              />
+            </div>
+            <div className="flex min-w-0 flex-[2_1_300px] flex-col gap-0.5 border-line px-5 py-3.5 sm:border-e">
+              <span className={fieldLabel}>{copy.whenLabel}</span>
+              <div className="flex items-center gap-2">
+                <input type="date" aria-label={copy.whenLabel} value={startDate} onChange={e => setStartDate(e.target.value)} className={`${fieldInput} min-w-0 flex-1 text-[15px]`} />
+                <span className="text-muted" aria-hidden="true">→</span>
+                <input type="date" aria-label={copy.whenLabel} value={endDate} min={startDate || undefined} onChange={e => setEndDate(e.target.value)} className={`${fieldInput} min-w-0 flex-1 text-[15px]`} />
+              </div>
+            </div>
+            <label className="flex min-w-0 flex-[1_1_150px] flex-col gap-0.5 px-5 py-3.5">
+              <span className={fieldLabel}>{copy.budgetLabel}</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={500}
+                value={budget}
+                onChange={e => setBudget(e.target.value)}
+                placeholder={copy.budgetPlaceholder}
+                className={fieldInput}
+              />
+            </label>
+            <div className="flex p-2.5">
               <button
-                key={city}
-                onClick={() => navigateToCity(city)}
-                className="px-4 py-1.5 rounded-full bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-colors border border-white/10"
+                type="submit"
+                className="flex min-h-14 items-center gap-2.5 rounded-xl bg-brand-600 px-7 text-base font-semibold text-white transition-colors hover:bg-brand-700"
               >
-                {city}
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+                {copy.showOnMap}
               </button>
-            ))}
-          </div>
+            </div>
+          </form>
         </div>
-      </header>
+      </section>
 
-      {/* Stats bar */}
-      <div className="bg-[#0F172A] border-t border-slate-800 py-5">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-12 text-sm font-medium">
-            <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[#F5831F] text-xl font-black">12,470+</span>
-              posts aggregated
-            </div>
-            <div className="hidden sm:block w-px h-5 bg-slate-700" />
-            <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[#F5831F] text-xl font-black">10+</span>
-              major cities
-            </div>
-            <div className="hidden sm:block w-px h-5 bg-slate-700" />
-            <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[#F5831F] text-xl font-black">Updated</span>
-              daily
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* City listing rows */}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-14 space-y-14">
-        {FEATURED_CITIES.map(city => (
-            <section key={city}>
-              {/* Section header */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-black text-slate-900">
-                  Listings in {city}
-                  {!loading && (listingsByCity[city]?.length ?? 0) > 0 && (
-                    <span className="ml-2 text-base font-semibold text-slate-400">
-                      ({listingsByCity[city].length}+)
-                    </span>
-                  )}
-                </h2>
-                <button
-                  onClick={() => navigateToCity(city)}
-                  className="flex items-center gap-1 text-[#4A7CC7] text-sm font-bold hover:underline"
-                >
-                  See all
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Horizontal carousel */}
-              <div className="flex overflow-x-auto gap-4 pb-3 -mx-4 px-4 scrollbar-hide">
-                {loading
-                  ? Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
-                  : (listingsByCity[city] ?? []).map(sublet => (
-                      <HomeListingCard
-                        key={sublet.id}
-                        sublet={sublet}
-                        isSaved={savedListingIds.has(sublet.id)}
-                        onToggleSave={(e) => toggleSaved(e, sublet.id)}
-                        currency={currency}
-                        language={language}
-                      />
-                    ))
-                }
-              </div>
-            </section>
-          ))}
+      {/* City carousels */}
+      <main className="mx-auto flex max-w-[1200px] flex-col gap-12 px-6 pb-14 pt-[88px]">
+        {activeCities.map(city => {
+          const listings = listingsByCity[city] ?? [];
+          return (
+            <CityCarousel
+              key={city}
+              title={city}
+              countLabel={!loading && listings.length > 0 ? copy.listingsCount(listings.length) : undefined}
+              seeAllLabel={copy.seeAllOnMap}
+              onSeeAll={() => openCity(city)}
+              prevLabel={copy.previous}
+              nextLabel={copy.next}
+              showArrows
+            >
+              {loading
+                ? Array.from({ length: 5 }).map((_, i) => <CardSkeleton key={i} />)
+                : listings.map(sublet => (
+                    <HomeListingCard
+                      key={sublet.id}
+                      sublet={sublet}
+                      isSaved={savedListingIds.has(sublet.id)}
+                      onToggleSave={(e) => toggleSaved(e, sublet.id)}
+                      currency={currency}
+                      language={language}
+                    />
+                  ))}
+            </CityCarousel>
+          );
+        })}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-[#0F172A] text-slate-300 py-16 mt-10">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-12">
-            <div className="col-span-1">
-              <div className="flex items-center gap-2 mb-6">
-                <img src="/logo.png" alt="SubHub Logo" className="h-16 w-auto mix-blend-screen opacity-90" />
-              </div>
-              <p className="text-slate-500 leading-relaxed text-sm">
-                Connecting people with the perfect home by bringing all fragmented rental posts into one unified platform.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-6">Platform</h4>
-              <ul className="space-y-3 text-sm font-medium">
-                <li><Link href="/map" className="text-slate-400 hover:text-white transition-colors">Search Map</Link></li>
-                <li><Link href="/how-it-works" className="text-slate-400 hover:text-white transition-colors">How it Works</Link></li>
-                <li><Link href="/map" className="text-slate-400 hover:text-white transition-colors">Post a Listing</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-6">Support</h4>
-              <ul className="space-y-3 text-sm font-medium">
-                <li><Link href="/privacy" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/data-deletion" className="text-slate-400 hover:text-white transition-colors">Data Deletion</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-bold mb-6">Subscribe</h4>
-              <p className="text-sm text-slate-400 mb-4">Get the latest rental tips and news.</p>
-              <div className="flex">
-                <input
-                  type="email"
-                  placeholder="Enter email"
-                  className="bg-slate-800/50 border border-slate-700 rounded-l-lg text-sm w-full focus:ring-1 focus:ring-[#4A7CC7] px-4 py-3 outline-none text-white placeholder-slate-500"
-                />
-                <button className="bg-[#4A7CC7] text-white px-5 py-3 rounded-r-lg hover:bg-[#4A7CC7]/90 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+      {/* How it works */}
+      <section className="bg-brand-900 text-white">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-10 px-6 py-16">
+          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+            <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-brand-200">{copy.howItWorksEyebrow}</p>
+            <h2 className="font-display text-[40px] font-extrabold leading-[1.08] tracking-[-0.025em]">{copy.howItWorksTitle}</h2>
+            <p className="text-[17px] text-white/80">{copy.howItWorksBody}</p>
           </div>
-
-          <div className="mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm font-medium text-slate-500">
-            <p>© 2026 SubHub Technologies Inc. All rights reserved.</p>
-            <div className="flex gap-8">
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Cookie Policy</a>
-            </div>
+          <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5 rounded-2xl border border-white/15 bg-white/[0.07] p-5">
+            <span className="text-xs font-medium uppercase tracking-wide text-white/70">{copy.sampleSource}</span>
+            <p lang="he" dir="rtl" className="text-[15px] leading-relaxed">
+              דירת יחיד מטופחת ביהודה הלוי, קומה 2, 4500 לחודש. פנויה מנובמבר עד סוף ינואר, מרוהטת, מזגן…
+            </p>
           </div>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" className="shrink-0 text-accent-500 rtl:rotate-180">
+            <path d="M4 12h15" /><path d="M13 6l6 6-6 6" />
+          </svg>
+          <dl className="grid min-w-0 flex-[1_1_260px] grid-cols-2 gap-3.5 rounded-2xl bg-white p-5 text-ink">
+            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.samplePrice}</dt><dd className="text-[17px] font-bold tabular-nums" dir="ltr">₪4,500/mo</dd></div>
+            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleType}</dt><dd><span className="rounded-md bg-brand-100 px-2 py-0.5 text-sm font-semibold text-brand-700">Studio</span></dd></div>
+            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleDates}</dt><dd className="text-[15px] font-medium">1 Nov → 31 Jan</dd></div>
+            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleWhere}</dt><dd className="font-semibold">Lev HaIr</dd></div>
+          </dl>
         </div>
-      </footer>
+      </section>
 
-      {isAuthModalOpen && <AuthModal onClose={() => setIsAuthModalOpen(false)} />}
+      <footer className="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-6 px-6 py-8 text-sm text-muted">
+        <div className="flex items-center gap-4">
+          <Logo size="sm" />
+          <span>© {new Date().getFullYear()} SubHub</span>
+        </div>
+        <nav className="flex flex-wrap gap-5" aria-label="Footer">
+          <Link href="/how-it-works" className="hover:text-ink">{copy.howItWorksLink}</Link>
+          <Link href="/privacy" className="hover:text-ink">{copy.privacy}</Link>
+          <Link href="/data-deletion" className="hover:text-ink">{copy.dataDeletion}</Link>
+        </nav>
+      </footer>
     </div>
   );
 }

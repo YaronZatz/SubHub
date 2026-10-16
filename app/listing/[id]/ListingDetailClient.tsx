@@ -100,7 +100,7 @@ function NotFound() {
       <p className="text-slate-500 mb-8">This listing may no longer be available.</p>
       <Link
         href="/map"
-        className="px-6 py-3 bg-[#4A7CC7] text-white font-bold rounded-xl hover:bg-[#3b66a6] transition-colors"
+        className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors"
       >
         {t.browse} →
       </Link>
@@ -120,11 +120,11 @@ function FetchErrorState({ message, onRetry }: { message: string; onRetry: () =>
       <button
         type="button"
         onClick={onRetry}
-        className="px-6 py-3 bg-[#4A7CC7] text-white font-bold rounded-xl hover:bg-[#3b66a6] transition-colors"
+        className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors"
       >
         {t.tryAgain}
       </button>
-      <Link href="/map" className="mt-6 text-sm font-semibold text-slate-600 hover:text-[#4A7CC7]">
+      <Link href="/map" className="mt-6 text-sm font-semibold text-slate-600 hover:text-brand-600">
         {t.browse} →
       </Link>
     </div>
@@ -411,7 +411,7 @@ export default function ListingDetailClient({
                 <div className="flex flex-wrap gap-3 pb-8 border-b border-slate-100">
                   {dateRange && (
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <svg className="w-4 h-4 text-[#4A7CC7] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span className="text-sm font-semibold text-slate-700">{dateRange}</span>
@@ -419,7 +419,7 @@ export default function ListingDetailClient({
                   )}
                   {beds !== null && (
                     <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <svg className="w-4 h-4 text-[#4A7CC7] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                       <span className="text-sm font-semibold text-slate-700">
@@ -508,7 +508,7 @@ export default function ListingDetailClient({
                 <div className="space-y-3 pt-8 border-t border-slate-100">
                   <h2 className="text-lg font-bold text-slate-900">{t.locationHeading}</h2>
                   <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-                    <svg className="w-4 h-4 text-[#4A7CC7] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -529,7 +529,7 @@ export default function ListingDetailClient({
                         href={`https://www.google.com/maps?q=${sublet.lat},${sublet.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-end gap-1 px-4 py-2 text-xs text-slate-400 hover:text-[#4A7CC7] transition-colors border-t border-slate-100"
+                        className="flex items-center justify-end gap-1 px-4 py-2 text-xs text-slate-400 hover:text-brand-600 transition-colors border-t border-slate-100"
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -583,7 +583,7 @@ export default function ListingDetailClient({
                       </span>
                       <span className="text-slate-500 font-medium">/mo</span>
                     </div>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-[#4A7CC7]/10 text-[#4A7CC7] text-[10px] font-black uppercase rounded tracking-wider">
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-brand-600/10 text-brand-600 text-[10px] font-black uppercase rounded tracking-wider">
                       {t.subletTypes[sublet.type]}
                     </span>
                   </div>
@@ -611,7 +611,7 @@ export default function ListingDetailClient({
                     onClick={handleContact}
                     disabled={isTaken}
                     className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
-                      bg-gradient-to-r from-[#4A7CC7] to-[#5b8fd4] text-white shadow-lg shadow-[#4A7CC7]/25 hover:shadow-xl hover:shadow-[#4A7CC7]/30"
+                      bg-gradient-to-r from-brand-600 to-[#5b8fd4] text-white shadow-lg shadow-brand-600/25 hover:shadow-xl hover:shadow-brand-600/30"
                   >
                     {isTaken ? t.noLongerAvailable : t.contactLandlord}
                   </button>
@@ -655,7 +655,7 @@ export default function ListingDetailClient({
           <button
             onClick={handleContact}
             disabled={isTaken}
-            className="px-6 py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-[#4A7CC7] to-[#5b8fd4] shadow-lg disabled:opacity-50 active:scale-95 transition-all"
+            className="px-6 py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-brand-600 to-[#5b8fd4] shadow-lg disabled:opacity-50 active:scale-95 transition-all"
           >
             {isTaken ? t.unavailable : t.contactLandlord}
           </button>

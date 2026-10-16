@@ -26,8 +26,8 @@ function MessagesContent() {
 
         {/* Empty state */}
         <div className="bg-white rounded-2xl border border-slate-200 py-20 flex flex-col items-center text-center px-4">
-          <div className="w-16 h-16 rounded-full bg-[#4A7CC7]/10 flex items-center justify-center mb-5">
-            <svg className="w-8 h-8 text-[#4A7CC7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <div className="w-16 h-16 rounded-full bg-brand-600/10 flex items-center justify-center mb-5">
+            <svg className="w-8 h-8 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
@@ -41,7 +41,7 @@ function MessagesContent() {
           </div>
           <Link
             href="/map"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#4A7CC7] text-white font-bold rounded-xl hover:bg-[#3b66a6] transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors shadow-sm"
           >
             Find a listing →
           </Link>

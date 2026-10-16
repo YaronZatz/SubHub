@@ -24,6 +24,7 @@ import {
   DateMode, RentTerm, Language,
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
+import { matchesFreeText } from '@/lib/searchMatch';
 
 const MapVisualizer = dynamic(
   () => import('@/components/MapVisualizer'),
@@ -99,16 +100,16 @@ function PriceSlider({ minVal, maxVal, onChange }: {
     'absolute inset-0 w-full h-full appearance-none bg-transparent cursor-pointer pointer-events-none',
     '[&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:appearance-none',
     '[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full',
-    '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#4A7CC7]',
+    '[&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-brand-600',
     '[&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-runnable-track]:bg-transparent',
     '[&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5',
     '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:border-2',
-    '[&::-moz-range-thumb]:border-[#4A7CC7] [&::-moz-range-thumb]:shadow-md [&::-moz-range-track]:bg-transparent',
+    '[&::-moz-range-thumb]:border-brand-600 [&::-moz-range-thumb]:shadow-md [&::-moz-range-track]:bg-transparent',
   ].join(' ');
   return (
     <div className="relative h-5 mt-2">
       <div className="absolute top-1/2 -translate-y-1/2 w-full h-1.5 bg-slate-200 rounded-full pointer-events-none">
-        <div className="absolute h-full bg-[#4A7CC7] rounded-full" style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }} />
+        <div className="absolute h-full bg-brand-600 rounded-full" style={{ left: `${minPct}%`, right: `${100 - maxPct}%` }} />
       </div>
       <input type="range" min={0} max={PRICE_MAX} step={PRICE_STEP} value={minVal}
         onChange={e => { const v = +e.target.value; if (v < maxVal) onChange(v, maxVal); }}
@@ -141,11 +142,11 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
   const sLabel = 'text-xs font-bold uppercase tracking-widest text-slate-500';
   const iconBtnCls = (active: boolean) =>
     `flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer select-none ${
-      active ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+      active ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'
     }`;
   const pillCls = (active: boolean) =>
     `whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
-      active ? 'bg-[#4A7CC7] text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+      active ? 'bg-brand-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
     }`;
 
   return (
@@ -168,7 +169,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
-              <span className="text-sm font-semibold text-[#4A7CC7]">
+              <span className="text-sm font-semibold text-brand-600">
                 ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
               </span>
             </div>
@@ -213,7 +214,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex gap-2 flex-wrap">
               {([{ label: t.anyRooms, value: undefined as number | undefined }, { label: '1+', value: 1 }, { label: '2+', value: 2 }, { label: '3+', value: 3 }, { label: '4+', value: 4 }]).map(opt => (
                 <button key={opt.label} onClick={() => set({ minRooms: opt.value })}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all ${filters.minRooms === opt.value ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+                  className={`px-5 py-2 rounded-full text-sm font-semibold border-2 transition-all ${filters.minRooms === opt.value ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
                   {opt.label}
                 </button>
               ))}
@@ -228,19 +229,19 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
                 <span className="text-xs text-slate-400 font-medium">{t.flexible}</span>
                 <button
                   onClick={() => set({ dateMode: filters.dateMode === DateMode.FLEXIBLE ? DateMode.EXACT : DateMode.FLEXIBLE })}
-                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-[#4A7CC7]' : 'bg-slate-200'}`}
+                  className={`relative w-11 h-6 rounded-full transition-colors ${filters.dateMode === DateMode.FLEXIBLE ? 'bg-brand-600' : 'bg-slate-200'}`}
                 >
                   <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${filters.dateMode === DateMode.FLEXIBLE ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
+              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-brand-600 transition-all">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.start}</p>
                 <input type="date" value={filters.startDate || ''} onChange={e => set({ startDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
               </div>
-              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-[#4A7CC7] transition-all">
+              <div className="p-3 rounded-xl bg-slate-100 border-2 border-transparent focus-within:border-brand-600 transition-all">
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">{t.end}</p>
                 <input type="date" value={filters.endDate || ''} onChange={e => set({ endDate: e.target.value })}
                   className="bg-transparent border-none p-0 text-sm font-semibold text-slate-900 focus:ring-0 w-full" />
@@ -264,7 +265,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <section className="space-y-4">
             <span className={sLabel}>{t.postQuality}</span>
             <button onClick={() => set({ onlyWithPrice: !filters.onlyWithPrice })}
-              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+              className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all w-full ${filters.onlyWithPrice ? 'border-brand-600 bg-brand-600/5 text-brand-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
               <span>💰</span> {t.onlyWithPrice}
             </button>
           </section>
@@ -281,8 +282,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
               ] as Array<{ key: keyof NonNullable<Filters['amenities']>; label: string }>).map(opt => (
                 <label key={opt.key} className="flex items-center gap-3 cursor-pointer group">
                   <input type="checkbox" checked={!!(filters.amenities?.[opt.key])} onChange={e => setAmenity(opt.key, e.target.checked)}
-                    className="w-5 h-5 rounded border-slate-300 text-[#4A7CC7] focus:ring-[#4A7CC7]/20 cursor-pointer" />
-                  <span className="text-sm text-slate-700 font-medium group-hover:text-[#4A7CC7] transition-colors">{opt.label}</span>
+                    className="w-5 h-5 rounded border-slate-300 text-brand-600 focus:ring-brand-600/20 cursor-pointer" />
+                  <span className="text-sm text-slate-700 font-medium group-hover:text-brand-600 transition-colors">{opt.label}</span>
                 </label>
               ))}
             </div>
@@ -294,7 +295,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           <button onClick={onClear} className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">
             {t.clearAll}
           </button>
-          <button onClick={onClose} className="flex items-center gap-2 px-7 py-3.5 bg-[#4A7CC7] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#4A7CC7]/25 hover:bg-[#3b66a6] transition-all active:scale-95">
+          <button onClick={onClose} className="flex items-center gap-2 px-7 py-3.5 bg-brand-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-brand-600/25 hover:bg-brand-700 transition-all active:scale-95">
             {t.showResults.replace('{n}', resultCount.toLocaleString())}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </button>
@@ -313,6 +314,20 @@ export function setInitialMapCity(city: string, center: { lat: number; lng: numb
   _pendingWebMapState = {
     filters: { ...INITIAL_FILTERS, city },
     searchQuery: city,
+    selectedSubletId: undefined,
+    cityFlyTo: center,
+  };
+}
+
+/** Call before router.push('/map') to pre-seed a free-text search with optional dates / budget. */
+export function setInitialMapSearch(
+  query: string,
+  extra: Partial<Pick<Filters, 'startDate' | 'endDate' | 'maxPrice'>> = {},
+  center: { lat: number; lng: number; zoom?: number } | null = null,
+) {
+  _pendingWebMapState = {
+    filters: { ...INITIAL_FILTERS, ...extra },
+    searchQuery: query,
     selectedSubletId: undefined,
     cityFlyTo: center,
   };
@@ -353,7 +368,7 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
         ref={ref}
         className={`group relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer
           ${isSelected
-            ? 'shadow-xl shadow-[#4A7CC7]/25 ring-2 ring-[#4A7CC7] scale-[1.01]'
+            ? 'shadow-xl shadow-brand-600/25 ring-2 ring-brand-600 scale-[1.01]'
             : 'shadow-sm hover:shadow-xl hover:-translate-y-0.5'
           }
           ${isTaken ? 'opacity-55' : ''}`}
@@ -524,12 +539,7 @@ function WebMapPage() {
   // Filter listings
   const filteredSublets = useMemo(() => {
     return sublets.filter(s => {
-      const q = searchQuery.toLowerCase();
-      const matchesSearch = !q
-        || s.location.toLowerCase().includes(q)
-        || s.originalText.toLowerCase().includes(q)
-        || (s.city?.toLowerCase().includes(q))
-        || (s.neighborhood?.toLowerCase().includes(q));
+      const matchesSearch = matchesFreeText(s, searchQuery);
 
       const matchesPrice = s.price >= filters.minPrice && s.price <= filters.maxPrice;
       const matchesStatus = filters.showTaken || s.status !== ListingStatus.TAKEN;
@@ -630,7 +640,7 @@ function WebMapPage() {
           sublets={sublets}
           placeholder={t.searchPlaceholder}
           className="flex-1 max-w-xs"
-          inputClassName="w-full py-2 pl-10 pr-8 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#4A7CC7]/20 focus:border-[#4A7CC7] focus:bg-white transition-all"
+          inputClassName="w-full py-2 pl-10 pr-8 text-sm border border-slate-200 rounded-full bg-slate-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 focus:bg-white transition-all"
           onCitySelect={city => {
             const center = CITY_CENTERS[city];
             if (center) setCityFlyTo(center);
@@ -642,7 +652,7 @@ function WebMapPage() {
           onClick={() => setDrawerOpen(true)}
           className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border-2 transition-all whitespace-nowrap shrink-0 ${
             activeFilterCount > 0
-              ? 'border-[#4A7CC7] bg-[#4A7CC7]/5 text-[#4A7CC7]'
+              ? 'border-brand-600 bg-brand-600/5 text-brand-600'
               : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
           }`}
         >
@@ -651,7 +661,7 @@ function WebMapPage() {
           </svg>
           {t.filters}
           {activeFilterCount > 0 && (
-            <span className="w-5 h-5 bg-[#4A7CC7] text-white text-[10px] font-black rounded-full flex items-center justify-center">
+            <span className="w-5 h-5 bg-brand-600 text-white text-[10px] font-black rounded-full flex items-center justify-center">
               {activeFilterCount}
             </span>
           )}
@@ -692,7 +702,7 @@ function WebMapPage() {
                 {activeFilterCount > 0 && (
                   <button
                     onClick={handleClearFilters}
-                    className="mt-4 text-sm text-[#4A7CC7] font-semibold hover:underline"
+                    className="mt-4 text-sm text-brand-600 font-semibold hover:underline"
                   >
                     Clear all filters
                   </button>
