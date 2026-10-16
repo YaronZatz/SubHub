@@ -133,13 +133,13 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
 
   return (
     <>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-4 pb-20 md:p-4 bg-slate-900/60 backdrop-blur-sm">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+      <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-4 pb-20 md:p-4 bg-ink/50">
+        <div className="bg-white rounded-2xl shadow-[0_24px_64px_rgba(17,26,36,0.24)] w-full max-w-xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200">
 
           {/* ── Header ── */}
-          <div className="shrink-0 px-6 pt-5 pb-4 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-lg font-black text-slate-900">{pm.editModalTitle}</h2>
-            <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-xl leading-none">×</button>
+          <div className="shrink-0 px-6 pt-5 pb-4 border-b border-line flex items-center justify-between">
+            <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{pm.editModalTitle}</h2>
+            <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-brand-50 rounded-xl transition-colors text-xl leading-none">×</button>
           </div>
 
           {/* ── Body ── */}
@@ -147,11 +147,11 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
 
             {/* Status block — blocked if TAKEN or EXPIRED */}
             {isBlocked ? (
-              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="flex items-start gap-3 p-4 bg-accent-50 border border-accent-200 rounded-2xl">
+                <svg className="w-5 h-5 text-accent-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
                 </svg>
-                <p className="text-sm font-semibold text-amber-800">
+                <p className="text-sm font-semibold text-accent-700">
                   {listing.status === ListingStatus.TAKEN
                     ? (pm as unknown as { editBlockedTaken: string }).editBlockedTaken
                     : (pm as unknown as { editBlockedExpired: string }).editBlockedExpired}
@@ -173,8 +173,8 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
           </div>
 
           {/* ── Footer ── */}
-          <div className="shrink-0 px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
-            <button type="button" onClick={handleClose} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">
+          <div className="shrink-0 px-6 py-4 bg-white border-t border-line flex gap-3">
+            <button type="button" onClick={handleClose} className="h-12 px-5 bg-white border border-line text-ink rounded-xl font-semibold text-[15px] hover:border-brand-200 transition-all">
               {t.cancel}
             </button>
             {!isBlocked && (
@@ -182,7 +182,7 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
                 type="button"
                 disabled={isSubmitting || !isDirty()}
                 onClick={handleSubmit}
-                className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2"
+                className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 disabled:opacity-40 transition-all flex items-center justify-center gap-2"
               >
                 {isSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 {pm.updateListingBtn}
@@ -195,7 +195,7 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
       {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[130] pointer-events-none">
-          <div className="bg-amber-700 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-2xl">{toastMsg}</div>
+          <div className="bg-ink text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)]">{toastMsg}</div>
         </div>
       )}
     </>

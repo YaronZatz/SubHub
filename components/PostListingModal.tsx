@@ -26,6 +26,8 @@ interface PostListingModalProps {
   language: Language;
   currentUserId: string;
   currentUserName: string;
+  /** Render inline as a page (the /post route) instead of an overlay. */
+  asPage?: boolean;
 }
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -114,10 +116,10 @@ function StepBar({ step, total, label }: { step: number; total: number; label: s
     <div className="flex items-center gap-3 mb-5">
       <div className="flex gap-1.5">
         {Array.from({ length: total }).map((_, i) => (
-          <div key={i} className={`h-1.5 rounded-full transition-all ${i < step ? 'bg-cyan-600 w-6' : i === step - 1 ? 'bg-cyan-600 w-8' : 'bg-slate-200 w-4'}`} />
+          <div key={i} className={`h-1.5 rounded-full transition-all ${i < step ? 'bg-brand-600 w-6' : i === step - 1 ? 'bg-brand-600 w-8' : 'bg-brand-100 w-4'}`} />
         ))}
       </div>
-      <span className="text-xs text-slate-400 font-semibold">{label}</span>
+      <span className="text-xs text-muted font-semibold">{label}</span>
     </div>
   );
 }
@@ -130,10 +132,10 @@ function ExtractingScreen({ resolvedCount, labels }: { resolvedCount: number; la
   return (
     <div className="flex flex-col items-center py-10 space-y-8">
       <div className="relative w-16 h-16">
-        <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
-        <div className="absolute inset-0 rounded-full border-4 border-t-cyan-500 border-r-cyan-300 border-b-transparent border-l-transparent animate-spin" />
+        <div className="absolute inset-0 rounded-full border-4 border-line" />
+        <div className="absolute inset-0 rounded-full border-4 border-t-brand-600 border-r-brand-200 border-b-transparent border-l-transparent animate-spin" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <svg className="w-6 h-6 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-6 h-6 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
@@ -143,19 +145,19 @@ function ExtractingScreen({ resolvedCount, labels }: { resolvedCount: number; la
           const done = i < resolvedCount;
           const active = i === resolvedCount;
           return (
-            <div key={i} className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all ${active ? 'bg-cyan-50 border border-cyan-100' : done ? 'bg-slate-50' : ''}`}>
+            <div key={i} className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all ${active ? 'bg-brand-50 border border-brand-100' : done ? 'bg-brand-50' : ''}`}>
               <div className="w-5 h-5 shrink-0 flex items-center justify-center">
                 {done ? (
-                  <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <div className="w-5 h-5 rounded-full bg-brand-600 flex items-center justify-center">
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </div>
                 ) : active ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin" />
+                  <div className="w-4 h-4 rounded-full border-2 border-brand-600 border-t-transparent animate-spin" />
                 ) : (
-                  <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
+                  <div className="w-4 h-4 rounded-full border-2 border-line" />
                 )}
               </div>
-              <span className={`text-sm font-semibold ${done ? 'text-slate-600' : active ? 'text-cyan-700' : 'text-slate-300'}`}>{label}</span>
+              <span className={`text-sm font-semibold ${done ? 'text-muted' : active ? 'text-brand-700' : 'text-muted/60'}`}>{label}</span>
             </div>
           );
         })}
@@ -166,7 +168,7 @@ function ExtractingScreen({ resolvedCount, labels }: { resolvedCount: number; la
 
 // ─── Main modal ─────────────────────────────────────────────────────────────────
 
-export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName }: PostListingModalProps) {
+export default function PostListingModal({ onAdd, onClose, onViewOnMap, language, currentUserId, currentUserName, asPage = false }: PostListingModalProps) {
   const t = translations[language];
   const pm = t.postModal;
 
@@ -361,20 +363,26 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
   // ─────────────────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="fixed inset-0 z-[120] flex items-center justify-center px-4 pt-4 pb-20 md:p-4 bg-slate-900/60 backdrop-blur-sm">
-        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200">
+      <div className={asPage
+        ? 'flex justify-center px-4 pb-28 pt-6 md:pb-12 md:pt-10'
+        : 'fixed inset-0 z-[120] flex items-center justify-center px-4 pt-4 pb-20 md:p-4 bg-ink/50'}>
+        <div className={asPage
+          ? 'flex w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-line bg-white'
+          : 'bg-white rounded-2xl shadow-[0_24px_64px_rgba(17,26,36,0.24)] w-full max-w-xl flex flex-col max-h-[92vh] overflow-hidden animate-in zoom-in-95 fade-in duration-200'}>
 
           {/* ── Header ── */}
-          <div className="shrink-0 px-6 pt-5 pb-0 border-b border-slate-100">
+          <div className="shrink-0 px-6 pt-5 pb-0 border-b border-line">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-black text-slate-900">{pm.modalTitle}</h2>
-              <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors text-xl leading-none">×</button>
+              <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{pm.modalTitle}</h2>
+              <button type="button" onClick={handleClose} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-brand-50 hover:text-ink">
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
             </div>
 
             {!isSuccess && (
-              <div className="flex bg-slate-100 p-1 rounded-2xl mb-4">
+              <div className="flex bg-brand-50 p-1 rounded-xl mb-4">
                 {(['paste', 'manual'] as Tab[]).map(tk => (
-                  <button key={tk} type="button" onClick={() => setTab(tk)} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${tab === tk ? 'bg-white text-cyan-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
+                  <button key={tk} type="button" onClick={() => setTab(tk)} className={`flex-1 h-10 rounded-[10px] text-sm font-semibold transition-all ${tab === tk ? 'bg-white text-brand-700 shadow-[0_1px_3px_rgba(17,26,36,0.12)]' : 'text-muted hover:text-ink'}`}>
                     {tk === 'paste' ? pm.pasteAPost : pm.manualEntry}
                   </button>
                 ))}
@@ -387,11 +395,11 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
 
             {/* Discard confirmation */}
             {showDiscardConfirm && (
-              <div className="mb-5 bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-3">
-                <p className="text-sm font-bold text-amber-800">{pm.unsavedChanges}</p>
+              <div className="mb-5 bg-accent-50 border border-accent-200 rounded-2xl p-4 space-y-3">
+                <p className="text-sm font-bold text-accent-700">{pm.unsavedChanges}</p>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setShowDiscardConfirm(false)} className="flex-1 py-2.5 bg-white border border-amber-200 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-50 transition-colors">{pm.keepEditing}</button>
-                  <button type="button" onClick={onClose} className="flex-1 py-2.5 bg-amber-600 text-white rounded-xl text-xs font-bold hover:bg-amber-700 transition-colors">{pm.discard}</button>
+                  <button type="button" onClick={() => setShowDiscardConfirm(false)} className="flex-1 py-2.5 bg-white border border-accent-200 text-accent-700 rounded-xl text-xs font-bold hover:bg-accent-50 transition-colors">{pm.keepEditing}</button>
+                  <button type="button" onClick={onClose} className="flex-1 py-2.5 bg-ink text-white rounded-xl text-sm font-semibold hover:bg-ink/90 transition-colors">{pm.discard}</button>
                 </div>
               </div>
             )}
@@ -403,13 +411,13 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                 {pasteScreen === 'input' && (
                   <div className="space-y-5">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{pm.pastePostLabel}</label>
+                      <label className="text-xs font-semibold text-muted uppercase tracking-[0.06em]">{pm.pastePostLabel}</label>
                       <textarea
                         value={pasteText}
                         onChange={e => { setPasteText(e.target.value); setPasteTextError(null); setExtractError(null); }}
                         rows={8}
                         placeholder={pm.pastePostPlaceholder}
-                        className={`w-full px-4 py-3.5 rounded-2xl text-sm leading-relaxed resize-none outline-none transition-all focus:ring-4 ${pasteTextError ? 'bg-red-50 border border-red-300 focus:ring-red-500/10 focus:border-red-500' : 'bg-slate-50 border border-slate-200 focus:ring-cyan-500/10 focus:border-cyan-500'}`}
+                        className={`w-full px-4 py-3.5 rounded-2xl text-sm leading-relaxed resize-none outline-none transition-all focus:ring-4 ${pasteTextError ? 'bg-red-50 border border-red-300  focus:border-red-500' : 'bg-brand-50 border border-line  focus:border-brand-600'}`}
                       />
                       {pasteTextError && <p className="text-[11px] text-red-500 font-medium">{pasteTextError}</p>}
                     </div>
@@ -440,13 +448,13 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                 {/* Screen 3: Review */}
                 {pasteScreen === 'review' && (
                   <>
-                    <div className="flex items-center gap-2.5 mb-5 p-3.5 bg-green-50 border border-green-100 rounded-xl">
-                      <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shrink-0">
+                    <div className="flex items-center gap-2.5 mb-5 p-3.5 bg-brand-50 border border-brand-100 rounded-xl">
+                      <div className="w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center shrink-0">
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-green-800">{pm.aiExtractedBanner}</p>
-                        <p className="text-[11px] text-green-600">{pm.aiExtractedSub}</p>
+                        <p className="text-sm font-bold text-brand-800">{pm.aiExtractedBanner}</p>
+                        <p className="text-[11px] text-brand-700">{pm.aiExtractedSub}</p>
                       </div>
                     </div>
                     <ReviewForm data={pasteReviewData} onChange={setPasteReviewData} photos={pasteReviewPhotos} onPhotosChange={setPasteReviewPhotos} errors={pasteReviewErrors} t={t} pm={pm} amenityLabels={amenityLabels} subletTypeLabels={subletTypeLabels} photosReadOnly />
@@ -483,9 +491,9 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                 )}
                 {manualStep === 'review' && (
                   <>
-                    <div className="flex items-center gap-2.5 mb-5 p-3.5 bg-cyan-50 border border-cyan-100 rounded-xl">
-                      <svg className="w-5 h-5 text-cyan-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                      <p className="text-sm font-bold text-cyan-800">{pm.reviewBanner}</p>
+                    <div className="flex items-center gap-2.5 mb-5 p-3.5 bg-brand-50 border border-brand-100 rounded-xl">
+                      <svg className="w-5 h-5 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      <p className="text-sm font-bold text-brand-800">{pm.reviewBanner}</p>
                     </div>
                     <ReviewForm data={manualReviewData} onChange={setManualReviewData} photos={manualReviewPhotos} onPhotosChange={setManualReviewPhotos} errors={manualReviewErrors} t={t} pm={pm} amenityLabels={amenityLabels} subletTypeLabels={subletTypeLabels} />
                   </>
@@ -499,11 +507,11 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
 
           {/* ── Footer ── */}
           {!isSuccess && pasteScreen !== 'extracting' && (
-            <div className="shrink-0 px-6 py-4 bg-slate-50/80 border-t border-slate-100 flex gap-3">
+            <div className="shrink-0 px-6 py-4 bg-white border-t border-line flex gap-3">
 
               {/* Path 1 — Input */}
               {tab === 'paste' && pasteScreen === 'input' && (
-                <button type="button" onClick={handleExtract} disabled={!pasteText.trim()} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2">
+                <button type="button" onClick={handleExtract} disabled={!pasteText.trim()} className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 disabled:opacity-40 transition-all flex items-center justify-center gap-2">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>
                   {pm.extractWithAI}
                 </button>
@@ -512,8 +520,8 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
               {/* Path 1 — Review */}
               {tab === 'paste' && pasteScreen === 'review' && (
                 <>
-                  <button type="button" onClick={() => setPasteScreen('input')} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
-                  <button type="button" disabled={isSubmitting} onClick={() => handleSubmit(pasteReviewData, pasteReviewPhotos, pasteText)} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => setPasteScreen('input')} className="h-12 px-5 bg-white border border-line text-ink rounded-xl font-semibold text-[15px] hover:border-brand-200 transition-all">{pm.back}</button>
+                  <button type="button" disabled={isSubmitting} onClick={() => handleSubmit(pasteReviewData, pasteReviewPhotos, pasteText)} className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 disabled:opacity-40 transition-all flex items-center justify-center gap-2">
                     {isSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     {pm.postListingBtn}
                   </button>
@@ -524,7 +532,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
               {tab === 'manual' && typeof manualStep === 'number' && (
                 <>
                   {manualStep > 1 && (
-                    <button type="button" onClick={() => setManualStep((manualStep - 1) as ManualStep)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
+                    <button type="button" onClick={() => setManualStep((manualStep - 1) as ManualStep)} className="h-12 px-5 bg-white border border-line text-ink rounded-xl font-semibold text-[15px] hover:border-brand-200 transition-all">{pm.back}</button>
                   )}
                   <button type="button" onClick={() => {
                     if (manualStep === 1) {
@@ -538,7 +546,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
                     } else {
                       goToManualReview();
                     }
-                  }} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 transition-all shadow-lg shadow-cyan-100/50">
+                  }} className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-all ">
                     {pm.next}
                   </button>
                 </>
@@ -547,11 +555,11 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
               {/* Path 2 — Review */}
               {tab === 'manual' && manualStep === 'review' && (
                 <>
-                  <button type="button" onClick={() => setManualStep(3)} className="py-3.5 px-5 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-50 transition-all">{pm.back}</button>
+                  <button type="button" onClick={() => setManualStep(3)} className="h-12 px-5 bg-white border border-line text-ink rounded-xl font-semibold text-[15px] hover:border-brand-200 transition-all">{pm.back}</button>
                   <button type="button" disabled={isSubmitting} onClick={() => {
                     const orig = [manualReviewData.type && `${manualReviewData.type} in ${manualReviewData.location}, ${manualReviewData.city}`, manualReviewData.description].filter(Boolean).join('. ');
                     handleSubmit(manualReviewData, manualReviewPhotos, orig);
-                  }} className="flex-1 py-3.5 bg-cyan-600 text-white rounded-2xl font-black text-sm hover:bg-cyan-700 disabled:opacity-40 transition-all shadow-lg shadow-cyan-100/50 flex items-center justify-center gap-2">
+                  }} className="flex-1 h-12 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 disabled:opacity-40 transition-all flex items-center justify-center gap-2">
                     {isSubmitting && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     {pm.postListingBtn}
                   </button>
@@ -565,7 +573,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
       {/* Toast */}
       {toastMsg && (
         <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[130] pointer-events-none">
-          <div className="bg-amber-700 text-white text-sm font-bold px-5 py-2.5 rounded-full shadow-2xl">{toastMsg}</div>
+          <div className="bg-ink text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-[0_8px_24px_rgba(0,0,0,0.25)]">{toastMsg}</div>
         </div>
       )}
     </>
@@ -601,13 +609,13 @@ function ManualStep1({ data, onChange, errors, te, pm, subletTypeLabels }: {
         </select>
       </FL>
       <FL label={pm.typeLabel} required error={te(errors.type)}>
-        <select value={data.type} onChange={e => s('type', e.target.value as SubletType | '')} className={(errors.type ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
+        <select value={data.type} onChange={e => s('type', e.target.value as SubletType | '')} className={(errors.type ? 'border-red-300 bg-red-50 ' : 'border-line bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none  focus:border-brand-600 transition-all cursor-pointer'}>
           <option value="">—</option>
           {Object.values(SubletType).map(v => <option key={v} value={v}>{subletTypeLabels[v]}</option>)}
         </select>
       </FL>
       <FL label={pm.rentalDurationLabel} required error={te(errors.rentalDuration)}>
-        <select value={data.rentalDuration} onChange={e => s('rentalDuration', e.target.value as RentalDuration | '')} className={(errors.rentalDuration ? 'border-red-300 bg-red-50 ' : 'border-slate-200 bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none focus:ring-4 focus:ring-cyan-500/10 focus:border-cyan-500 transition-all cursor-pointer'}>
+        <select value={data.rentalDuration} onChange={e => s('rentalDuration', e.target.value as RentalDuration | '')} className={(errors.rentalDuration ? 'border-red-300 bg-red-50 ' : 'border-line bg-white ') + 'w-full px-3.5 py-3 rounded-xl text-sm border focus:outline-none  focus:border-brand-600 transition-all cursor-pointer'}>
           <option value="">—</option>
           <option value={RentalDuration.SUBLET}>{pm.rentalDurationSublet}</option>
           <option value={RentalDuration.SHORT_TERM}>{pm.rentalDurationShortTerm}</option>
@@ -636,10 +644,10 @@ function ManualStep2({ data, onChange, errors, te, pm }: {
         )}
       </div>
       <label className="flex items-center gap-3 cursor-pointer select-none">
-        <div onClick={() => s('openEnded', !data.openEnded)} className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${data.openEnded ? 'bg-cyan-600' : 'bg-slate-200'}`}>
+        <div onClick={() => s('openEnded', !data.openEnded)} className={`w-11 h-6 rounded-full transition-colors flex items-center px-0.5 ${data.openEnded ? 'bg-brand-600' : 'bg-brand-50'}`}>
           <div className={`w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${data.openEnded ? 'translate-x-5' : 'translate-x-0'}`} />
         </div>
-        <span className="text-sm text-slate-600 font-medium">{pm.openEndedLabel}</span>
+        <span className="text-sm text-muted font-medium">{pm.openEndedLabel}</span>
       </label>
     </div>
   );
@@ -657,7 +665,7 @@ function ManualStep3({ data, onChange, pm, amenityLabels }: {
         <AmenitiesGrid selected={data.amenities} onChange={a => s('amenities', a)} labels={amenityLabels} />
       </div>
       <FL label={pm.descriptionLabel}>
-        <textarea value={data.description} onChange={e => s('description', e.target.value)} rows={3} className="w-full px-3.5 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:border-cyan-500 focus:ring-4 focus:ring-cyan-500/10 transition-all resize-none" />
+        <textarea value={data.description} onChange={e => s('description', e.target.value)} rows={3} className="w-full px-3.5 py-3 bg-white border border-line rounded-xl text-sm text-ink focus:outline-none focus:border-brand-600 transition-all resize-none" />
       </FL>
       <FL label={pm.sourceUrlLabel}>
         <input type="url" value={data.sourceUrl} onChange={e => s('sourceUrl', e.target.value)} placeholder="https://…" className={ic} />
