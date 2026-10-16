@@ -11,6 +11,7 @@ import { getCurrencySymbol, formatPrice } from '../utils/formatters';
 import { convertAmount } from '../lib/currencyService';
 import { NavigationIcon } from './Icons';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
+import { MAP_STYLES } from '../lib/mapStyles';
 
 interface MapVisualizerProps {
   sublets: Sublet[];
@@ -31,23 +32,6 @@ function markerHtml(priceText: string, taken: boolean, selected: boolean) {
     : 'bg-white text-ink hover:bg-brand-600 hover:text-white shadow-[0_1px_4px_rgba(0,0,0,0.18)]';
   return `<div dir="ltr" class="price-marker flex items-center justify-center rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums whitespace-nowrap transition-colors ${cls}">${priceText}</div>`;
 }
-
-/** Quiet basemap: no business icons or transit clutter, water and parks in brand tints. */
-const MAP_STYLES: google.maps.MapTypeStyle[] = [
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', stylers: [{ visibility: 'on' }] },
-  { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#E1EDE0' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-  { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#F5F6F7' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#BDD6F2' }] },
-  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#18568F' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFFFFF' }] },
-  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#E4E8EC' }] },
-  { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#56606B' }] },
-  { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#56606B' }] },
-];
 
 /** Listings in the most common city, so one far-away geocode can't zoom the map out to the world. */
 function primaryCluster(sublets: Sublet[]): Sublet[] {

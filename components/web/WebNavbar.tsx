@@ -192,7 +192,7 @@ export default function WebNavbar() {
             {!isOnHome && !isOnMap ? (
               <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-xs">
                 <div className="relative w-full">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <svg className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   <input
@@ -201,7 +201,7 @@ export default function WebNavbar() {
                     onChange={e => setSearchQuery(e.target.value)}
                     onFocus={() => { if (!searchQuery) router.push('/map'); }}
                     placeholder={t.searchPlaceholder}
-                    className="w-full pl-10 pr-4 py-2 bg-slate-100 hover:bg-slate-200 focus:bg-white border border-transparent focus:border-slate-300 rounded-full text-sm font-medium text-slate-700 placeholder:text-slate-400 outline-none transition-all focus:ring-2 focus:ring-brand-600/20"
+                    className="h-11 w-full ps-10 pe-4 bg-white border border-line rounded-xl text-sm text-ink placeholder:text-muted/70 outline-none transition-colors focus:border-brand-600"
                   />
                 </div>
               </form>

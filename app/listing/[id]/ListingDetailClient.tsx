@@ -21,6 +21,10 @@ import { translateText } from '@/lib/translationService';
 import { formatPrice, formatDate } from '@/utils/formatters';
 import { getActiveAmenities } from '@/utils/amenityHelpers';
 import { Sublet, ListingStatus, CurrencyCode } from '@/types';
+import { homeCopy } from '@/lib/homeCopy';
+import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
+import AmenityIcon from '@/components/shared/AmenityIcon';
+import { Bath, BedDouble, Calendar, ChevronDown, ChevronLeft, ExternalLink, Heart, House, MapPin, Ruler, Share2, SearchX, TriangleAlert } from 'lucide-react';
 
 export type ListingDetailServerResult = 'found' | 'missing' | 'error';
 
@@ -41,11 +45,9 @@ function getPageTitle(s: Sublet): string {
   return parts.length > 0 ? parts.join(', ') : (s.location || 'Listing');
 }
 
-function getDateRange(s: Sublet, t: { fromDate: string; availableNow: string }): string {
-  const start = s.startDate ? formatDate(s.startDate) : '';
-  const end = s.endDate ? formatDate(s.endDate) : '';
-  if (start && end) return `${start} – ${end}`;
-  if (start) return t.fromDate.replace('{date}', start);
+function getDateRange(s: Sublet, t: { availableNow: string }, locale: string): string {
+  const range = formatDateRange(s.startDate, s.endDate, locale);
+  if (range) return range;
   if (s.immediateAvailability) return t.availableNow;
   return '';
 }
@@ -72,15 +74,16 @@ function contentBodyClass(dir: 'rtl' | 'ltr', base: string): string {
 function DetailSkeleton() {
   return (
     <div className="animate-pulse">
-      <div className="aspect-[16/9] md:aspect-[21/8] w-full bg-slate-200 rounded-2xl mb-8" />
-      <div className="grid lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-4">
-          <div className="h-8 bg-slate-200 rounded w-2/3" />
-          <div className="h-4 bg-slate-100 rounded w-1/3" />
-          <div className="h-4 bg-slate-100 rounded w-1/2 mt-4" />
-          <div className="h-32 bg-slate-100 rounded-xl mt-6" />
+      <div className="mb-3 h-5 w-32 rounded bg-brand-50" />
+      <div className="mb-6 h-10 w-2/3 rounded bg-brand-50" />
+      <div className="mb-8 aspect-[16/9] w-full rounded-2xl bg-brand-50 md:aspect-[21/8]" />
+      <div className="grid gap-10 lg:grid-cols-3">
+        <div className="space-y-4 lg:col-span-2">
+          <div className="h-24 rounded-2xl bg-brand-50" />
+          <div className="h-4 w-full rounded bg-brand-50" />
+          <div className="h-4 w-4/5 rounded bg-brand-50" />
         </div>
-        <div className="h-64 bg-slate-100 rounded-3xl" />
+        <div className="h-72 rounded-2xl bg-brand-50" />
       </div>
     </div>
   );
@@ -93,14 +96,16 @@ function NotFound() {
   const t = translations[language];
   return (
     <div className="flex flex-col items-center justify-center py-32 text-center px-4">
-      <div className="text-6xl mb-6">🏠</div>
-      <h1 className="text-2xl font-black text-slate-900 mb-2">
+      <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600">
+        <SearchX className="h-7 w-7" strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <h1 className="mb-2 font-display text-2xl font-extrabold text-ink">
         {t.listingNotFound}
       </h1>
-      <p className="text-slate-500 mb-8">This listing may no longer be available.</p>
+      <p className="mb-8 text-muted">{homeCopy(language).notFoundBody}</p>
       <Link
         href="/map"
-        className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors"
+        className="flex h-12 items-center rounded-xl bg-brand-600 px-6 font-semibold text-white transition-colors hover:bg-brand-700"
       >
         {t.browse} →
       </Link>
@@ -113,18 +118,20 @@ function FetchErrorState({ message, onRetry }: { message: string; onRetry: () =>
   const t = translations[language];
   return (
     <div className="flex flex-col items-center justify-center py-32 text-center px-4">
-      <div className="text-6xl mb-6">⚠️</div>
-      <h1 className="text-2xl font-black text-slate-900 mb-2">{t.listingLoadError}</h1>
-      <p className="text-slate-500 mb-2 max-w-md">{message}</p>
-      <p className="text-slate-400 text-sm mb-8">Check your connection or try again.</p>
+      <span className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent-100 text-accent-700">
+        <TriangleAlert className="h-7 w-7" strokeWidth={1.8} aria-hidden="true" />
+      </span>
+      <h1 className="mb-2 font-display text-2xl font-extrabold text-ink">{t.listingLoadError}</h1>
+      <p className="mb-2 max-w-md text-muted">{message}</p>
+      <p className="mb-8 text-sm text-muted">{homeCopy(language).errorHint}</p>
       <button
         type="button"
         onClick={onRetry}
-        className="px-6 py-3 bg-brand-600 text-white font-bold rounded-xl hover:bg-brand-700 transition-colors"
+        className="flex h-12 items-center rounded-xl bg-brand-600 px-6 font-semibold text-white transition-colors hover:bg-brand-700"
       >
         {t.tryAgain}
       </button>
-      <Link href="/map" className="mt-6 text-sm font-semibold text-slate-600 hover:text-brand-600">
+      <Link href="/map" className="mt-6 text-sm font-semibold text-brand-700 hover:underline">
         {t.browse} →
       </Link>
     </div>
@@ -269,77 +276,76 @@ export default function ListingDetailClient({
   const isTaken = sublet?.status === ListingStatus.TAKEN;
   const amenities = sublet ? getActiveAmenities(sublet) : [];
   const beds = sublet ? getBeds(sublet) : null;
-  const dateRange = sublet ? getDateRange(sublet, t) : '';
+  const dateRange = sublet ? getDateRange(sublet, t, lang) : '';
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
   const pageTitleText = sublet ? getPageTitle(sublet) : '';
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
   const addressLine = sublet ? (sublet.fullAddress || localizedLocation(sublet, lang) || '') : '';
+  // Hide the address line when it just repeats the title.
+  const showAddress = !!addressLine && addressLine.trim().toLowerCase() !== (sublet ? getPageTitle(sublet) : '').trim().toLowerCase();
   const addressDir = contentTextDir(addressLine || null);
   const summaryDir = contentTextDir(translatedSummary ?? sublet?.ai_summary ?? null);
   const originalDir = contentTextDir(sublet?.originalText ?? null);
   const isUiRTL = lang === 'he';
   const priceLocale = isUiRTL ? 'he-IL' : 'en-US';
 
+  const copy = homeCopy(lang);
+  const timeline = sublet ? timelineWindow(sublet.startDate, sublet.endDate, lang) : null;
+  const postTs = sublet ? (sublet.postedAt ? (new Date(sublet.postedAt).getTime() || sublet.createdAt) : sublet.createdAt) : 0;
+  const hoursAgo = Math.max(0, Math.floor((Date.now() - postTs) / (60 * 60 * 1000)));
+  const daysAgo = Math.max(1, Math.floor(hoursAgo / 24));
+  const isNew = hoursAgo < 24;
+  const freshLabel = isNew
+    ? t.addedXhAgo.replace('{x}', String(hoursAgo))
+    : t.addedXdAgo.replace('{x}', String(daysAgo > 30 ? '30+' : daysAgo));
+  const priceText = sublet && sublet.price > 0
+    ? formatPrice(sublet.price, currency as CurrencyCode, priceLocale, sublet.currency)
+    : null;
+
+  const facts = sublet ? [
+    dateRange ? { key: 'dates', icon: Calendar, label: copy.factDates, value: dateRange } : null,
+    beds !== null ? { key: 'beds', icon: BedDouble, label: copy.factBedrooms, value: String(beds) } : null,
+    sublet.parsedRooms?.bathrooms ? { key: 'baths', icon: Bath, label: copy.factBathrooms, value: String(sublet.parsedRooms.bathrooms) } : null,
+    sublet.parsedRooms?.floorArea ? { key: 'size', icon: Ruler, label: copy.factSize, value: `${sublet.parsedRooms.floorArea} ${sublet.parsedRooms.floorAreaUnit || t.sqm}` } : null,
+    { key: 'type', icon: House, label: copy.factType, value: t.subletTypes[sublet.type] },
+  ].filter(Boolean) as { key: string; icon: typeof Calendar; label: string; value: string }[] : [];
+
+  const sectionTitle = 'font-display text-[22px] font-extrabold tracking-tight text-ink';
+  const outlineBtn = 'flex h-10 items-center gap-1.5 rounded-[10px] border border-line bg-white px-3 text-sm font-semibold text-ink transition-colors hover:border-brand-200';
+  const contactBtn = 'flex h-12 w-full items-center justify-center rounded-xl bg-brand-600 text-[15px] font-semibold text-white transition-colors hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50';
+
   return (
     <div
-      className={`min-h-screen bg-white ${isUiRTL ? 'font-sans' : ''}`}
+      className="min-h-screen bg-white font-sans text-ink"
       dir={isUiRTL ? 'rtl' : 'ltr'}
       lang={isUiRTL ? 'he' : 'en'}
     >
-      {/* ── Navbar ── */}
       <WebNavbar />
 
-      {/* ── Breadcrumb / Action Bar ── */}
-      <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-100 z-40 px-4 md:px-8 py-3 flex items-center justify-between">
-        <Link
-          href="/map"
-          className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors group"
-        >
-          <svg
-            className={`w-4 h-4 transition-transform ${isUiRTL ? 'rotate-180 group-hover:translate-x-0.5' : 'group-hover:-translate-x-0.5'}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          {t.backToMap}
-        </Link>
-
-        {sublet && (
-          <div className="flex items-center gap-2">
-            {/* Save */}
-            <button
-              onClick={handleSave}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border transition-all ${
-                isSaved
-                  ? 'bg-red-50 border-red-200 text-red-500'
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'
-              }`}
-            >
-              <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              {isSaved ? t.saved : t.saveListing}
-            </button>
-
-            {/* Share */}
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border border-slate-200 bg-white text-slate-600 hover:border-slate-400 transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              {shareCopied ? t.copied : 'Share'}
-            </button>
-          </div>
-        )}
+      {/* ── Action bar (sits under the sticky navbar) ── */}
+      <div className="sticky top-16 z-40 border-b border-line bg-white md:top-[72px]">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3 px-4 py-2.5 md:px-6">
+          <Link href="/map" className="flex h-10 items-center gap-1 rounded-[10px] px-2 text-sm font-semibold text-ink hover:bg-brand-50">
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" strokeWidth={2.4} aria-hidden="true" />
+            {t.backToMap}
+          </Link>
+          {sublet && (
+            <div className="flex items-center gap-2">
+              <button onClick={handleSave} className={`${outlineBtn} ${isSaved ? 'border-accent-200 bg-accent-50 text-accent-700' : ''}`}>
+                <Heart className="h-4 w-4" fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} aria-hidden="true" />
+                {isSaved ? t.saved : t.saveListing}
+              </button>
+              <button onClick={handleShare} className={outlineBtn}>
+                <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+                {shareCopied ? t.copied : copy.share}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Content ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 pb-40 md:pb-10">
+      <div className="mx-auto max-w-[1200px] px-4 pb-44 pt-6 md:px-6 lg:pb-16">
         {isLoading ? (
           <DetailSkeleton />
         ) : fetchError ? (
@@ -349,31 +355,31 @@ export default function ListingDetailClient({
         ) : (
           <>
             {/* Title */}
-            <div className="mb-4">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1
-                  className={contentBodyClass(pageTitleDir, 'text-2xl md:text-3xl font-black text-slate-900')}
-                  dir={pageTitleDir}
-                  {...(pageTitleDir === 'rtl' ? { lang: 'he' as const } : {})}
-                >
-                  {getPageTitle(sublet)}
-                </h1>
+            <header className="mb-5 flex flex-col gap-2.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-md bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">{t.subletTypes[sublet.type]}</span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isNew ? 'bg-accent-100 text-accent-700' : 'bg-brand-50 text-ink'}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${isNew ? 'bg-accent-500' : 'bg-brand-200'}`} />
+                  {freshLabel}
+                </span>
                 {isTaken && (
-                  <span className="bg-red-100 text-red-600 text-xs font-black px-3 py-1 rounded-full uppercase">
-                    {t.taken}
-                  </span>
+                  <span className="rounded-full bg-ink px-2.5 py-0.5 text-xs font-semibold text-white">{t.taken}</span>
                 )}
               </div>
-              {sublet.fullAddress || sublet.location ? (
-                <p
-                  className={contentBodyClass(addressDir, 'text-slate-500 mt-1 text-sm')}
-                  dir={addressDir}
-                  {...(addressDir === 'rtl' ? { lang: 'he' as const } : {})}
-                >
-                  {sublet.fullAddress || localizedLocation(sublet, lang)}
+              <h1
+                className="font-display text-[30px] font-extrabold leading-tight tracking-[-0.025em] md:text-[40px]"
+                dir={pageTitleDir}
+                {...(pageTitleDir === 'rtl' ? { lang: 'he' as const } : {})}
+              >
+                {pageTitleText}
+              </h1>
+              {showAddress && (
+                <p className="flex items-center gap-1.5 self-start text-[15px] text-muted" dir={addressDir} {...(addressDir === 'rtl' ? { lang: 'he' as const } : {})}>
+                  <MapPin className="h-4 w-4 shrink-0 text-brand-600" strokeWidth={2} aria-hidden="true" />
+                  {addressLine}
                 </p>
-              ) : null}
-            </div>
+              )}
+            </header>
 
             {/* Photo Gallery */}
             {(() => {
@@ -389,7 +395,7 @@ export default function ListingDetailClient({
                   />
                 </div>
               ) : (
-                <div className="mb-8 rounded-2xl overflow-hidden">
+                <div className="mb-8 overflow-hidden rounded-2xl">
                   <ListingCarousel
                     id={sublet.id}
                     images={sublet.images}
@@ -401,283 +407,201 @@ export default function ListingDetailClient({
               );
             })()}
 
-            {/* Two-column layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+              {/* ── Main column ── */}
+              <div className="flex flex-col gap-10 lg:col-span-2">
 
-              {/* ── Left Column ── */}
-              <div className="lg:col-span-2 space-y-8">
-
-                {/* Key Highlights */}
-                <div className="flex flex-wrap gap-3 pb-8 border-b border-slate-100">
-                  {dateRange && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-sm font-semibold text-slate-700">{dateRange}</span>
-                    </div>
-                  )}
-                  {beds !== null && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                      </svg>
-                      <span className="text-sm font-semibold text-slate-700">
-                        {beds} {t.bedroom}{beds !== 1 ? 's' : ''}
+                {/* Key facts */}
+                <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {facts.map(f => (
+                    <div key={f.key} className={`flex flex-col gap-1 rounded-2xl border border-line p-4 ${f.key === 'dates' ? 'col-span-2 sm:col-span-3' : ''}`}>
+                      <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-muted">
+                        <f.icon className="h-4 w-4 text-brand-600" strokeWidth={2} aria-hidden="true" />
+                        {f.label}
                       </span>
-                    </div>
-                  )}
-                  {!!sublet.parsedRooms?.bathrooms && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <span className="text-base">🚿</span>
-                      <span className="text-sm font-semibold text-slate-700">
-                        {sublet.parsedRooms.bathrooms} {t.bath}{sublet.parsedRooms.bathrooms !== 1 ? 's' : ''}
-                      </span>
-                    </div>
-                  )}
-                  {!!sublet.parsedRooms?.floorArea && (
-                    <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                      <span className="text-base">📐</span>
-                      <span className="text-sm font-semibold text-slate-700">
-                        {sublet.parsedRooms.floorArea} {sublet.parsedRooms.floorAreaUnit || t.sqm}
-                      </span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl bg-white">
-                    <span className="text-base">🏠</span>
-                    <span className="text-sm font-semibold text-slate-700">{t.subletTypes[sublet.type]}</span>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-4">
-                  <h2 className="text-lg font-bold text-slate-900">{t.aboutThisPlace}</h2>
-                  {sublet.ai_summary ? (
-                    <div className="space-y-5">
-                      {summaryTranslating ? (
-                        <p className="text-xs text-slate-400 italic">{t.parsing}</p>
-                      ) : (
-                        <p
-                          className={contentBodyClass(summaryDir, 'text-slate-600 leading-relaxed whitespace-pre-line text-sm')}
-                          dir={summaryDir}
-                          {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
-                        >
-                          {translatedSummary ?? sublet.ai_summary}
-                        </p>
+                      <span className="text-[17px] font-semibold text-ink">{f.value}</span>
+                      {f.key === 'dates' && timeline && (
+                        <div className="mt-2 flex flex-col gap-1.5" aria-hidden="true">
+                          <div className="relative h-2 rounded-full bg-brand-100">
+                            <div className="absolute inset-y-0 rounded-full bg-brand-600" style={{ insetInlineStart: `${timeline.left}%`, width: `${timeline.width}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[11px] uppercase text-muted">
+                            {timeline.months.map(m => <span key={m}>{m}</span>)}
+                          </div>
+                        </div>
                       )}
-                      {sublet.originalText?.trim() ? (
-                        <aside className="pt-5 mt-1 border-t border-slate-100">
-                          <div className="flex items-center gap-2 mb-3" dir="ltr" lang="en">
-                            <svg className="w-4 h-4 text-[#1877F2] shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                            </svg>
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">{t.originalPost}</span>
-                          </div>
-                          <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
-                            <TranslatedText text={sublet.originalText} language={lang} />
-                          </div>
-                        </aside>
-                      ) : null}
                     </div>
-                  ) : (
-                    <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
-                      <TranslatedText text={sublet.originalText} language={lang} />
-                    </div>
-                  )}
-                </div>
+                  ))}
+                </section>
+
+                {/* About */}
+                <section className="flex flex-col gap-4">
+                  <h2 className={sectionTitle}>{t.aboutThisPlace}</h2>
+                  {sublet.ai_summary ? (
+                    summaryTranslating ? (
+                      <div className="space-y-2" aria-busy="true">
+                        <div className="h-4 w-full animate-pulse rounded bg-brand-50" />
+                        <div className="h-4 w-4/5 animate-pulse rounded bg-brand-50" />
+                      </div>
+                    ) : (
+                      <p
+                        className="whitespace-pre-line text-base leading-relaxed text-ink"
+                        dir={summaryDir}
+                        {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
+                      >
+                        {translatedSummary ?? sublet.ai_summary}
+                      </p>
+                    )
+                  ) : null}
+
+                  {sublet.originalText?.trim() ? (
+                    <details className="group rounded-2xl border border-line" open={!sublet.ai_summary}>
+                      <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
+                        <svg className="h-5 w-5 shrink-0 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                        </svg>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="text-sm font-semibold text-ink">
+                            <span className="group-open:hidden">{copy.showOriginal}</span>
+                            <span className="hidden group-open:inline">{copy.hideOriginal}</span>
+                          </span>
+                          {sublet.sourceGroupName && (
+                            <span className="truncate text-xs text-muted">{copy.postedIn} {sublet.sourceGroupName}</span>
+                          )}
+                        </span>
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" strokeWidth={2.2} aria-hidden="true" />
+                      </summary>
+                      <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
+                        <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
+                          <TranslatedText text={sublet.originalText} language={lang} />
+                        </div>
+                        {sublet.sourceUrl && (
+                          <a href={sublet.sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 self-start text-sm font-semibold text-brand-700 hover:underline">
+                            {t.viewPost}
+                            <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden="true" />
+                          </a>
+                        )}
+                      </div>
+                    </details>
+                  ) : null}
+                </section>
 
                 {/* Amenities */}
                 {amenities.length > 0 && (
-                  <div className="space-y-4 pt-8 border-t border-slate-100">
-                    <h2 className="text-lg font-bold text-slate-900">{t.whatThisPlaceOffers}</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <section className="flex flex-col gap-4">
+                    <h2 className={sectionTitle}>{t.whatThisPlaceOffers}</h2>
+                    <ul className="grid grid-cols-2 gap-x-6 gap-y-3.5 md:grid-cols-3">
                       {amenities.map(item => (
-                        <div
-                          key={item.key}
-                          className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
-                        >
-                          <span className="text-xl">{item.icon}</span>
-                          <span className="text-sm font-medium text-slate-700">{(t as unknown as Record<string, string>)[item.tKey] || item.labelEn}</span>
-                        </div>
+                        <li key={item.key} className="flex items-center gap-3 text-[15px] text-ink">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                            <AmenityIcon amenity={item.key} className="h-[18px] w-[18px]" />
+                          </span>
+                          {(t as unknown as Record<string, string>)[item.tKey] || item.labelEn}
+                        </li>
                       ))}
-                    </div>
-                  </div>
+                    </ul>
+                  </section>
                 )}
 
                 {/* Location */}
-                <div className="space-y-3 pt-8 border-t border-slate-100">
-                  <h2 className="text-lg font-bold text-slate-900">{t.locationHeading}</h2>
-                  <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-                    <svg className="w-4 h-4 text-brand-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                <section className="flex flex-col gap-3">
+                  <h2 className={sectionTitle}>{t.locationHeading}</h2>
+                  <div className="flex flex-wrap items-center gap-2 text-[15px] text-muted">
                     <span>
                       {[localizedNeighborhood(sublet, lang), sublet.city, sublet.country].filter(Boolean).join(', ') || localizedLocation(sublet, lang)}
                     </span>
                     {sublet.pin_status === 'approximate' && (
-                      <span className="ml-1 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                        approx.
-                      </span>
+                      <span className="rounded-full bg-accent-100 px-2.5 py-0.5 text-xs font-semibold text-accent-700">{copy.approxLocation}</span>
                     )}
                   </div>
-
                   {sublet.lat && sublet.lng ? (
-                    <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border border-line">
                       <MiniMap lat={sublet.lat} lng={sublet.lng} price={sublet.price} currency={sublet.currency} />
                       <a
                         href={`https://www.google.com/maps?q=${sublet.lat},${sublet.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-end gap-1 px-4 py-2 text-xs text-slate-400 hover:text-brand-600 transition-colors border-t border-slate-100"
+                        className="flex items-center justify-end gap-1 border-t border-line px-4 py-2.5 text-[13px] font-medium text-brand-700 hover:underline"
                       >
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                        </svg>
                         {t.openInGoogleMaps}
+                        <ExternalLink className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden="true" />
                       </a>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <span className="text-slate-500 text-sm">{localizedLocation(sublet, lang)}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Source info */}
-                {(sublet.sourceGroupName || sublet.sourceUrl) && (
-                  <div className="pt-8 border-t border-slate-100">
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                      <svg className="w-5 h-5 text-[#1877F2] shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                      </svg>
-                      <div>
-                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.source}</p>
-                        <p className="text-sm font-semibold text-slate-700">
-                          {sublet.sourceGroupName || 'Facebook Group'}
-                        </p>
-                      </div>
-                      {sublet.sourceUrl && (
-                        <a
-                          href={sublet.sourceUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ms-auto text-xs font-semibold text-[#1877F2] hover:underline"
-                        >
-                          {t.viewPost} →
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  ) : null}
+                </section>
               </div>
 
-              {/* ── Right Column — Booking Widget ── */}
-              <div className="hidden lg:block">
-                <div className="sticky top-[88px] bg-white border border-slate-200 rounded-3xl shadow-2xl p-6 space-y-5">
-                  {/* Price */}
+              {/* ── Contact panel ── */}
+              <aside className="hidden lg:block">
+                <div className="sticky top-[150px] flex flex-col gap-5 rounded-2xl border border-line bg-white p-6 shadow-[0_12px_32px_rgba(17,26,36,0.08)]">
                   <div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-black text-slate-900">
-                        {formatPrice(sublet.price, currency as CurrencyCode, priceLocale, sublet.currency)}
-                      </span>
-                      <span className="text-slate-500 font-medium">/mo</span>
-                    </div>
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-brand-600/10 text-brand-600 text-[10px] font-black uppercase rounded tracking-wider">
-                      {t.subletTypes[sublet.type]}
-                    </span>
+                    {priceText ? (
+                      <p className="flex items-baseline gap-1">
+                        <span className="text-[32px] font-bold tabular-nums tracking-tight text-ink">{priceText}</span>
+                        <span className="text-muted">{copy.perMonth}</span>
+                      </p>
+                    ) : (
+                      <p className="text-lg font-semibold text-muted">{copy.priceOnRequest}</p>
+                    )}
                   </div>
 
-                  {/* Date Range */}
-                  {(sublet.startDate || sublet.endDate) && (
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden text-xs">
-                      <div className="grid grid-cols-2">
-                        <div className="p-3 border-e border-slate-200">
-                          <div className="font-black uppercase text-slate-400 text-[9px] tracking-widest mb-1">{t.fromLabel}</div>
-                          <div className="text-slate-900 font-bold">{formatDate(sublet.startDate) || '—'}</div>
-                        </div>
-                        <div className="p-3">
-                          <div className="font-black uppercase text-slate-400 text-[9px] tracking-widest mb-1">{t.untilLabel}</div>
-                          <div className="text-slate-900 font-bold">
-                            {formatDate(sublet.endDate) || (sublet.datesFlexible ? 'Flexible' : '—')}
-                          </div>
-                        </div>
+                  {(formatDate(sublet.startDate) || formatDate(sublet.endDate)) && (
+                    <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-line">
+                      <div className="border-e border-line p-3">
+                        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{t.fromLabel}</div>
+                        <div className="font-semibold text-ink">{formatDate(sublet.startDate) || '—'}</div>
+                      </div>
+                      <div className="p-3">
+                        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">{t.untilLabel}</div>
+                        <div className="font-semibold text-ink">{formatDate(sublet.endDate) || (sublet.datesFlexible ? copy.flexible : '—')}</div>
                       </div>
                     </div>
                   )}
 
-                  {/* Contact Landlord */}
-                  <button
-                    onClick={handleContact}
-                    disabled={isTaken}
-                    className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed
-                      bg-gradient-to-r from-brand-600 to-[#5b8fd4] text-white shadow-lg shadow-brand-600/25 hover:shadow-xl hover:shadow-brand-600/30"
-                  >
+                  <button onClick={handleContact} disabled={isTaken} className={contactBtn}>
                     {isTaken ? t.noLongerAvailable : t.contactLandlord}
                   </button>
 
-                  {/* Save */}
                   <button
                     onClick={handleSave}
-                    className={`w-full py-3 rounded-2xl font-bold text-sm border-2 transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${
-                      isSaved
-                        ? 'border-red-200 bg-red-50 text-red-500'
-                        : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                    className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-semibold transition-colors ${
+                      isSaved ? 'border-accent-200 bg-accent-50 text-accent-700' : 'border-line bg-white text-ink hover:border-brand-200'
                     }`}
                   >
-                    <svg className="w-4 h-4" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
+                    <Heart className="h-4 w-4" fill={isSaved ? 'currentColor' : 'none'} strokeWidth={2} aria-hidden="true" />
                     {isSaved ? t.saved : t.saveListing}
                   </button>
 
-                  {/* Safety note */}
-                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-                    {t.feeNote}
-                  </p>
+                  <p className="text-center text-xs leading-relaxed text-muted">{t.feeNote}</p>
                 </div>
-              </div>
+              </aside>
             </div>
           </>
         )}
       </div>
 
-      {/* ── Mobile Sticky Bottom Bar — sits above the mobile tab bar (bottom-16) ── */}
+      {/* ── Mobile contact bar — sits above the mobile tab bar ── */}
       {sublet && !isLoading && !notFound && !fetchError && (
-        <div className="lg:hidden fixed bottom-16 inset-x-0 bg-white border-t border-slate-200 px-4 py-3 flex items-center gap-3 z-40">
-          <div className="flex-1">
-            <p className="font-black text-slate-900">
-              {formatPrice(sublet.price, currency as CurrencyCode, priceLocale, sublet.currency)}
-              <span className="text-slate-500 font-medium text-sm"> /mo</span>
-            </p>
-            {dateRange && <p className="text-xs text-slate-500">{dateRange}</p>}
+        <div className="fixed inset-x-0 bottom-16 z-40 flex items-center gap-3 border-t border-line bg-white px-4 py-3 lg:hidden">
+          <div className="min-w-0 flex-1">
+            {priceText ? (
+              <p className="text-lg font-bold tabular-nums text-ink">
+                {priceText}<span className="text-sm font-normal text-muted"> {copy.perMonth}</span>
+              </p>
+            ) : (
+              <p className="text-sm font-semibold text-muted">{copy.priceOnRequest}</p>
+            )}
+            {dateRange && <p className="truncate text-xs text-muted">{dateRange}</p>}
           </div>
           <button
             onClick={handleContact}
             disabled={isTaken}
-            className="px-6 py-3 rounded-xl font-black text-sm text-white bg-gradient-to-r from-brand-600 to-[#5b8fd4] shadow-lg disabled:opacity-50 active:scale-95 transition-all"
+            className="h-12 shrink-0 rounded-xl bg-brand-600 px-5 text-sm font-semibold text-white transition-colors active:bg-brand-700 disabled:opacity-50"
           >
             {isTaken ? t.unavailable : t.contactLandlord}
           </button>
         </div>
       )}
-
-      {/* ── Floating "Back to map" button (mobile, visible after scrolling) ── */}
-      <Link
-        href="/map"
-        className="lg:hidden fixed bottom-36 start-4 z-40 flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-full shadow-lg text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors"
-      >
-        <svg
-          className={`w-3.5 h-3.5 ${isUiRTL ? 'rotate-180' : ''}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        {t.backToMap}
-      </Link>
 
       {/* ── Lightbox ── */}
       {showLightbox && (() => {

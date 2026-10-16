@@ -32,14 +32,14 @@ export function TranslatedText({ text, language }: Props) {
 
   return (
     <div>
-      <p className="text-sm text-slate-700 whitespace-pre-wrap">{text}</p>
+      <p className="text-[15px] leading-relaxed text-ink whitespace-pre-wrap">{text}</p>
       {loading && (
-        <p className="text-xs text-slate-400 mt-2 italic">{t.parsing}</p>
+        <p className="mt-2 text-xs text-muted">{t.translationLabel}…</p>
       )}
       {translation && !loading && (
-        <div className="mt-2 pt-2 border-t border-slate-200">
-          <p className="text-xs text-slate-400 mb-1">{t.translationLabel}</p>
-          <p className="text-sm text-slate-600 whitespace-pre-wrap">{translation}</p>
+        <div className="mt-3 border-t border-line pt-3">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.06em] text-muted">{t.translationLabel}</p>
+          <p className="text-[15px] leading-relaxed text-ink whitespace-pre-wrap">{translation}</p>
         </div>
       )}
     </div>

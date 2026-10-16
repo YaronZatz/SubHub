@@ -51,6 +51,20 @@ const en = {
   bedroomsShort: (n: number) => `${n} ${n === 1 ? 'bedroom' : 'bedrooms'}`,
   availableNow: 'Available now',
   viewDetails: 'View details',
+  // Listing detail
+  showOriginal: 'Show original post',
+  hideOriginal: 'Hide original post',
+  approxLocation: 'Approximate location',
+  factDates: 'Dates',
+  factBedrooms: 'Bedrooms',
+  factBathrooms: 'Bathrooms',
+  factSize: 'Size',
+  factType: 'Type',
+  share: 'Share',
+  notFoundBody: 'This listing may have been taken or removed.',
+  errorHint: 'Check your connection and try again.',
+  postedIn: 'Posted in',
+  flexible: 'Flexible',
 };
 
 type HomeCopy = typeof en;
@@ -104,6 +118,19 @@ const he: HomeCopy = {
   bedroomsShort: (n: number) => `${n} חדרי שינה`,
   availableNow: 'זמין עכשיו',
   viewDetails: 'לפרטים',
+  showOriginal: 'הצג את הפוסט המקורי',
+  hideOriginal: 'הסתר את הפוסט המקורי',
+  approxLocation: 'מיקום משוער',
+  factDates: 'תאריכים',
+  factBedrooms: 'חדרי שינה',
+  factBathrooms: 'חדרי רחצה',
+  factSize: 'גודל',
+  factType: 'סוג',
+  share: 'שיתוף',
+  notFoundBody: 'ייתכן שהמודעה נתפסה או הוסרה.',
+  errorHint: 'בדקו את החיבור ונסו שוב.',
+  postedIn: 'פורסם ב',
+  flexible: 'גמיש',
 };
 
 export function homeCopy(language: string): HomeCopy {
