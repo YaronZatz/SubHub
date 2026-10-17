@@ -15,8 +15,10 @@ export function formatDateRange(start: string | undefined, end: string | undefin
   const e = parseIso(end);
   if (!s && !e) return null;
   const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
-  if (s && e) return `${fmt.format(s)} → ${fmt.format(e)}`;
-  return s ? `${fmt.format(s)} →` : `→ ${fmt.format(e!)}`;
+  // Arrows aren't mirrored by the bidi algorithm, so right-to-left text needs ← to read "from → to".
+  const arrow = /^(he|ar|fa)(-|$)/.test(locale) ? '←' : '→';
+  if (s && e) return `${fmt.format(s)} ${arrow} ${fmt.format(e)}`;
+  return s ? `${fmt.format(s)} ${arrow}` : `${arrow} ${fmt.format(e!)}`;
 }
 
 export interface TimelineWindow {

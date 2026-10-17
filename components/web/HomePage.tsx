@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SearchAutocomplete from '@/components/SearchAutocomplete';
@@ -9,6 +8,8 @@ import WebNavbar from '@/components/web/WebNavbar';
 import HomeListingCard from '@/components/web/HomeListingCard';
 import CityCarousel from '@/components/shared/CityCarousel';
 import SiteFooter from '@/components/shared/SiteFooter';
+import PostToListingSection from '@/components/shared/PostToListingSection';
+import HeroMapCard from '@/components/shared/HeroMapCard';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { homeCopy } from '@/lib/homeCopy';
 import { persistenceService } from '@/services/persistenceService';
@@ -47,37 +48,6 @@ function CardSkeleton() {
         <div className="h-1.5 w-full rounded bg-brand-50" />
       </div>
     </div>
-  );
-}
-
-/** Decorative map card in the hero — links to the real map. */
-function HeroMapCard({ label }: { label: string }) {
-  const pin = 'absolute rounded-full bg-white px-2.5 py-1 text-[13px] font-bold tabular-nums shadow-[0_1px_4px_rgba(0,0,0,0.16)]';
-  return (
-    <Link
-      href="/map"
-      aria-label={label}
-      className="relative block h-[380px] min-w-0 flex-[1_1_420px] overflow-hidden rounded-[20px] border border-brand-100 bg-[#F5F6F7] transition-shadow hover:shadow-[0_12px_32px_rgba(17,26,36,0.10)]"
-    >
-      <svg viewBox="0 0 560 380" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full" aria-hidden="true">
-        <path d="M0 0 L120 0 L95 120 L70 240 L40 380 L0 380 Z" className="fill-brand-200" />
-        <rect x="300" y="40" width="110" height="70" rx="10" className="fill-brand-100" />
-        <rect x="420" y="250" width="90" height="80" rx="10" className="fill-brand-100" />
-        <g stroke="#fff" strokeWidth="9" fill="none" strokeLinecap="round">
-          <path d="M160 0 L130 380" /><path d="M250 0 L235 380" /><path d="M370 0 L380 380" /><path d="M480 0 L520 380" />
-          <path d="M110 80 L560 60" /><path d="M100 170 L560 165" /><path d="M85 260 L560 275" />
-        </g>
-        <g stroke="#fff" strokeWidth="4" fill="none">
-          <path d="M200 0 L185 380" /><path d="M310 0 L305 380" /><path d="M430 0 L450 380" />
-          <path d="M120 125 L560 115" /><path d="M95 215 L560 222" /><path d="M70 320 L560 330" />
-        </g>
-      </svg>
-      <span className={pin} style={{ left: '26%', top: '18%' }} dir="ltr">₪4.5k</span>
-      <span className={pin} style={{ left: '54%', top: '30%' }} dir="ltr">₪6.8k</span>
-      <span className="absolute rounded-full bg-accent-500 px-3.5 py-1.5 text-[15px] font-bold tabular-nums text-accent-ink shadow-[0_6px_16px_rgba(0,0,0,0.2)]" style={{ left: '36%', top: '50%' }} dir="ltr">₪3.2k</span>
-      <span className={pin} style={{ left: '70%', top: '62%' }} dir="ltr">₪9k</span>
-      <span className="absolute rounded-full bg-brand-900 px-2.5 py-1 text-[13px] font-bold text-white" style={{ left: '22%', top: '74%' }}>12</span>
-    </Link>
   );
 }
 
@@ -141,7 +111,7 @@ export function WebHomePage({
             </h1>
             <p className="max-w-[520px] text-[19px] text-muted">{copy.subhead}</p>
           </div>
-          <HeroMapCard label={copy.showOnMap} />
+          <HeroMapCard label={copy.showOnMap} className="h-[380px] flex-[1_1_420px]" />
         </div>
 
         {/* Search — overlaps the hero edge */}
@@ -230,30 +200,7 @@ export function WebHomePage({
       </main>
 
       {/* How it works */}
-      <section className="bg-brand-900 text-white">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-10 px-6 py-16">
-          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
-            <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-brand-200">{copy.howItWorksEyebrow}</p>
-            <h2 className="font-display text-[40px] font-extrabold leading-[1.08] tracking-[-0.025em]">{copy.howItWorksTitle}</h2>
-            <p className="text-[17px] text-white/80">{copy.howItWorksBody}</p>
-          </div>
-          <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5 rounded-2xl border border-white/15 bg-white/[0.07] p-5">
-            <span className="text-xs font-medium uppercase tracking-wide text-white/70">{copy.sampleSource}</span>
-            <p lang="he" dir="rtl" className="text-[15px] leading-relaxed">
-              דירת יחיד מטופחת ביהודה הלוי, קומה 2, 4500 לחודש. פנויה מנובמבר עד סוף ינואר, מרוהטת, מזגן…
-            </p>
-          </div>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" className="shrink-0 text-accent-500 rtl:rotate-180">
-            <path d="M4 12h15" /><path d="M13 6l6 6-6 6" />
-          </svg>
-          <dl className="grid min-w-0 flex-[1_1_260px] grid-cols-2 gap-3.5 rounded-2xl bg-white p-5 text-ink">
-            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.samplePrice}</dt><dd className="text-[17px] font-bold tabular-nums" dir="ltr">₪4,500/mo</dd></div>
-            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleType}</dt><dd><span className="rounded-md bg-brand-100 px-2 py-0.5 text-sm font-semibold text-brand-700">Studio</span></dd></div>
-            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleDates}</dt><dd className="text-[15px] font-medium">1 Nov → 31 Jan</dd></div>
-            <div><dt className="text-[11px] font-medium uppercase text-muted">{copy.sampleWhere}</dt><dd className="font-semibold">Lev HaIr</dd></div>
-          </dl>
-        </div>
-      </section>
+      <PostToListingSection />
 
       <SiteFooter />
     </div>

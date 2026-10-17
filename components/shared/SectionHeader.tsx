@@ -20,7 +20,7 @@ export default function SectionHeader({ title, titleHref, subtitle, countLabel, 
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col gap-1">
         <div className="flex flex-wrap items-baseline gap-2.5">
-          <h2 className={`font-display font-extrabold tracking-tight text-ink ${lg ? 'text-[32px]' : 'text-[22px]'}`}>
+          <h2 className={`font-display font-extrabold leading-[1.15] tracking-tight text-ink ${lg ? 'text-[32px]' : 'text-[22px]'}`}>
             {titleHref ? <Link href={titleHref} className="hover:text-brand-700">{title}</Link> : title}
           </h2>
           {countLabel && <span className={`text-muted ${lg ? 'text-sm' : 'text-[13px]'}`}>{countLabel}</span>}
