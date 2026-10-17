@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { homeCopy } from '@/lib/homeCopy';
 import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 import MobileTabBar from '@/components/shared/MobileTabBar';
@@ -174,7 +175,7 @@ export default function WebNavbar() {
   };
 
   const firebaseUser = user as (typeof user & { photoURL?: string; displayName?: string }) | null;
-  const displayName = firebaseUser?.displayName || (user as any)?.name || 'User';
+  const displayName = firebaseUser?.displayName || (user as any)?.name || homeCopy(language).userFallback;
   const initials = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
@@ -269,7 +270,7 @@ export default function WebNavbar() {
                   <button
                     onClick={() => setIsUserMenuOpen(v => !v)}
                     className="flex items-center gap-1.5 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
-                    aria-label="Account menu"
+                    aria-label={homeCopy(language).accountMenu}
                   >
                     {firebaseUser?.photoURL ? (
                       <img src={firebaseUser.photoURL} alt={displayName} className="w-10 h-10 rounded-full shadow-sm object-cover" />

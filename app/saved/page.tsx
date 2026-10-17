@@ -12,7 +12,8 @@ import { formatPrice, formatDate } from '@/utils/formatters';
 import { HeartIcon } from '@/components/Icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
-import { localizedLocation, localizedNeighborhood, listingTitle } from '@/lib/locationUtils';
+import { accountCopy } from '@/lib/accountCopy';
+import { listingTitle } from '@/lib/locationUtils';
 import { normalizeCurrencyCode } from '@/utils/formatters';
 import { Sublet, CurrencyCode, ListingStatus } from '@/types';
 
@@ -101,6 +102,7 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
   const { currency } = useCurrency();
   const { language } = useLanguage();
   const t = translations[language];
+  const ac = accountCopy(language).saved;
 
   const isUnavailable = [
     ListingStatus.FILLED,
@@ -126,8 +128,9 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
           <span className="text-muted text-xs font-semibold">{t.unavailable}</span>
           <button
             onClick={(e) => { e.preventDefault(); onUnsave(); }}
-            className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
-            title="Remove from saved"
+            className="absolute top-3 end-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+            title={ac.removeFromSaved}
+            aria-label={ac.removeFromSaved}
           >
             <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
           </button>
@@ -137,7 +140,8 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
           <button
             onClick={onUnsave}
             className="p-2 rounded-full hover:bg-brand-50 transition-colors"
-            title="Remove from saved"
+            title={ac.removeFromSaved}
+            aria-label={ac.removeFromSaved}
           >
             <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
           </button>
@@ -160,8 +164,9 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
         {/* Unsave button */}
         <button
           onClick={(e) => { e.preventDefault(); onUnsave(); }}
-          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
-          title="Remove from saved"
+          className="absolute top-3 end-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors"
+          title={ac.removeFromSaved}
+          aria-label={ac.removeFromSaved}
         >
           <HeartIcon className="w-4 h-4 fill-red-500 text-red-500" />
         </button>
@@ -178,8 +183,8 @@ function SavedCard({ sublet, onUnsave }: { sublet: Sublet; onUnsave: () => void 
           </div>
           {sublet.price > 0 && (
             <p className="shrink-0 text-sm font-bold text-ink">
-              {formatPrice(sublet.price, (sublet.currency ?? currency) as CurrencyCode)}
-              <span className="text-xs font-normal text-muted">/mo</span>
+              {formatPrice(sublet.price, currency as CurrencyCode, language, sublet.currency)}
+              <span className="ms-0.5 text-xs font-normal text-muted">{ac.perMonth}</span>
             </p>
           )}
         </div>
@@ -239,7 +244,7 @@ function SavedContent() {
           </div>
           {!isLoading && savedIds.size > 0 && (
             <span className="text-sm font-semibold text-muted">
-              {savedIds.size} saved
+              {accountCopy(language).saved.savedCount(savedIds.size)}
             </span>
           )}
         </div>

@@ -14,6 +14,46 @@ import {
 } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { User } from '../types';
+import { authErrorMessage, type AuthErrorCode } from '../lib/accountCopy';
+
+export type { AuthErrorCode };
+
+/** Result of an auth call. `errorCode` is stable; the UI localizes it. `error` is an English fallback, never a raw Firebase message. */
+export type AuthResult = { success: boolean; user?: User; error?: string; errorCode?: AuthErrorCode };
+
+function fail(code: AuthErrorCode): AuthResult {
+  return { success: false, errorCode: code, error: authErrorMessage(code, 'en') };
+}
+
+/** Map a Firebase Auth error code to our stable code. */
+function mapFirebaseError(error: unknown, fallback: AuthErrorCode): AuthErrorCode {
+  const code = (error as { code?: string } | null)?.code;
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'invalid-credentials';
+    case 'auth/invalid-email':
+      return 'invalid-email';
+    case 'auth/email-already-in-use':
+      return 'email-in-use';
+    case 'auth/weak-password':
+      return 'weak-password';
+    case 'auth/popup-blocked':
+      return 'popup-blocked';
+    case 'auth/cancelled-popup-request':
+    case 'auth/popup-closed-by-user':
+    case 'auth/user-cancelled':
+      return 'cancelled';
+    case 'auth/network-request-failed':
+      return 'network';
+    case 'auth/too-many-requests':
+      return 'too-many-requests';
+    default:
+      return fallback;
+  }
+}
 
 /** Local storage key for mock user only. Used only when Firebase is not configured (e.g. dev). Not for production. */
 const LOCAL_USER_KEY = 'subhub_local_user';
@@ -32,11 +72,11 @@ export const authService = {
     };
   },
 
-  async login(email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  async login(email: string, password: string): Promise<AuthResult> {
     // Fallback to Mock Auth only when Firebase is not initialized (e.g. dev). Not for production.
     if (!auth) {
       if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Authentication is not configured.' };
+        return fail('not-configured');
       }
       console.warn('SubHub: Development/mock auth only; not for production.');
       return new Promise((resolve) => {
@@ -59,15 +99,15 @@ export const authService = {
       return { success: true, user: user || undefined };
     } catch (error: any) {
       console.error("Firebase Login Error:", error);
-      return { success: false, error: "Invalid email or password" };
+      return fail(mapFirebaseError(error, 'unknown'));
     }
   },
 
-  async signup(name: string, email: string, password: string): Promise<{ success: boolean; user?: User; error?: string }> {
+  async signup(name: string, email: string, password: string): Promise<AuthResult> {
     // Fallback to Mock Auth only when Firebase is not initialized (e.g. dev). Not for production.
     if (!auth) {
       if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Authentication is not configured.' };
+        return fail('not-configured');
       }
       console.warn('SubHub: Development/mock auth only; not for production.');
       return new Promise((resolve) => {
@@ -91,17 +131,14 @@ export const authService = {
       return { success: true, user: user || undefined };
     } catch (error: any) {
       console.error("Firebase Signup Error:", error);
-      let message = "Failed to create account";
-      if (error.code === 'auth/email-already-in-use') message = "Email already registered";
-      if (error.code === 'auth/weak-password') message = "Password is too weak";
-      return { success: false, error: message };
+      return fail(mapFirebaseError(error, 'signup-failed'));
     }
   },
 
-  async loginWithGoogle(): Promise<{ success: boolean; user?: User; error?: string }> {
+  async loginWithGoogle(): Promise<AuthResult> {
     if (!auth) {
       if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Authentication is not configured.' };
+        return fail('not-configured');
       }
       console.warn('SubHub: Development/mock auth only; not for production.');
       const mockUser: User = {
@@ -122,22 +159,21 @@ export const authService = {
       if (error.code === 'auth/popup-blocked') {
         try {
           await signInWithRedirect(auth, new GoogleAuthProvider());
-          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+          return fail('popup-redirect');
         } catch (redirectErr: any) {
           console.error('Firebase Google redirect error:', redirectErr);
-          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+          return fail('popup-blocked');
         }
       }
       console.error('Firebase Google Login Error:', error);
-      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Google sign-in failed');
-      return { success: false, error: message };
+      return fail(mapFirebaseError(error, 'provider-failed'));
     }
   },
 
-  async loginWithApple(): Promise<{ success: boolean; user?: User; error?: string }> {
+  async loginWithApple(): Promise<AuthResult> {
     if (!auth) {
       if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Authentication is not configured.' };
+        return fail('not-configured');
       }
       console.warn('SubHub: Development/mock auth only; not for production.');
       const mockUser: User = {
@@ -158,22 +194,21 @@ export const authService = {
       if (error.code === 'auth/popup-blocked') {
         try {
           await signInWithRedirect(auth, new OAuthProvider('apple.com'));
-          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+          return fail('popup-redirect');
         } catch (redirectErr: any) {
           console.error('Firebase Apple redirect error:', redirectErr);
-          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+          return fail('popup-blocked');
         }
       }
       console.error('Firebase Apple Login Error:', error);
-      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Apple sign-in failed');
-      return { success: false, error: message };
+      return fail(mapFirebaseError(error, 'provider-failed'));
     }
   },
 
-  async loginWithFacebook(): Promise<{ success: boolean; user?: User; error?: string }> {
+  async loginWithFacebook(): Promise<AuthResult> {
     if (!auth) {
       if (process.env.NODE_ENV === 'production') {
-        return { success: false, error: 'Authentication is not configured.' };
+        return fail('not-configured');
       }
       console.warn('SubHub: Development/mock auth only; not for production.');
       const mockUser: User = {
@@ -194,15 +229,14 @@ export const authService = {
       if (error.code === 'auth/popup-blocked') {
         try {
           await signInWithRedirect(auth, new FacebookAuthProvider());
-          return { success: false, error: 'Popup blocked; complete sign-in in the new tab.' };
+          return fail('popup-redirect');
         } catch (redirectErr: any) {
           console.error('Firebase Facebook redirect error:', redirectErr);
-          return { success: false, error: 'Sign-in was blocked. Please allow popups or try again.' };
+          return fail('popup-blocked');
         }
       }
       console.error('Firebase Facebook Login Error:', error);
-      const message = error.code === 'auth/cancelled-popup-request' ? 'Sign-in cancelled' : (error.message || 'Facebook sign-in failed');
-      return { success: false, error: message };
+      return fail(mapFirebaseError(error, 'provider-failed'));
     }
   },
 

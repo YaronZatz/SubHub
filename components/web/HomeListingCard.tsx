@@ -77,7 +77,7 @@ const HomeListingCard: React.FC<HomeListingCardProps> = ({
           className={`absolute end-2 top-2 z-20 flex items-center justify-center rounded-full bg-white transition-colors ${
             lg ? 'h-10 w-10' : 'h-9 w-9'
           } ${isSaved ? 'text-accent-600' : 'text-ink hover:text-accent-600'}`}
-          aria-label={isSaved ? 'Unsave' : 'Save'}
+          aria-label={isSaved ? copy.unsaveListing : copy.saveListing}
         >
           <HeartIcon className="h-[18px] w-[18px]" filled={isSaved} />
         </button>

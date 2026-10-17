@@ -4,6 +4,13 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Sublet } from '../types';
 import { SearchIcon } from './Icons';
 import { GLOBAL_CITIES } from '../constants';
+import { useLanguage } from '../contexts/LanguageContext';
+import { homeCopy } from '../lib/homeCopy';
+import { cityFor, neighborhoodFor, inLanguage } from '../lib/placeNames';
+
+type Section = 'Cities' | 'Neighborhoods' | 'Streets';
+/** `value` is the stored name (used for map fly-to); `label` is what the user sees, in the UI language. */
+interface Suggestion { value: string; label: string }
 
 interface SearchAutocompleteProps {
   value: string;
@@ -15,6 +22,10 @@ interface SearchAutocompleteProps {
   inputClassName?: string;
   /** Called when a Cities suggestion is selected — use to trigger map fly-to */
   onCitySelect?: (city: string) => void;
+}
+
+function matchesSuggestion(s: Suggestion, q: string): boolean {
+  return s.label.toLowerCase().includes(q) || s.value.toLowerCase().includes(q);
 }
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -29,47 +40,51 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
   value,
   onChange,
   sublets,
-  placeholder = 'Search...',
+  placeholder,
   className = '',
   inputClassName = 'w-full py-2 bg-slate-100 rounded-xl text-sm font-medium focus:ring-2 focus:ring-cyan-500 outline-none border border-transparent focus:bg-white',
   onCitySelect,
 }) => {
+  const { language } = useLanguage();
+  const copy = homeCopy(language);
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Build deduplicated suggestion pools from all loaded listings
+  // Build deduplicated suggestion pools from all loaded listings. Each name is shown in
+  // the UI language; names we only have in the other language are left out.
   const { neighborhoods, streets, cities } = useMemo(() => {
-    const ns = new Set<string>();
-    const sts = new Set<string>();
-    const cs = new Set<string>(GLOBAL_CITIES);
-    sublets.forEach(s => {
-      if (s.neighborhood?.trim()) ns.add(s.neighborhood.trim());
-      if (s.location?.trim()) {
-        const st = s.location.split(',')[0].trim();
-        if (st) sts.add(st);
-      }
-      if (s.city?.trim()) cs.add(s.city.trim());
-    });
-    return {
-      neighborhoods: Array.from(ns).sort(),
-      streets: Array.from(sts).sort(),
-      cities: Array.from(cs).sort(),
+    const ns = new Map<string, Suggestion>();
+    const sts = new Map<string, Suggestion>();
+    const cs = new Map<string, Suggestion>();
+    const addCity = (raw: string) => {
+      const label = cityFor(raw, language);
+      if (label && !cs.has(label)) cs.set(label, { value: raw, label });
     };
-  }, [sublets]);
+    GLOBAL_CITIES.forEach(addCity);
+    sublets.forEach(s => {
+      const nb = neighborhoodFor(s.neighborhood, language, s.neighborhoodTranslations);
+      if (nb && !ns.has(nb)) ns.set(nb, { value: s.neighborhood!.trim(), label: nb });
+      const st = s.location?.split(',')[0].trim();
+      if (st && inLanguage(st, language) && !sts.has(st)) sts.set(st, { value: st, label: st });
+      if (s.city?.trim()) addCity(s.city.trim());
+    });
+    const sorted = (m: Map<string, Suggestion>) => Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label, language));
+    return { neighborhoods: sorted(ns), streets: sorted(sts), cities: sorted(cs) };
+  }, [sublets, language]);
 
-  // Compute matches for each section independently
+  // Compute matches for each section independently (match the shown label or the stored name)
   const q = value.trim().toLowerCase();
-  const cityMatches         = useMemo(() => q ? cities.filter(c => c.toLowerCase().includes(q)).slice(0, 4)        : [], [q, cities]);
-  const neighborhoodMatches = useMemo(() => q ? neighborhoods.filter(n => n.toLowerCase().includes(q)).slice(0, 4) : [], [q, neighborhoods]);
-  const streetMatches       = useMemo(() => q ? streets.filter(s => s.toLowerCase().includes(q)).slice(0, 4)       : [], [q, streets]);
+  const cityMatches         = useMemo(() => q ? cities.filter(s => matchesSuggestion(s, q)).slice(0, 4)        : [], [q, cities]);
+  const neighborhoodMatches = useMemo(() => q ? neighborhoods.filter(s => matchesSuggestion(s, q)).slice(0, 4) : [], [q, neighborhoods]);
+  const streetMatches       = useMemo(() => q ? streets.filter(s => matchesSuggestion(s, q)).slice(0, 4)       : [], [q, streets]);
 
   // Flat ordered list for keyboard navigation: cities first, then neighborhoods, then streets
   const flatItems = useMemo(() => [
-    ...cityMatches.map(label        => ({ label, sectionLabel: 'Cities'        as const })),
-    ...neighborhoodMatches.map(label => ({ label, sectionLabel: 'Neighborhoods' as const })),
-    ...streetMatches.map(label       => ({ label, sectionLabel: 'Streets'       as const })),
+    ...cityMatches.map(item         => ({ item, sectionLabel: 'Cities'        as Section })),
+    ...neighborhoodMatches.map(item => ({ item, sectionLabel: 'Neighborhoods' as Section })),
+    ...streetMatches.map(item       => ({ item, sectionLabel: 'Streets'       as Section })),
   ], [cityMatches, neighborhoodMatches, streetMatches]);
 
   const totalItems   = flatItems.length;
@@ -88,9 +103,9 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const select = (label: string, sectionLabel: string) => {
-    onChange(label);
-    if (sectionLabel === 'Cities') onCitySelect?.(label);
+  const select = (item: Suggestion, sectionLabel: Section) => {
+    onChange(item.label);
+    if (sectionLabel === 'Cities') onCitySelect?.(item.value);
     setIsOpen(false);
     setHighlightedIndex(-1);
     inputRef.current?.blur();
@@ -110,8 +125,8 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
       case 'Enter':
         if (highlightedIndex >= 0) {
           e.preventDefault();
-          const item = flatItems[highlightedIndex];
-          if (item) select(item.label, item.sectionLabel);
+          const entry = flatItems[highlightedIndex];
+          if (entry) select(entry.item, entry.sectionLabel);
         } else {
           // Let Enter fall through so a surrounding <form> can submit free text.
           setIsOpen(false);
@@ -146,7 +161,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
         onChange={(e) => { onChange(e.target.value); setIsOpen(true); }}
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={placeholder ?? copy.searchFallbackPlaceholder}
         autoComplete="off"
         className={`pl-10 ${value ? 'pr-8' : 'pr-4'} ${inputClassName}`}
       />
@@ -157,7 +172,7 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
           type="button"
           onClick={() => { onChange(''); setIsOpen(false); }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors z-10"
-          aria-label="Clear search"
+          aria-label={copy.clearSearch}
           tabIndex={-1}
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -172,15 +187,15 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
           {cityMatches.length > 0 && (
             <div>
-              <div className={sectionHeaderClass}>🏙 Cities</div>
-              {cityMatches.map((label, i) => (
+              <div className={sectionHeaderClass}>🏙 {copy.searchCities}</div>
+              {cityMatches.map((item, i) => (
                 <div
-                  key={label}
+                  key={item.label}
                   className={itemClass(i)}
                   onMouseEnter={() => setHighlightedIndex(i)}
-                  onClick={() => select(label, 'Cities')}
+                  onClick={() => select(item, 'Cities')}
                 >
-                  <HighlightMatch text={label} query={value} />
+                  <HighlightMatch text={item.label} query={value} />
                 </div>
               ))}
             </div>
@@ -188,17 +203,17 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
           {neighborhoodMatches.length > 0 && (
             <div>
-              <div className={sectionHeaderClass}>🏘 Neighborhoods</div>
-              {neighborhoodMatches.map((label, i) => {
+              <div className={sectionHeaderClass}>🏘 {copy.searchNeighborhoods}</div>
+              {neighborhoodMatches.map((item, i) => {
                 const flatIdx = cityMatches.length + i;
                 return (
                   <div
-                    key={label}
+                    key={item.label}
                     className={itemClass(flatIdx)}
                     onMouseEnter={() => setHighlightedIndex(flatIdx)}
-                    onClick={() => select(label, 'Neighborhoods')}
+                    onClick={() => select(item, 'Neighborhoods')}
                   >
-                    <HighlightMatch text={label} query={value} />
+                    <HighlightMatch text={item.label} query={value} />
                   </div>
                 );
               })}
@@ -207,17 +222,17 @@ const SearchAutocomplete: React.FC<SearchAutocompleteProps> = ({
 
           {streetMatches.length > 0 && (
             <div>
-              <div className={sectionHeaderClass}>📍 Streets</div>
-              {streetMatches.map((label, i) => {
+              <div className={sectionHeaderClass}>📍 {copy.searchStreets}</div>
+              {streetMatches.map((item, i) => {
                 const flatIdx = cityMatches.length + neighborhoodMatches.length + i;
                 return (
                   <div
-                    key={label}
+                    key={item.label}
                     className={itemClass(flatIdx)}
                     onMouseEnter={() => setHighlightedIndex(flatIdx)}
-                    onClick={() => select(label, 'Streets')}
+                    onClick={() => select(item, 'Streets')}
                   >
-                    <HighlightMatch text={label} query={value} />
+                    <HighlightMatch text={item.label} query={value} />
                   </div>
                 );
               })}

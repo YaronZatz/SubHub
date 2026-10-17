@@ -5,6 +5,7 @@ import { Sublet, ListingStatus, Language } from '../types';
 import { translations } from '../translations';
 import { getAuth } from 'firebase/auth';
 import ConfirmModal from './shared/ConfirmModal';
+import { accountCopy } from '../lib/accountCopy';
 
 interface ListingActionMenuProps {
   listing: Sublet;
@@ -26,6 +27,7 @@ export default function ListingActionMenu({
   className = '',
 }: ListingActionMenuProps) {
   const t = translations[language];
+  const ac = accountCopy(language).listingActions;
   const [open, setOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,11 +57,13 @@ export default function ListingActionMenu({
   const canFill    = status === ListingStatus.AVAILABLE || status === ListingStatus.PAUSED;
   const canDelete  = true; // active, paused, filled all allow delete
 
+  // errorMsg is a localized, user-facing message (or '' to use the action's own failure message).
+  // Raw server/network errors are logged, never shown.
   const patchStatus = async (newStatus: string): Promise<{ ok: boolean; errorMsg: string }> => {
     try {
       const user = getAuth().currentUser;
       const token = user ? await user.getIdToken() : null;
-      if (!token) return { ok: false, errorMsg: 'Not signed in' };
+      if (!token) return { ok: false, errorMsg: ac.notSignedIn };
       const res = await fetch(`/api/listings/${listing.id}/status`, {
         method: 'PATCH',
         headers: {
@@ -69,12 +73,13 @@ export default function ListingActionMenu({
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) return { ok: true, errorMsg: '' };
-      let errorMsg = `Error ${res.status}`;
-      try { const body = await res.json(); errorMsg = body?.error || errorMsg; } catch { /* ignore */ }
-      console.error(`[ListingActionMenu] PATCH status failed: ${errorMsg}`);
-      return { ok: false, errorMsg };
+      let detail = `HTTP ${res.status}`;
+      try { const body = await res.json(); if (body?.error) detail = `${detail}: ${body.error}`; } catch { /* ignore */ }
+      console.error(`[ListingActionMenu] PATCH status failed: ${detail}`);
+      return { ok: false, errorMsg: res.status === 401 ? ac.notSignedIn : '' };
     } catch (err) {
-      return { ok: false, errorMsg: String(err) };
+      console.error('[ListingActionMenu] PATCH status error:', err);
+      return { ok: false, errorMsg: '' };
     }
   };
 
@@ -85,7 +90,7 @@ export default function ListingActionMenu({
       onStatusChange({ ...listing, status: ListingStatus.PAUSED });
       onToast(t.toastPaused);
     } else {
-      onToast(errorMsg || 'Failed to pause listing');
+      onToast(errorMsg || ac.pauseFailed);
     }
   };
 
@@ -96,7 +101,7 @@ export default function ListingActionMenu({
       onStatusChange({ ...listing, status: ListingStatus.AVAILABLE });
       onToast(t.toastResumed);
     } else {
-      onToast(errorMsg || 'Failed to resume listing');
+      onToast(errorMsg || ac.resumeFailed);
     }
   };
 
@@ -111,7 +116,7 @@ export default function ListingActionMenu({
         onStatusChange({ ...listing, status: ListingStatus.FILLED });
         onToast(t.toastFilled);
       } else {
-        onToast(errorMsg || 'Failed to mark as filled');
+        onToast(errorMsg || ac.fillFailed);
       }
     } else if (pendingAction === 'delete') {
       const { ok, errorMsg } = await patchStatus('deleted');
@@ -121,7 +126,7 @@ export default function ListingActionMenu({
         onDelete(listing.id);
         onToast(t.toastDeleted);
       } else {
-        onToast(errorMsg || 'Failed to delete listing');
+        onToast(errorMsg || ac.deleteFailed);
       }
     }
   };
@@ -132,19 +137,19 @@ export default function ListingActionMenu({
         <button
           type="button"
           onClick={() => setOpen(v => !v)}
-          aria-label="Listing actions"
+          aria-label={ac.menuLabel}
           className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-brand-50 rounded-xl transition-colors text-lg font-bold"
         >
           ···
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-2xl shadow-xl border border-line py-1.5 min-w-[160px]">
+          <div className="absolute end-0 top-full mt-1 z-50 bg-white rounded-2xl shadow-xl border border-line py-1.5 min-w-[160px]">
             {canPause && (
               <button
                 type="button"
                 onClick={handlePause}
-                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
+                className="w-full text-start px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.pauseListing}
               </button>
@@ -153,7 +158,7 @@ export default function ListingActionMenu({
               <button
                 type="button"
                 onClick={handleResume}
-                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
+                className="w-full text-start px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.resumeListing}
               </button>
@@ -162,7 +167,7 @@ export default function ListingActionMenu({
               <button
                 type="button"
                 onClick={() => { setOpen(false); setPendingAction('fill'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
+                className="w-full text-start px-4 py-2.5 text-sm text-ink hover:bg-brand-50 font-medium transition-colors"
               >
                 {t.markAsFilled}
               </button>
@@ -171,7 +176,7 @@ export default function ListingActionMenu({
               <button
                 type="button"
                 onClick={() => { setOpen(false); setPendingAction('delete'); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
+                className="w-full text-start px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors"
               >
                 {t.deleteListing}
               </button>
@@ -187,6 +192,7 @@ export default function ListingActionMenu({
           body={t.confirmFillBody}
           confirmLabel={t.markAsFilled}
           onConfirm={handleConfirm}
+          cancelLabel={t.cancel}
           onCancel={() => setPendingAction(null)}
           isLoading={isLoading}
         />
@@ -198,6 +204,7 @@ export default function ListingActionMenu({
           confirmLabel={t.deleteListing}
           danger
           onConfirm={handleConfirm}
+          cancelLabel={t.cancel}
           onCancel={() => setPendingAction(null)}
           isLoading={isLoading}
         />

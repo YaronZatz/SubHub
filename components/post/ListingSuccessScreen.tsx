@@ -2,6 +2,8 @@
 
 import React from 'react';
 import type { Sublet } from '../../types';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { accountCopy } from '../../lib/accountCopy';
 
 interface SuccessTranslations {
   successTitle: string;
@@ -25,10 +27,12 @@ export default function ListingSuccessScreen({
   onDone,
   t,
 }: ListingSuccessScreenProps) {
-  const title = listing.location || listing.city || 'Your listing';
+  const { language } = useLanguage();
+  const locale = language === 'he' ? 'he' : 'en';
+  const title = listing.location || listing.city || accountCopy(language).post.yourListing;
   const currencySymbol: Record<string, string> = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
   const sym = currencySymbol[listing.currency] ?? listing.currency;
-  const priceStr = listing.price > 0 ? `${sym}${listing.price.toLocaleString()}` : null;
+  const priceStr = listing.price > 0 ? `${sym}${listing.price.toLocaleString(locale)}` : null;
 
   return (
     <div className="flex flex-col items-center justify-center py-10 px-6 text-center space-y-6 animate-in fade-in zoom-in-95 duration-300">

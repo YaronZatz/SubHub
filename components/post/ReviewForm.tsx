@@ -8,6 +8,8 @@ import AmenitiesGrid from './AmenitiesGrid';
 import type { AmenityKey } from './AmenitiesGrid';
 import type { ReviewFormData, ReviewFormErrors } from './reviewFormTypes';
 import { FL, SectionHeading, ic, icErr } from './formPrimitives';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { accountCopy } from '../../lib/accountCopy';
 
 export default function ReviewForm({
   data, onChange, photos, onPhotosChange, errors, t, pm, amenityLabels, subletTypeLabels, photosReadOnly,
@@ -24,6 +26,8 @@ export default function ReviewForm({
   const s = <K extends keyof ReviewFormData>(k: K, v: ReviewFormData[K]) => onChange({ ...data, [k]: v });
   const te = (v?: string) => !v ? undefined : v === 'required' ? pm.fieldRequired : v === 'end_before_start' ? pm.endDateBeforeStart : v;
   const [photoErr, setPhotoErr] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const pc = accountCopy(language).post;
 
   // suppress unused variable warning — t is kept in props for future use
   void t;
@@ -35,10 +39,10 @@ export default function ReviewForm({
         <SectionHeading>{pm.locationLabel}</SectionHeading>
         <div className="grid grid-cols-2 gap-3">
           <FL label={pm.locationLabel} required error={te(errors.location)}>
-            <input value={data.location} onChange={e => s('location', e.target.value)} className={errors.location ? icErr : ic} placeholder="12 Rothschild Blvd" />
+            <input value={data.location} onChange={e => s('location', e.target.value)} className={errors.location ? icErr : ic} placeholder={pc.addressPlaceholder} />
           </FL>
           <FL label={pm.cityLabel} required error={te(errors.city)}>
-            <input value={data.city} onChange={e => s('city', e.target.value)} className={errors.city ? icErr : ic} placeholder="Tel Aviv" />
+            <input value={data.city} onChange={e => s('city', e.target.value)} className={errors.city ? icErr : ic} placeholder={pc.cityPlaceholder} />
           </FL>
           <FL label={pm.neighborhoodLabel}>
             <input value={data.neighborhood} onChange={e => s('neighborhood', e.target.value)} className={ic} />
@@ -126,7 +130,7 @@ export default function ReviewForm({
               <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden bg-brand-50 group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={src} alt="" className="w-full h-full object-cover" />
-                <button type="button" onClick={() => onPhotosChange(photos.filter((_, j) => j !== i))} className="absolute top-1 right-1 w-5 h-5 bg-ink/70 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors">×</button>
+                <button type="button" onClick={() => onPhotosChange(photos.filter((_, j) => j !== i))} aria-label={pc.removePhoto} className="absolute top-1 end-1 w-5 h-5 bg-ink/70 text-white rounded-full flex items-center justify-center text-xs hover:bg-black/80 transition-colors">×</button>
               </div>
             ))}
           </div>

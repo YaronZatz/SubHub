@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { authService } from '../services/authService';
+import { authService, type AuthResult } from '../services/authService';
 import { auth } from '../lib/firebase';
 // Fix: Import onAuthStateChanged from modular firebase/auth to resolve "no exported member" error
 import { onAuthStateChanged, getRedirectResult } from 'firebase/auth';
@@ -11,14 +11,17 @@ import { onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
-  loginWithApple: () => Promise<{ success: boolean; error?: string }>;
-  loginWithFacebook: () => Promise<{ success: boolean; error?: string }>;
+  /** `errorCode` is stable — localize it with authErrorMessage() from lib/accountCopy. */
+  login: (email: string, password: string) => Promise<AuthCallResult>;
+  signup: (name: string, email: string, password: string) => Promise<AuthCallResult>;
+  loginWithGoogle: () => Promise<AuthCallResult>;
+  loginWithApple: () => Promise<AuthCallResult>;
+  loginWithFacebook: () => Promise<AuthCallResult>;
   logout: () => Promise<void>;
   isLocalMode: boolean;
 }
+
+type AuthCallResult = Omit<AuthResult, 'user'>;
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -66,7 +69,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       setUser(result.user);
     }
-    return { success: result.success, error: result.error };
+    return { success: result.success, error: result.error, errorCode: result.errorCode };
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -74,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       setUser(result.user);
     }
-    return { success: result.success, error: result.error };
+    return { success: result.success, error: result.error, errorCode: result.errorCode };
   };
 
   const loginWithGoogle = async () => {
@@ -82,7 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       setUser(result.user);
     }
-    return { success: result.success, error: result.error };
+    return { success: result.success, error: result.error, errorCode: result.errorCode };
   };
 
   const loginWithApple = async () => {
@@ -90,7 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       setUser(result.user);
     }
-    return { success: result.success, error: result.error };
+    return { success: result.success, error: result.error, errorCode: result.errorCode };
   };
 
   const loginWithFacebook = async () => {
@@ -98,7 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (result.success && result.user) {
       setUser(result.user);
     }
-    return { success: result.success, error: result.error };
+    return { success: result.success, error: result.error, errorCode: result.errorCode };
   };
 
   const logout = async () => {

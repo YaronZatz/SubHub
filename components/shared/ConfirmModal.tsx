@@ -1,11 +1,15 @@
 'use client';
 
 import React from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { translations } from '@/translations';
 
 interface ConfirmModalProps {
   title: string;
   body: string;
   confirmLabel: string;
+  /** Defaults to "Cancel" in the active UI language. */
+  cancelLabel?: string;
   danger?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
@@ -16,11 +20,14 @@ export default function ConfirmModal({
   title,
   body,
   confirmLabel,
+  cancelLabel,
   danger = false,
   onConfirm,
   onCancel,
   isLoading = false,
 }: ConfirmModalProps) {
+  const { language } = useLanguage();
+  const cancelText = cancelLabel ?? translations[language].cancel;
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center px-4 bg-ink/60 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4 animate-in zoom-in-95 fade-in duration-200">
@@ -33,7 +40,7 @@ export default function ConfirmModal({
             disabled={isLoading}
             className="flex-1 py-3 bg-white border border-line text-muted rounded-2xl font-bold text-sm hover:bg-brand-50 transition-all disabled:opacity-40"
           >
-            Cancel
+            {cancelText}
           </button>
           <button
             type="button"
