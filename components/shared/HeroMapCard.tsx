@@ -5,12 +5,7 @@ import Link from 'next/link';
  * Decorative map card (street grid + price pins) that links to the real map. Size comes from `className`.
  * Prices are written in full (no "k") so the card reads the same in every language.
  */
-export default function HeroMapCard({ label, className = '', showCluster = true }: {
-  label: string;
-  className?: string;
-  /** The dark "12" cluster bubble; turn off where it would read as a random number. */
-  showCluster?: boolean;
-}) {
+export default function HeroMapCard({ label, className = '' }: { label: string; className?: string }) {
   const pin = 'absolute rounded-full bg-white px-2.5 py-1 text-[13px] font-bold tabular-nums shadow-[0_1px_4px_rgba(0,0,0,0.16)]';
   return (
     <Link
@@ -35,11 +30,7 @@ export default function HeroMapCard({ label, className = '', showCluster = true 
       <span className={pin} style={{ left: '54%', top: '30%' }} dir="ltr">₪6,800</span>
       <span className="absolute rounded-full bg-accent-500 px-3.5 py-1.5 text-[15px] font-bold tabular-nums text-accent-ink shadow-[0_6px_16px_rgba(0,0,0,0.2)]" style={{ left: '36%', top: '50%' }} dir="ltr">₪3,200</span>
       <span className={pin} style={{ left: '70%', top: '62%' }} dir="ltr">₪9,000</span>
-      {showCluster ? (
-        <span className="absolute rounded-full bg-brand-900 px-2.5 py-1 text-[13px] font-bold text-white" style={{ left: '22%', top: '74%' }}>12</span>
-      ) : (
-        <span className={pin} style={{ left: '20%', top: '74%' }} dir="ltr">₪5,200</span>
-      )}
+      <span className={pin} style={{ left: '20%', top: '74%' }} dir="ltr">₪5,200</span>
     </Link>
   );
 }

@@ -64,7 +64,7 @@ export default function HowItWorksPage() {
             </div>
             {liveCount}
           </div>
-          <HeroMapCard label={copy.ctaMap} showCluster={false} className="h-[220px] w-full flex-[1_1_360px] md:h-[320px]" />
+          <HeroMapCard label={copy.ctaMap} className="h-[220px] w-full flex-[1_1_360px] md:h-[320px]" />
         </div>
       </header>
 
