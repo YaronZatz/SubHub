@@ -1,46 +1,41 @@
 // Copy for /how-it-works. Keep every claim true to what the product does today:
 // no in-app messaging, no alerts, listings aren't verified, scraping runs daily
-// (pilot). When scraping moves to hourly, update the source step and the FAQ answer.
-// Never mix languages: Hebrew strings use Hebrew words only (no Latin names).
+// (pilot). When scraping moves to hourly, update `sourceBody` and the FAQ answer.
+// Never mix languages: Hebrew strings use Hebrew words only (no Latin names),
+// and the preview examples are written separately for each language.
 
 const en = {
-  eyebrow: 'How it works',
-  title: 'Every sublet from the Facebook groups, on one map.',
-  subtitle: 'We read the posts, sort them by price, dates and location, and keep a link to the original.',
-  doorSeekerTitle: 'Looking for a sublet',
-  doorSeekerBody: 'Search, filter and compare every listing on one map.',
-  doorSeekerLink: 'How to find one',
-  doorPosterTitle: 'Posting a sublet',
-  doorPosterBody: 'Paste your Facebook post and the details fill in for you.',
-  doorPosterLink: 'How to post',
+  title: 'Find your next sublet in four steps.',
+  subtitle: 'SubHub collects sublet posts from Facebook groups and puts them on one map. Here’s how to use it.',
+  ctaMap: 'Explore the map',
+  posterLink: 'Posting a sublet?',
+
+  stepLabel: (n: number) => `Step ${n}`,
+  steps: [
+    { title: 'Search for a place, or for what you need', body: 'Type a neighborhood or a street, or something that matters to you, like a balcony or pets.' },
+    { title: 'Filter down to what fits', body: 'Set your budget and dates, then narrow it by type, rooms and amenities. Tap “Posted today” to see only the newest.' },
+    { title: 'Compare listings side by side', body: 'Every listing shows the same details: price, dates, type and location, with photos and the original post.' },
+    { title: 'Contact the poster', body: 'Sign in to message the poster on Facebook, where the post was published. Save the ones you like to compare later.' },
+  ],
+
+  // Preview examples (step visuals)
+  searchQuery: 'Florentin balcony',
+  suggestions: [
+    { name: 'Florentin', place: 'Neighborhood · Tel Aviv-Yafo' },
+    { name: 'Florentin Street', place: 'Street · Tel Aviv-Yafo' },
+  ],
+  budgetLabel: 'Budget / mo',
+  budgetRange: '₪3,000 – ₪6,000',
+  datesLabel: 'Dates',
+  sampleArea: 'Florentin',
+  sampleCity: 'Tel Aviv-Yafo',
+  opensOriginal: 'Opens the original post on Facebook',
 
   sourceTitle: 'Where the listings come from',
-  sourceSteps: [
-    { title: 'Public Facebook groups', body: 'Every day we collect new posts from public sublet groups.' },
-    { title: 'Read by AI', body: 'Gemini pulls out the price, dates, property type and location, in Hebrew or English.' },
-    { title: 'The original, one tap away', body: 'Every listing links back to the post it came from.' },
-  ],
-  exampleEyebrow: 'Example',
+  sourceBody: 'Every day we collect new posts from public Facebook sublet groups. AI reads each one and pulls out the price, dates, type and location. The original post is always one tap away.',
 
-  findTitle: 'Finding a sublet',
-  findSubtitle: 'Four steps from search to the person renting it.',
-  findSteps: [
-    { title: 'Search', body: 'Type an area, a street, or what you need. Hebrew or English both work.', chips: ['Florentin', 'balcony', 'pets ok'] },
-    { title: 'Filter', body: 'Narrow it down to what fits, and see every result on the map.', chips: ['Price', 'Dates', 'Type', 'Bedrooms', 'Amenities'] },
-    { title: 'Check the details', body: 'Photos, dates, the original post translated into your language, and the location on a map.', chips: [] as string[] },
-    { title: 'Contact and save', body: 'Sign in and tap “Message Owner on Facebook” to open the original post. Tap the heart to keep a shortlist.', chips: [] as string[] },
-  ],
-  tipTitle: 'Tip',
-  tipBody: 'Good sublets go fast. Tap “Posted today” on the map to see what’s new.',
-  ctaMap: 'Explore the map',
-
-  postTitle: 'Posting a sublet',
-  postSubtitle: 'It’s free, and you don’t have to retype anything.',
-  postSteps: [
-    { title: 'Paste your post', body: 'Sign in, paste the text of your Facebook post and add photos. Or fill in a short form instead.' },
-    { title: 'The details fill in', body: 'Price, dates, location and property type are filled in for you.' },
-    { title: 'Review and publish', body: 'Fix anything that’s off and publish. Your listing is on the map right away, and you can edit it later.' },
-  ],
+  postTitle: 'Posting a sublet?',
+  postBody: 'Paste your Facebook post and the price, dates and location fill in for you. Check them, add photos and publish. It’s free.',
   ctaPost: 'Post a sublet',
 
   faqTitle: 'Questions',
@@ -54,48 +49,44 @@ const en = {
   ],
   safetyTitle: 'Listings aren’t verified.',
   safetyBody: 'We don’t check listings or posters. Never transfer money before you’ve seen the place and met the person renting it.',
+
+  closingTitle: 'Start with the map',
+  closingBody: 'Every sublet that’s available now, in one place.',
 };
 
 type HowItWorksCopy = typeof en;
 
 const he: HowItWorksCopy = {
-  eyebrow: 'איך זה עובד',
-  title: 'כל הסאבלטים מקבוצות הפייסבוק, על מפה אחת.',
-  subtitle: 'אנחנו קוראים את הפוסטים, מסדרים אותם לפי מחיר, תאריכים ומיקום, ומשאירים קישור לפוסט המקורי.',
-  doorSeekerTitle: 'מחפשים סאבלט',
-  doorSeekerBody: 'מחפשים, מסננים ומשווים את כל המודעות על מפה אחת.',
-  doorSeekerLink: 'איך מוצאים',
-  doorPosterTitle: 'מפרסמים סאבלט',
-  doorPosterBody: 'מדביקים את הפוסט מפייסבוק, והפרטים מתמלאים לבד.',
-  doorPosterLink: 'איך מפרסמים',
+  title: 'מוצאים סאבלט בארבעה צעדים.',
+  subtitle: 'אנחנו אוספים פוסטים של סאבלטים מקבוצות פייסבוק ומציגים אותם על מפה אחת. ככה משתמשים בזה.',
+  ctaMap: 'לחיפוש במפה',
+  posterLink: 'מפרסמים סאבלט?',
+
+  stepLabel: (n: number) => `שלב ${n}`,
+  steps: [
+    { title: 'מחפשים מקום, או את מה שחשוב לכם', body: 'מקלידים שכונה או רחוב, או משהו שחשוב לכם, כמו מרפסת או חיות מחמד.' },
+    { title: 'מסננים למה שמתאים', body: 'קובעים תקציב ותאריכים, ומצמצמים לפי סוג נכס, חדרים ומאפיינים. לחיצה על "פורסם היום" מציגה רק את החדשים.' },
+    { title: 'משווים בין מודעות', body: 'בכל מודעה מופיעים אותם פרטים: מחיר, תאריכים, סוג נכס ומיקום, עם תמונות והפוסט המקורי.' },
+    { title: 'פונים למפרסם', body: 'מתחברים ושולחים הודעה למפרסם בפייסבוק, איפה שהפוסט פורסם. שומרים את המודעות שאהבתם כדי להשוות אחר כך.' },
+  ],
+
+  searchQuery: 'פלורנטין מרפסת',
+  suggestions: [
+    { name: 'פלורנטין', place: 'שכונה · תל אביב-יפו' },
+    { name: 'רחוב פלורנטין', place: 'רחוב · תל אביב-יפו' },
+  ],
+  budgetLabel: 'תקציב לחודש',
+  budgetRange: '₪3,000 – ₪6,000',
+  datesLabel: 'תאריכים',
+  sampleArea: 'פלורנטין',
+  sampleCity: 'תל אביב-יפו',
+  opensOriginal: 'פותח את הפוסט המקורי בפייסבוק',
 
   sourceTitle: 'מאיפה המודעות מגיעות',
-  sourceSteps: [
-    { title: 'קבוצות פייסבוק ציבוריות', body: 'בכל יום אנחנו אוספים פוסטים חדשים מקבוצות סאבלטים ציבוריות.' },
-    { title: 'נקראות על ידי בינה מלאכותית', body: 'הבינה המלאכותית מחלצת מחיר, תאריכים, סוג נכס ומיקום, בעברית או באנגלית.' },
-    { title: 'המקור במרחק לחיצה', body: 'כל מודעה מקושרת לפוסט שממנו היא הגיעה.' },
-  ],
-  exampleEyebrow: 'דוגמה',
+  sourceBody: 'בכל יום אנחנו אוספים פוסטים חדשים מקבוצות סאבלטים ציבוריות בפייסבוק. בינה מלאכותית קוראת כל פוסט ומחלצת מחיר, תאריכים, סוג נכס ומיקום. הפוסט המקורי תמיד במרחק לחיצה.',
 
-  findTitle: 'מוצאים סאבלט',
-  findSubtitle: 'ארבעה שלבים מהחיפוש ועד מי שמשכיר.',
-  findSteps: [
-    { title: 'מחפשים', body: 'מקלידים אזור, רחוב או מה שחשוב לכם. אפשר בעברית או באנגלית.', chips: ['פלורנטין', 'מרפסת', 'חיות מחמד'] },
-    { title: 'מסננים', body: 'מצמצמים למה שמתאים לכם, ורואים כל תוצאה על המפה.', chips: ['מחיר', 'תאריכים', 'סוג נכס', 'חדרים', 'מאפיינים'] },
-    { title: 'בודקים את הפרטים', body: 'תמונות, תאריכים, הפוסט המקורי מתורגם לשפה שלכם, והמיקום על המפה.', chips: [] },
-    { title: 'פונים ושומרים', body: 'מתחברים ולוחצים על "שלח הודעה לבעלים בפייסבוק" כדי לפתוח את הפוסט המקורי. לוחצים על הלב כדי לשמור רשימה.', chips: [] },
-  ],
-  tipTitle: 'טיפ',
-  tipBody: 'סאבלטים טובים נתפסים מהר. לחצו על "פורסם היום" במפה כדי לראות מה חדש.',
-  ctaMap: 'לחיפוש במפה',
-
-  postTitle: 'מפרסמים סאבלט',
-  postSubtitle: 'זה בחינם, ולא צריך להקליד הכול מחדש.',
-  postSteps: [
-    { title: 'מדביקים את הפוסט', body: 'מתחברים, מדביקים את הטקסט מהפוסט שלכם בפייסבוק ומוסיפים תמונות. אפשר גם למלא טופס קצר.' },
-    { title: 'הפרטים מתמלאים לבד', body: 'מחיר, תאריכים, מיקום וסוג הנכס ממולאים בשבילכם.' },
-    { title: 'בודקים ומפרסמים', body: 'מתקנים מה שצריך ומפרסמים. המודעה עולה למפה מיד, ואפשר לערוך אותה בהמשך.' },
-  ],
+  postTitle: 'מפרסמים סאבלט?',
+  postBody: 'מדביקים את הפוסט מפייסבוק, והמחיר, התאריכים והמיקום מתמלאים לבד. בודקים, מוסיפים תמונות ומפרסמים. זה בחינם.',
   ctaPost: 'לפרסום סאבלט',
 
   faqTitle: 'שאלות',
@@ -109,6 +100,9 @@ const he: HowItWorksCopy = {
   ],
   safetyTitle: 'המודעות לא מאומתות.',
   safetyBody: 'אנחנו לא בודקים מודעות או מפרסמים. אל תעבירו כסף לפני שראיתם את הדירה ופגשתם את מי שמשכיר אותה.',
+
+  closingTitle: 'מתחילים מהמפה',
+  closingBody: 'כל הסאבלטים שזמינים עכשיו, במקום אחד.',
 };
 
 export function howItWorksCopy(language: string): HowItWorksCopy {

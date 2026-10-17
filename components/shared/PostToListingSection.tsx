@@ -5,21 +5,25 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { homeCopy } from '@/lib/homeCopy';
 
 interface PostToListingSectionProps {
-  /** Overrides the small label above the title (defaults to "How it works"). */
-  eyebrow?: string;
+  /** Small label above the title. Defaults to "How it works"; pass null to hide it. */
+  eyebrow?: string | null;
+  title?: string;
+  body?: string;
 }
 
 /** Dark band showing a raw Facebook post next to the structured listing we make from it. */
-export default function PostToListingSection({ eyebrow }: PostToListingSectionProps) {
+export default function PostToListingSection({ eyebrow, title, body }: PostToListingSectionProps) {
   const { language } = useLanguage();
   const copy = homeCopy(language);
   return (
     <section className="bg-brand-900 text-white">
       <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-10 px-6 py-16">
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
-          <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-brand-200 rtl:tracking-normal">{eyebrow ?? copy.howItWorksEyebrow}</p>
-          <h2 className="font-display text-[40px] font-extrabold leading-[1.08] tracking-[-0.025em]">{copy.howItWorksTitle}</h2>
-          <p className="text-[17px] text-white/80">{copy.howItWorksBody}</p>
+          {eyebrow !== null && (
+            <p className="text-[13px] font-medium uppercase tracking-[0.08em] text-brand-200 rtl:tracking-normal">{eyebrow ?? copy.howItWorksEyebrow}</p>
+          )}
+          <h2 className="font-display text-[32px] font-extrabold leading-[1.08] tracking-[-0.025em] md:text-[40px]">{title ?? copy.howItWorksTitle}</h2>
+          <p className="text-[17px] leading-relaxed text-white/80">{body ?? copy.howItWorksBody}</p>
         </div>
         <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5 rounded-2xl border border-white/15 bg-white/[0.07] p-5">
           <span className="text-xs font-medium uppercase tracking-wide text-white/70">{copy.sampleSource}</span>
