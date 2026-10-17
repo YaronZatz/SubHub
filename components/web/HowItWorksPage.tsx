@@ -6,6 +6,7 @@ import { Map as MapIcon, ArrowRight, ChevronDown, Info } from 'lucide-react';
 import HeroMapCard from '@/components/shared/HeroMapCard';
 import PostToListingSection from '@/components/shared/PostToListingSection';
 import SiteFooter from '@/components/shared/SiteFooter';
+import { PostToPinSpot, HomePinSpot } from '@/components/illustrations/MapSpots';
 import { SearchPreview, FilterPreview, ListingPreview, ContactPreview } from '@/components/howItWorks/StepPreviews';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { howItWorksCopy } from '@/lib/howItWorksCopy';
@@ -95,18 +96,21 @@ export default function HowItWorksPage() {
 
       {/* Posting — one compact band, not another list of steps */}
       <section id="post" className="scroll-mt-20 border-b border-line">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-start gap-5 px-4 py-12 md:flex-row md:items-center md:justify-between md:gap-12 md:px-6 md:py-14">
-          <div className="flex max-w-[640px] flex-col gap-2">
-            <h2 className="font-display text-[26px] font-extrabold tracking-[-0.02em] md:text-[30px]">{copy.postTitle}</h2>
-            <p className="text-[17px] leading-relaxed text-muted">{copy.postBody}</p>
+        <div className="mx-auto grid max-w-[1200px] items-center gap-8 px-4 py-12 md:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] md:gap-16 md:px-6 md:py-16">
+          <div className="flex flex-col items-start gap-5">
+            <div className="flex max-w-[560px] flex-col gap-2">
+              <h2 className="font-display text-[26px] font-extrabold tracking-[-0.02em] md:text-[30px]">{copy.postTitle}</h2>
+              <p className="text-[17px] leading-relaxed text-muted">{copy.postBody}</p>
+            </div>
+            <Link
+              href="/post"
+              className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-accent-500 px-5 text-[15px] font-semibold text-accent-ink transition-colors hover:bg-accent-600"
+            >
+              {copy.ctaPost}
+              <ArrowRight className="h-[18px] w-[18px] rtl:rotate-180" aria-hidden="true" />
+            </Link>
           </div>
-          <Link
-            href="/post"
-            className="inline-flex h-12 shrink-0 items-center gap-2 rounded-xl bg-accent-500 px-5 text-[15px] font-semibold text-accent-ink transition-colors hover:bg-accent-600"
-          >
-            {copy.ctaPost}
-            <ArrowRight className="h-[18px] w-[18px] rtl:rotate-180" aria-hidden="true" />
-          </Link>
+          <PostToPinSpot className="mx-auto w-full max-w-[380px]" />
         </div>
       </section>
 
@@ -134,15 +138,20 @@ export default function HowItWorksPage() {
 
       {/* Closing */}
       <section className="bg-brand-50">
-        <div className="mx-auto flex max-w-[1200px] flex-col items-start gap-5 px-4 py-12 md:flex-row md:items-center md:justify-between md:px-6 md:py-16">
-          <div className="flex flex-col gap-2">
-            <h2 className="font-display text-[28px] font-extrabold tracking-[-0.02em] md:text-[34px]">{copy.closingTitle}</h2>
-            <p className="text-[17px] text-muted">{copy.closingBody}</p>
-            {liveCount}
+        <div className="mx-auto grid max-w-[1200px] items-center gap-8 px-4 py-12 md:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] md:gap-16 md:px-6 md:py-16">
+          <div className="flex flex-col items-start gap-5">
+            <div className="flex flex-col gap-2">
+              <h2 className="font-display text-[28px] font-extrabold tracking-[-0.02em] md:text-[34px]">{copy.closingTitle}</h2>
+              <p className="text-[17px] text-muted">{copy.closingBody}</p>
+              {liveCount}
+            </div>
+            <Link href="/map" className={primaryBtn}>
+              <MapIcon className="h-[18px] w-[18px]" aria-hidden="true" />
+              {copy.ctaMap}
+            </Link>
           </div>
-          <Link href="/map" className={`${primaryBtn} shrink-0`}>
-            <MapIcon className="h-[18px] w-[18px]" aria-hidden="true" />
-            {copy.ctaMap}
+          <Link href="/map" aria-label={copy.ctaMap} tabIndex={-1} className="mx-auto block w-full max-w-[380px] transition-transform hover:-translate-y-0.5">
+            <HomePinSpot className="w-full" />
           </Link>
         </div>
       </section>
