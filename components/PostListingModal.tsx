@@ -16,6 +16,7 @@ import { EMPTY_REVIEW_FORM } from './post/reviewFormTypes';
 import type { AmenityKey } from './post/AmenitiesGrid';
 import { FL, ic, icErr, SectionHeading } from './post/formPrimitives';
 import { amenityArrayToParsedAmenities } from '../utils/amenityHelpers';
+import { legacyPropertyType } from '../lib/propertyType';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,7 @@ function buildSublet(data: ReviewFormData, photos: string[], originalText: strin
     neighborhood: data.neighborhood || undefined,
     lat, lng,
     type: data.type as SubletType,
+    property_type: legacyPropertyType(data.type),
     // Use 'active' to match the Firestore query filter in persistenceService
     status: 'active' as unknown as ListingStatus,
     createdAt: Date.now(),

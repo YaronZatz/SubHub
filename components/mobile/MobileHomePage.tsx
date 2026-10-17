@@ -14,6 +14,8 @@ import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
 const FEATURED_CITIES = ['Tel Aviv', 'Berlin', 'London'];
+/** Cities that have a /city/[slug] page. */
+const CITY_PAGE_SLUG: Record<string, string> = { 'Tel Aviv': 'tel-aviv' };
 
 interface MobileHomePageProps {
   onPostClick?: () => void;
@@ -164,6 +166,7 @@ export function MobileHomePage({
                 key={city}
                 size="md"
                 title={city}
+                titleHref={CITY_PAGE_SLUG[city] ? `/city/${CITY_PAGE_SLUG[city]}` : undefined}
                 countLabel={!loading && listings.length > 0 ? String(listings.length >= 20 ? '20+' : listings.length) : undefined}
                 seeAllLabel={copy.seeAll}
                 onSeeAll={() => openCity(city)}

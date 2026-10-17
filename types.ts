@@ -189,6 +189,8 @@ export interface Sublet {
   /** Airbnb-style titles pre-generated per language by Stage 7 */
   titles_by_lang?: Record<string, string>;
   contentHash?: string;
+  /** Canonical property type written by the Gemini extractor / backfill. Prefer over `type`. */
+  property_type?: 'entire' | 'studio' | 'private_room' | 'shared_room' | 'unknown';
   duplicateOf?: string;
   partialData?: boolean;
   lastParsedAt?: number;
@@ -224,4 +226,8 @@ export interface Filters {
   amenities?: Partial<Record<keyof ParsedAmenities, boolean>>;
   country?: string;
   postedWithin?: string; // 'all' | '1h' | '24h' | '7d' | '30d'
+  /** Browse-area slug (e.g. 'florentin'), set from /map?area=… */
+  area?: string;
+  /** Canonical property type, set from /map?type=… */
+  propertyType?: 'entire' | 'studio' | 'private_room' | 'shared_room';
 }

@@ -21,12 +21,17 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   }, []);
 
+  // Keep <html lang/dir> in sync with the language — including the one restored
+  // from localStorage on load, so Hebrew pages are RTL after a reload too.
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === Language.HE ? 'rtl' : 'ltr';
+  }, [language]);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('subhub_lang', lang);
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang === Language.HE ? 'rtl' : 'ltr';
     }
   };
 

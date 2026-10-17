@@ -25,6 +25,7 @@ import {
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
 import { matchesFreeText } from '@/lib/searchMatch';
+import { useCityScope, matchesSubletType } from '@/hooks/useCityScope';
 import { listingTitle } from '@/lib/locationUtils';
 import { homeCopy } from '@/lib/homeCopy';
 import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
@@ -511,6 +512,9 @@ function WebMapPage() {
     })();
   }, []);
 
+  // ?city=…&area=…&type=… (shareable links from the city page)
+  const scope = useCityScope(filters, setFilters, setCityFlyTo);
+
   // Filter listings
   const filteredSublets = useMemo(() => {
     return sublets.filter(s => {
@@ -518,7 +522,7 @@ function WebMapPage() {
 
       const matchesPrice = s.price >= filters.minPrice && s.price <= filters.maxPrice;
       const matchesStatus = filters.showTaken || s.status !== ListingStatus.TAKEN;
-      const matchesType = !filters.type || s.type === filters.type;
+      const matchesType = matchesSubletType(s, filters.type);
       const matchesCity = !filters.city.trim()
         || (s.city?.toLowerCase().includes(filters.city.toLowerCase()));
       const matchesNeighborhood = !filters.neighborhood.trim()
@@ -555,9 +559,10 @@ function WebMapPage() {
 
       return matchesSearch && matchesPrice && matchesStatus && matchesType
         && matchesCity && matchesNeighborhood && matchesDates && matchesRentTerm
-        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2;
+        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2
+        && scope.matches(s);
     });
-  }, [sublets, filters, searchQuery]);
+  }, [sublets, filters, searchQuery, scope.matches]);
 
   const sortedSublets = useMemo(() => {
     const ts = (s: Sublet) => (s.postedAt ? new Date(s.postedAt).getTime() || s.createdAt : s.createdAt);
@@ -592,7 +597,7 @@ function WebMapPage() {
     !!filters.minRooms,
     (filters.postedWithin ?? 'all') !== 'all',
     ...AMENITY_FILTER_KEYS.map(k => !!filters.amenities?.[k]),
-  ].filter(Boolean).length, [filters]);
+  ].filter(Boolean).length + scope.activeCount, [filters, scope.activeCount]);
 
   const handleMarkerClick = useCallback((sublet: Sublet) => {
     setSelectedSubletId(sublet.id);
@@ -613,7 +618,8 @@ function WebMapPage() {
   const handleClearFilters = useCallback(() => {
     setFilters(INITIAL_FILTERS);
     setSearchQuery('');
-  }, []);
+    scope.clearScope();
+  }, [scope.clearScope]);
 
   const handleNavigateToListing = useCallback(() => {
     _pendingWebMapState = { filters, searchQuery, selectedSubletId, cityFlyTo };
@@ -660,6 +666,17 @@ function WebMapPage() {
         </button>
 
         <div className="scrollbar-hide flex min-w-0 items-center gap-2 overflow-x-auto">
+          {scope.city && (
+            <button
+              type="button"
+              onClick={scope.clearScope}
+              aria-label={`${copy.clearFilter}: ${scope.area ? (language === 'he' ? scope.area.he : scope.area.en) : (language === 'he' ? scope.city.he : scope.city.en)}`}
+              className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-brand-600 bg-brand-600 ps-3.5 pe-2.5 text-[13px] font-medium text-white"
+            >
+              {scope.area ? (language === 'he' ? scope.area.he : scope.area.en) : (language === 'he' ? scope.city.he : scope.city.en)}
+              <span aria-hidden="true" className="text-white/80">✕</span>
+            </button>
+          )}
           {quickFilters.map(q => (
             <button
               key={q.key}
@@ -685,7 +702,7 @@ function WebMapPage() {
           className="flex-1 md:flex-none md:w-1/2 overflow-y-auto bg-white border-e border-line"
         >
           <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-line bg-white/95 px-4 py-3">
-            {isLoading ? (
+            {isLoading || !scope.ready ? (
               <div className="h-5 w-32 animate-pulse rounded bg-brand-50" />
             ) : (
               <h1 className="font-display text-xl font-extrabold tracking-tight text-ink">
@@ -707,7 +724,7 @@ function WebMapPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-            {isLoading ? (
+            {isLoading || !scope.ready ? (
               Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
             ) : sortedSublets.length === 0 ? (
               <div className="col-span-full py-16 text-center">

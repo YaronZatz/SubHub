@@ -4,6 +4,7 @@
  */
 
 import { Sublet, ListingStatus, ParsedAmenities, ParsedRooms, ParsedDates, RentTerm } from '@/types';
+import { isPropertyType, legacyPropertyType } from '@/lib/propertyType';
 
 function computeRentTerm(startDate: string, endDate: string, immediateAvail: boolean): RentTerm | undefined {
   if (endDate && startDate) {
@@ -106,6 +107,8 @@ export function listingDocumentToSublet(docId: string, data: Record<string, unkn
     fullAddress: (data.fullAddress ?? data.displayAddress) as string | undefined,
     locationConfidence: data.locationConfidence as string | undefined,
     contentHash: data.contentHash as string | undefined,
+    // Derive from the raw stored type, before the 'Entire Place' default above is applied.
+    property_type: isPropertyType(data.property_type) ? data.property_type : legacyPropertyType(data.type),
     partialData: data.partialData as boolean | undefined,
     lastParsedAt: data.lastParsedAt as number | undefined,
     parserVersion: data.parserVersion as string | undefined,

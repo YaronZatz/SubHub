@@ -171,6 +171,7 @@ export interface GeminiExtractionResponse {
   duration?: string;
   immediate_availability?: boolean;
   type?: string;
+  property_type?: string;
   rooms?: Record<string, unknown>;
   amenities?: Record<string, unknown>;
   ai_summary?: string;
