@@ -17,6 +17,8 @@ import type { AmenityKey } from './post/AmenitiesGrid';
 import { FL, ic, icErr, SectionHeading } from './post/formPrimitives';
 import { amenityArrayToParsedAmenities } from '../utils/amenityHelpers';
 import { legacyPropertyType } from '../lib/propertyType';
+import { accountCopy } from '../lib/accountCopy';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -376,7 +378,7 @@ export default function PostListingModal({ onAdd, onClose, onViewOnMap, language
           <div className="shrink-0 px-6 pt-5 pb-0 border-b border-line">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{pm.modalTitle}</h2>
-              <button type="button" onClick={handleClose} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-brand-50 hover:text-ink">
+              <button type="button" onClick={handleClose} aria-label={accountCopy(language).post.close} className="flex h-10 w-10 items-center justify-center rounded-full text-muted transition-colors hover:bg-brand-50 hover:text-ink">
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} aria-hidden="true"><path strokeLinecap="round" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -589,13 +591,14 @@ function ManualStep1({ data, onChange, errors, te, pm, subletTypeLabels }: {
   te: (v?: string) => string | undefined; pm: Record<string, string>; subletTypeLabels: Record<SubletType, string>;
 }) {
   const s = <K extends keyof Step1Data>(k: K, v: Step1Data[K]) => onChange({ ...data, [k]: v });
+  const pc = accountCopy(useLanguage().language).post;
   return (
     <div className="grid grid-cols-2 gap-3">
       <div className="col-span-2"><FL label={pm.locationLabel} required error={te(errors.location)}>
-        <input value={data.location} onChange={e => s('location', e.target.value)} className={errors.location ? icErr : ic} placeholder="12 Rothschild Blvd" />
+        <input value={data.location} onChange={e => s('location', e.target.value)} className={errors.location ? icErr : ic} placeholder={pc.addressPlaceholder} />
       </FL></div>
       <FL label={pm.cityLabel} required error={te(errors.city)}>
-        <input value={data.city} onChange={e => s('city', e.target.value)} className={errors.city ? icErr : ic} placeholder="Tel Aviv" />
+        <input value={data.city} onChange={e => s('city', e.target.value)} className={errors.city ? icErr : ic} placeholder={pc.cityPlaceholder} />
       </FL>
       <FL label={pm.neighborhoodLabel}>
         <input value={data.neighborhood} onChange={e => s('neighborhood', e.target.value)} className={ic} />

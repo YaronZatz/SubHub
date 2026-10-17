@@ -10,6 +10,8 @@ import HomeListingCard from '@/components/web/HomeListingCard';
 import CityCarousel from '@/components/shared/CityCarousel';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { homeCopy } from '@/lib/homeCopy';
+import { cityFor } from '@/lib/placeNames';
+import { formatDateRange } from '@/lib/dateWindow';
 import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
@@ -90,8 +92,8 @@ export function MobileHomePage({
   };
 
   const activeCities = loading ? FEATURED_CITIES : FEATURED_CITIES.filter(city => (listingsByCity[city]?.length ?? 0) > 0);
-  const datesLabel = startDate && endDate ? `${startDate.slice(5)} → ${endDate.slice(5)}` : copy.anyDates;
-  const budgetLabel = Number(budget) > 0 ? `≤ ${Number(budget).toLocaleString()}` : copy.anyBudget;
+  const datesLabel = (startDate && endDate && formatDateRange(startDate, endDate, language)) || copy.anyDates;
+  const budgetLabel = Number(budget) > 0 ? `≤ ${Number(budget).toLocaleString(language === 'he' ? 'he' : 'en')}` : copy.anyBudget;
   const toggleBtn = (active: boolean) =>
     `h-10 flex-1 rounded-[10px] border text-[13px] font-medium transition-colors ${
       active ? 'border-brand-600 bg-brand-100 text-brand-700' : 'border-line bg-white text-ink'
@@ -165,11 +167,13 @@ export function MobileHomePage({
               <CityCarousel
                 key={city}
                 size="md"
-                title={city}
+                title={cityFor(city, language) ?? city}
                 titleHref={CITY_PAGE_SLUG[city] ? `/city/${CITY_PAGE_SLUG[city]}` : undefined}
                 countLabel={!loading && listings.length > 0 ? String(listings.length >= 20 ? '20+' : listings.length) : undefined}
                 seeAllLabel={copy.seeAll}
                 onSeeAll={() => openCity(city)}
+                prevLabel={copy.previous}
+                nextLabel={copy.next}
               >
                 {loading
                   ? Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)

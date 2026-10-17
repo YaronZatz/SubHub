@@ -10,6 +10,7 @@ import type { ReviewFormData, ReviewFormErrors } from './post/reviewFormTypes';
 import { subletToReviewFormData, validateReviewForm } from './post/reviewFormTypes';
 import type { AmenityKey } from './post/AmenitiesGrid';
 import { amenityArrayToParsedAmenities } from '../utils/amenityHelpers';
+import { accountCopy } from '../lib/accountCopy';
 
 // ─── Props ─────────────────────────────────────────────────────────────────────
 
@@ -139,7 +140,7 @@ export default function EditListingModal({ listing, language, onClose, onUpdate,
           {/* ── Header ── */}
           <div className="shrink-0 px-6 pt-5 pb-4 border-b border-line flex items-center justify-between">
             <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{pm.editModalTitle}</h2>
-            <button type="button" onClick={handleClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-brand-50 rounded-xl transition-colors text-xl leading-none">×</button>
+            <button type="button" onClick={handleClose} aria-label={accountCopy(language).post.close} className="w-9 h-9 flex items-center justify-center text-muted hover:text-ink hover:bg-brand-50 rounded-xl transition-colors text-xl leading-none">×</button>
           </div>
 
           {/* ── Body ── */}

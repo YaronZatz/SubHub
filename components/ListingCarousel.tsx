@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { ChevronLeftIcon, ChevronRightIcon } from './Icons';
 import { isDirectImageUrl, enhanceImageUrl } from '../utils/imageUtils';
+import { useLanguage } from '../contexts/LanguageContext';
+import { homeCopy } from '../lib/homeCopy';
 
 interface ListingCarouselProps {
   id: string;
@@ -40,6 +42,8 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
   aspectRatio = "aspect-[4/3]",
   className = "" 
 }) => {
+  const { language } = useLanguage();
+  const copy = homeCopy(language);
   const [index, setIndex] = useState(0);
   const [touchDelta, setTouchDelta] = useState(0);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
@@ -179,7 +183,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              {photoCount} photo{photoCount !== 1 ? 's' : ''} on Facebook
+              {copy.photosOnFacebook(photoCount)}
             </button>
           ) : sourceUrl ? (
             <button
@@ -189,10 +193,10 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
-              View on Facebook
+              {copy.viewOnFacebook}
             </button>
           ) : (
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">No photos</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">{copy.noPhotos}</span>
           )}
         </div>
         {/* Subtle pattern overlay */}
@@ -238,7 +242,7 @@ const ListingCarousel: React.FC<ListingCarouselProps> = ({
               key={i}
               src={fallbackImages.has(i) ? originalImages[i] : src}
               className="w-full h-full object-cover shrink-0 select-none"
-              alt={`Sublet view ${i + 1}`}
+              alt={copy.photoAlt(i + 1)}
               loading="lazy"
               referrerPolicy="no-referrer"
               onError={() => handleImageError(i)}

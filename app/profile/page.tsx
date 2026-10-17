@@ -7,6 +7,8 @@ import AuthGuard from '@/components/shared/AuthGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { accountCopy } from '@/lib/accountCopy';
+import { listingTitle } from '@/lib/locationUtils';
 import { persistenceService } from '@/services/persistenceService';
 import type { Sublet } from '@/types';
 import { ListingStatus } from '@/types';
@@ -18,6 +20,7 @@ function ProfileContent() {
   const { user, logout } = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
+  const ac = accountCopy(language).profile;
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [myListings, setMyListings] = useState<Sublet[]>([]);
   const [listingsLoading, setListingsLoading] = useState(true);
@@ -38,7 +41,9 @@ function ProfileContent() {
 
   // Firebase users may expose photoURL / displayName beyond the User type
   const firebaseUser = user as typeof user & { photoURL?: string; displayName?: string };
-  const displayName = firebaseUser.displayName || user.name || 'User';
+  // authService uses 'Anonymous User' when Firebase has no display name — show it in the UI language.
+  const rawName = firebaseUser.displayName || (user.name !== 'Anonymous User' ? user.name : '');
+  const displayName = rawName || ac.userFallback;
   const initials = displayName
     .split(' ')
     .map((n: string) => n[0])
@@ -46,7 +51,7 @@ function ProfileContent() {
     .join('')
     .toUpperCase();
 
-  const memberSince = new Date(user.createdAt).toLocaleDateString('en-US', {
+  const memberSince = new Date(user.createdAt).toLocaleDateString(language === 'he' ? 'he' : 'en', {
     month: 'long',
     year: 'numeric',
   });
@@ -84,7 +89,7 @@ function ProfileContent() {
             <div className="flex-1 min-w-0">
               <p className="text-lg font-bold text-ink truncate">{displayName}</p>
               <p className="text-sm text-muted truncate">{user.email}</p>
-              <p className="text-xs text-muted mt-0.5">Member since {memberSince}</p>
+              <p className="text-xs text-muted mt-0.5">{ac.memberSince(memberSince)}</p>
             </div>
           </div>
         </div>
@@ -101,7 +106,7 @@ function ProfileContent() {
               </svg>
               <span className="text-sm font-semibold text-ink">{t.savedListings}</span>
             </div>
-            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -116,7 +121,7 @@ function ProfileContent() {
               </svg>
               <span className="text-sm font-semibold text-ink">{t.messages}</span>
             </div>
-            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4 text-muted/60 group-hover:text-muted transition-colors rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </Link>
@@ -156,7 +161,7 @@ function ProfileContent() {
                     >
                       {tab === 'active' ? t.activeListingsTab : t.pastListingsTab}
                       {tab === 'active' && activeListings.length > 0 && (
-                        <span className="ml-1.5 bg-brand-50 text-muted text-[10px] font-bold px-1.5 py-0.5 rounded-full">{activeListings.length}</span>
+                        <span className="ms-1.5 bg-brand-50 text-muted text-[10px] font-bold px-1.5 py-0.5 rounded-full">{activeListings.length}</span>
                       )}
                     </button>
                   ))}
@@ -167,7 +172,7 @@ function ProfileContent() {
               {listingsLoading ? (
                 <div className="px-6 py-4 flex items-center gap-2 text-sm text-muted">
                   <div className="w-4 h-4 border-2 border-line border-t-muted rounded-full animate-spin" />
-                  Loading…
+                  {ac.loading}
                 </div>
               ) : tabListings.length === 0 ? (
                 <div className="px-6 py-4 text-sm text-muted">{t.noListingsYet}</div>
@@ -179,7 +184,7 @@ function ProfileContent() {
                       <div key={listing.id} className="flex items-center gap-3 px-6 py-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-ink truncate">
-                            {listing.location}{listing.city ? `, ${listing.city}` : ''}
+                            {listingTitle(listing, language, t.unknownLocation)}
                           </p>
                           <div className="flex items-center gap-2 mt-0.5">
                             {statusBadge(listing.status)}
@@ -214,7 +219,7 @@ function ProfileContent() {
           <button
             onClick={handleSignOut}
             disabled={isSigningOut}
-            className="w-full flex items-center gap-3 px-6 py-4 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 text-left"
+            className="w-full flex items-center gap-3 px-6 py-4 text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 text-start"
           >
             {isSigningOut ? (
               <div className="w-5 h-5 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
@@ -224,7 +229,7 @@ function ProfileContent() {
               </svg>
             )}
             <span className="text-sm font-semibold">
-              {isSigningOut ? 'Signing out…' : t.signOut}
+              {isSigningOut ? ac.signingOut : t.signOut}
             </span>
           </button>
         </div>

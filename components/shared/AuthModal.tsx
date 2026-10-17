@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Logo from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { accountCopy, authErrorMessage } from '@/lib/accountCopy';
 import {
   validateAuthEmail,
   validateAuthPassword,
@@ -21,23 +23,6 @@ interface AuthModalProps {
   initialMode?: 'signup' | 'login';
 }
 
-// ─── Copy map ─────────────────────────────────────────────────────────────────
-
-const COPY: Record<AuthModalReason, { title: string; subtitle: string }> = {
-  save: {
-    title: 'Sign up to save this listing',
-    subtitle: 'Keep your favourites in one place — free forever.',
-  },
-  contact: {
-    title: 'Sign up to message the owner',
-    subtitle: 'Message the owner directly on Facebook.',
-  },
-  general: {
-    title: 'Join SubHub',
-    subtitle: 'Find your next place with AI-powered search.',
-  },
-};
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AuthModal({
@@ -47,6 +32,8 @@ export default function AuthModal({
   initialMode = 'signup',
 }: AuthModalProps) {
   const { login, signup, loginWithGoogle } = useAuth();
+  const { language } = useLanguage();
+  const c = accountCopy(language).auth;
 
   type View = 'main' | 'email';
   type FormMode = 'signup' | 'login';
@@ -59,7 +46,7 @@ export default function AuthModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const copy = COPY[reason];
+  const copy = c.reasons[reason];
 
   const handleSuccess = () => {
     onSuccess?.();
@@ -76,10 +63,11 @@ export default function AuthModal({
       if (result.success) {
         handleSuccess();
       } else {
-        setError(result.error || 'Google sign-in failed. Please try again.');
+        setError(authErrorMessage(result.errorCode ?? 'provider-failed', language));
       }
-    } catch {
-      setError('An unexpected error occurred.');
+    } catch (err) {
+      console.error('[AuthModal] Google sign-in threw:', err);
+      setError(authErrorMessage('unknown', language));
     } finally {
       setLoading(false);
     }
@@ -91,14 +79,14 @@ export default function AuthModal({
     e.preventDefault();
     setError(null);
 
-    const emailErr = validateAuthEmail(email);
+    const emailErr = validateAuthEmail(email, language);
     if (emailErr) { setError(emailErr); return; }
 
-    const passErr = validateAuthPassword(password);
+    const passErr = validateAuthPassword(password, language);
     if (passErr) { setError(passErr); return; }
 
     if (formMode === 'signup') {
-      const nameErr = validateAuthName(name);
+      const nameErr = validateAuthName(name, language);
       if (nameErr) { setError(nameErr); return; }
     }
 
@@ -111,10 +99,11 @@ export default function AuthModal({
       if (result.success) {
         handleSuccess();
       } else {
-        setError(result.error || 'Authentication failed. Please try again.');
+        setError(authErrorMessage(result.errorCode, language));
       }
-    } catch {
-      setError('An unexpected error occurred.');
+    } catch (err) {
+      console.error('[AuthModal] Email auth threw:', err);
+      setError(authErrorMessage('unknown', language));
     } finally {
       setLoading(false);
     }
@@ -135,11 +124,11 @@ export default function AuthModal({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 fade-in duration-200">
 
         {/* Close button */}
-        <div className="flex justify-end pt-4 pr-4">
+        <div className="flex justify-end pt-4 pe-4">
           <button
             onClick={onClose}
             className="text-muted hover:text-muted p-1.5 rounded-full hover:bg-brand-50 transition-colors"
-            aria-label="Close"
+            aria-label={c.close}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -157,7 +146,7 @@ export default function AuthModal({
           {/* Heading */}
           <div className="text-center mb-6">
             <h2 className="font-display text-xl font-extrabold text-ink leading-snug tracking-tight">
-              {view === 'email' && formMode === 'login' ? 'Welcome back' : copy.title}
+              {view === 'email' && formMode === 'login' ? c.welcomeBack : copy.title}
             </h2>
             {!(view === 'email' && formMode === 'login') && (
               <p className="text-sm text-muted mt-1">{copy.subtitle}</p>
@@ -184,31 +173,37 @@ export default function AuthModal({
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                 )}
-                Continue with Google
+                {c.continueWithGoogle}
               </button>
 
               {/* Email — secondary */}
               <button
-                onClick={() => { setView('email'); setFormMode('signup'); }}
+                onClick={() => { setView('email'); setFormMode('signup'); setError(null); }}
                 className="w-full h-12 px-4 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors"
               >
-                Continue with Email
+                {c.continueWithEmail}
               </button>
+
+              {error && (
+                <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-semibold border border-red-100">
+                  {error}
+                </div>
+              )}
 
               {/* Sign in link */}
               <p className="text-center text-sm text-muted pt-1">
-                Already have an account?{' '}
+                {c.haveAccount}{' '}
                 <button
-                  onClick={() => { setView('email'); setFormMode('login'); }}
+                  onClick={() => { setView('email'); setFormMode('login'); setError(null); }}
                   className="text-brand-600 font-bold hover:underline"
                 >
-                  Sign in
+                  {c.signInLink}
                 </button>
               </p>
 
               {/* Tagline */}
               <p className="text-center text-xs text-muted pt-1">
-                Takes 10 seconds. Free forever.
+                {c.tagline}
               </p>
             </div>
           )}
@@ -228,7 +223,7 @@ export default function AuthModal({
                       : 'text-muted hover:text-ink'
                   }`}
                 >
-                  Sign up
+                  {c.signUpTab}
                 </button>
                 <button
                   type="button"
@@ -239,7 +234,7 @@ export default function AuthModal({
                       : 'text-muted hover:text-ink'
                   }`}
                 >
-                  Log in
+                  {c.logInTab}
                 </button>
               </div>
 
@@ -249,7 +244,7 @@ export default function AuthModal({
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="Full name"
+                    placeholder={c.namePlaceholder}
                     autoComplete="name"
                     className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
                   />
@@ -259,7 +254,7 @@ export default function AuthModal({
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="Email address"
+                  placeholder={c.emailPlaceholder}
                   autoComplete="email"
                   required
                   className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
@@ -269,7 +264,7 @@ export default function AuthModal({
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="Password"
+                  placeholder={c.passwordPlaceholder}
                   autoComplete={formMode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   className="w-full px-4 py-3 border border-line rounded-xl text-sm bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-600/20 focus:border-brand-600 transition-all"
@@ -289,7 +284,7 @@ export default function AuthModal({
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                   ) : (
-                    formMode === 'signup' ? 'Create account' : 'Sign in'
+                    formMode === 'signup' ? c.createAccount : c.signInSubmit
                   )}
                 </button>
               </form>
@@ -297,9 +292,12 @@ export default function AuthModal({
               {/* Back to other options */}
               <button
                 onClick={() => { setView('main'); setError(null); }}
-                className="w-full text-center text-xs text-muted hover:text-muted transition-colors pt-1"
+                className="w-full inline-flex items-center justify-center gap-1 text-xs text-muted hover:text-ink transition-colors pt-1"
               >
-                ← Other sign-in options
+                <svg className="w-3.5 h-3.5 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                {c.otherOptions}
               </button>
             </div>
           )}

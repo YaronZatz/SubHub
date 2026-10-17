@@ -135,6 +135,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
   );
   const { language } = useLanguage();
   const t = translations[language];
+  const copy = homeCopy(language);
+  const locale = language === Language.HE ? 'he' : 'en';
 
   const sLabel = 'text-xs font-semibold uppercase tracking-[0.06em] text-muted';
   const iconBtnCls = (active: boolean) =>
@@ -152,7 +154,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
       <aside className={`fixed top-0 right-0 bottom-0 z-[60] w-full max-w-[480px] bg-white shadow-[0_0_40px_rgba(17,26,36,0.18)] flex flex-col transition-transform duration-300 ease-in-out ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="px-6 py-5 border-b border-line flex items-center justify-between shrink-0">
           <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{t.refineSearch}</h2>
-          <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
+          <button onClick={onClose} aria-label={copy.close} className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -165,7 +167,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold tabular-nums text-brand-700">
-                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
+                ₪{filters.minPrice.toLocaleString(locale)} — {filters.maxPrice >= PRICE_MAX ? copy.priceAndUp(`₪${PRICE_MAX.toLocaleString(locale)}`) : `₪${filters.maxPrice.toLocaleString(locale)}`}
               </span>
             </div>
             <PriceSlider minVal={filters.minPrice} maxVal={filters.maxPrice}
@@ -308,7 +310,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
           </button>
           <button onClick={onClose}
             className="flex items-center gap-2 h-12 px-6 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors">
-            {t.showResults.replace('{n}', resultCount.toLocaleString())}
+            {t.showResults.replace('{n}', resultCount.toLocaleString(locale))}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
             </svg>
@@ -432,10 +434,11 @@ function FreshBadge({ isNew, label, className = '' }: { isNew: boolean; label: s
 }
 
 function HeartButton({ isSaved, onSave, className = '' }: { isSaved: boolean; onSave: (e: React.MouseEvent) => void; className?: string }) {
+  const copy = homeCopy(useLanguage().language);
   return (
     <button
       onClick={onSave}
-      aria-label={isSaved ? 'Unsave listing' : 'Save listing'}
+      aria-label={isSaved ? copy.unsaveListing : copy.saveListing}
       className={`flex h-9 w-9 items-center justify-center rounded-full bg-white transition-colors ${isSaved ? 'text-accent-600' : 'text-ink'} ${className}`}
     >
       <svg className="h-4 w-4" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
@@ -539,9 +542,10 @@ export default function MapScreen() {
   const { user, logout }       = useAuth();
   const { currency, setCurrency } = useCurrency();
   const { language, setLanguage } = useLanguage();
+  const copy = homeCopy(language);
 
   const firebaseUser  = user as (typeof user & { photoURL?: string; displayName?: string }) | null;
-  const displayName   = firebaseUser?.displayName || (user as any)?.name || 'User';
+  const displayName   = firebaseUser?.displayName || (user as any)?.name || copy.userFallback;
   const initials      = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
 
   // ── Data state ──────────────────────────────────────────────────────────────
@@ -827,7 +831,7 @@ export default function MapScreen() {
     e.stopPropagation();
     const willSave = !savedIds.has(id);
     toggleSavedById(id);
-    if (willSave && user) setToastMessage('Saved ♡');
+    if (willSave && user) setToastMessage(copy.savedToast);
   }, [savedIds, toggleSavedById, user]);
 
   const handleClearFilters = useCallback(() => {
@@ -852,7 +856,6 @@ export default function MapScreen() {
   const showListingStrip = showList || (showCard && !selectedSublet && !isDragging);
 
   // ── Filter chip active states ────────────────────────────────────────────────
-  const copy = homeCopy(language);
   const quickFilters = [
     { key: 'entire', label: t.subletTypes[SubletType.ENTIRE], active: filters.type === SubletType.ENTIRE,
       toggle: () => setFilters(f => ({ ...f, type: f.type === SubletType.ENTIRE ? undefined : SubletType.ENTIRE })) },
@@ -876,7 +879,7 @@ export default function MapScreen() {
 
         {/* Row 1: Logo + Pickers + Avatar */}
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center shrink-0" aria-label="SubHub home">
+          <Link href="/" className="flex items-center shrink-0" aria-label={copy.homeLink}>
             <Logo size="sm" />
           </Link>
 
@@ -897,14 +900,6 @@ export default function MapScreen() {
             options={[
               { value: Language.EN, label: 'EN', display: <><img src="https://flagcdn.com/w20/us.png" alt="EN" className="w-4 h-3 rounded-sm object-cover" /> EN</> },
               { value: Language.HE, label: 'HE', display: <><img src="https://flagcdn.com/w20/il.png" alt="HE" className="w-4 h-3 rounded-sm object-cover" /> HE</> },
-              { value: Language.FR, label: 'FR', display: <><img src="https://flagcdn.com/w20/fr.png" alt="FR" className="w-4 h-3 rounded-sm object-cover" /> FR</> },
-              { value: Language.RU, label: 'RU', display: <><img src="https://flagcdn.com/w20/ru.png" alt="RU" className="w-4 h-3 rounded-sm object-cover" /> RU</> },
-              { value: Language.ES, label: 'ES', display: <><img src="https://flagcdn.com/w20/es.png" alt="ES" className="w-4 h-3 rounded-sm object-cover" /> ES</> },
-              { value: Language.DE, label: 'DE', display: <><img src="https://flagcdn.com/w20/de.png" alt="DE" className="w-4 h-3 rounded-sm object-cover" /> DE</> },
-              { value: Language.PT, label: 'PT', display: <><img src="https://flagcdn.com/w20/pt.png" alt="PT" className="w-4 h-3 rounded-sm object-cover" /> PT</> },
-              { value: Language.UK, label: 'UK', display: <><img src="https://flagcdn.com/w20/ua.png" alt="UK" className="w-4 h-3 rounded-sm object-cover" /> UK</> },
-              { value: Language.IT, label: 'IT', display: <><img src="https://flagcdn.com/w20/it.png" alt="IT" className="w-4 h-3 rounded-sm object-cover" /> IT</> },
-              { value: Language.ZH, label: 'ZH', display: <><img src="https://flagcdn.com/w20/cn.png" alt="ZH" className="w-4 h-3 rounded-sm object-cover" /> ZH</> },
             ]}
             onChange={handleLanguageChange}
           />
@@ -912,7 +907,7 @@ export default function MapScreen() {
           {user ? (
             <div className="relative">
               <button onClick={() => setProfileOpen(v => !v)}
-                className="w-10 h-10 rounded-full overflow-hidden border border-line focus:outline-none" aria-label="Account menu">
+                className="w-10 h-10 rounded-full overflow-hidden border border-line focus:outline-none" aria-label={copy.accountMenu}>
                 {firebaseUser?.photoURL ? (
                   <img src={firebaseUser.photoURL} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
@@ -924,19 +919,19 @@ export default function MapScreen() {
               {profileOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl py-1.5 z-50 overflow-hidden">
+                  <div className="absolute end-0 mt-2 w-44 bg-white border border-slate-200 rounded-2xl shadow-xl py-1.5 z-50 overflow-hidden">
                     <Link href="/profile" onClick={() => setProfileOpen(false)}
                       className="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                      Profile
+                      {t.profile}
                     </Link>
                     <Link href="/messages" onClick={() => setProfileOpen(false)}
                       className="block px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                      Messages
+                      {t.messages}
                     </Link>
                     <div className="border-t border-slate-100 mt-1">
                       <button onClick={() => { logout(); setProfileOpen(false); }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50">
-                        Sign Out
+                        className="w-full text-start px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50">
+                        {t.signOut}
                       </button>
                     </div>
                   </div>
@@ -945,7 +940,7 @@ export default function MapScreen() {
             </div>
           ) : (
             <button onClick={() => setHeaderAuthOpen(true)}
-              className="w-10 h-10 rounded-full border border-line bg-white flex items-center justify-center text-ink" aria-label="Sign in">
+              className="w-10 h-10 rounded-full border border-line bg-white flex items-center justify-center text-ink" aria-label={t.signIn}>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -1159,7 +1154,7 @@ export default function MapScreen() {
         <AuthModal
           reason="save"
           initialMode="signup"
-          onSuccess={() => setToastMessage('Saved ♡')}
+          onSuccess={() => setToastMessage(copy.savedToast)}
           onClose={closeSignInModal}
         />
       )}

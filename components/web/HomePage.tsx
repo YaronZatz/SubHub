@@ -12,6 +12,7 @@ import PostToListingSection from '@/components/shared/PostToListingSection';
 import HeroMapCard from '@/components/shared/HeroMapCard';
 import { useMapSearch } from '@/hooks/useMapSearch';
 import { homeCopy } from '@/lib/homeCopy';
+import { cityFor } from '@/lib/placeNames';
 import { persistenceService } from '@/services/persistenceService';
 import { Sublet, Filters } from '@/types';
 
@@ -173,7 +174,7 @@ export function WebHomePage({
           return (
             <CityCarousel
               key={city}
-              title={city}
+              title={cityFor(city, language) ?? city}
               titleHref={CITY_PAGE_SLUG[city] ? `/city/${CITY_PAGE_SLUG[city]}` : undefined}
               countLabel={!loading && listings.length > 0 ? copy.listingsCount(listings.length) : undefined}
               seeAllLabel={copy.seeAllOnMap}

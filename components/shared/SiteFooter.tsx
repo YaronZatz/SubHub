@@ -17,7 +17,7 @@ export default function SiteFooter() {
           <Logo size="sm" />
           <span>© {new Date().getFullYear()} SubHub</span>
         </div>
-        <nav className="flex flex-wrap gap-5" aria-label="Footer">
+        <nav className="flex flex-wrap gap-5" aria-label={copy.footerNav}>
           <Link href="/how-it-works" className="hover:text-ink">{copy.howItWorksLink}</Link>
           <Link href="/privacy" className="hover:text-ink">{copy.privacy}</Link>
           <Link href="/data-deletion" className="hover:text-ink">{copy.dataDeletion}</Link>

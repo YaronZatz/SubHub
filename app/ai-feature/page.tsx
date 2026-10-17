@@ -1,14 +1,6 @@
-'use client';
+import { permanentRedirect } from 'next/navigation';
 
-import React from 'react';
-import WebNavbar from '@/components/web/WebNavbar';
-import AIFeaturePage from '@/components/web/AIFeaturePage';
-
+// The old AI feature page was replaced by /how-it-works; keep old links working.
 export default function AIFeatureRoute() {
-  return (
-    <>
-      <WebNavbar />
-      <AIFeaturePage />
-    </>
-  );
+  permanentRedirect('/how-it-works');
 }

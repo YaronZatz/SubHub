@@ -6,6 +6,7 @@ import { importLibrary } from '../lib/googleMapsLoader';
 import { Sublet, ListingStatus, Language } from '../types';
 import { MAP_CENTER, MAP_ZOOM } from '../constants';
 import { translations } from '../translations';
+import { homeCopy } from '../lib/homeCopy';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { getCurrencySymbol, formatPrice } from '../utils/formatters';
 import { convertAmount } from '../lib/currencyService';
@@ -143,6 +144,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
   const [isMapReady, setIsMapReady] = useState(false);
 
   const t = translations[language];
+  const copy = homeCopy(language);
   const { currency } = useCurrency();
 
   // Group overlapping pins into count bubbles; clicking a bubble zooms into its pins.
@@ -264,7 +266,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
       const symbol = getCurrencySymbol(currency);
       const listingCurrency = sublet.currency || 'ILS';
       const convertedPrice = convertAmount(sublet.price, listingCurrency, currency);
-      const priceText = `${symbol}${convertedPrice >= 1000 ? (convertedPrice / 1000).toFixed(1) + 'k' : Math.round(convertedPrice)}`;
+      // Full number (no "k") so the pin reads the same in every UI language.
+      const priceText = `${symbol}${Math.round(convertedPrice).toLocaleString(language === Language.HE ? 'he' : 'en')}`;
       const html = markerHtml(priceText, sublet.status === ListingStatus.TAKEN, isSelected);
 
       if (markersRef.current[sublet.id]) {
@@ -363,7 +366,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
 
   const selectedSublet = selectedSubletId ? sublets.find(s => s.id === selectedSubletId) : null;
   const popupTitle = selectedSublet
-    ? listingTitle(selectedSublet, language, 'Unknown location')
+    ? listingTitle(selectedSublet, language, t.unknownLocation)
     : '';
   const popupBeds = selectedSublet
     ? (selectedSublet as any).parsedRooms?.bedrooms ?? (selectedSublet as any).rooms?.bedrooms ?? null
@@ -381,8 +384,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
           onClick={handleLocate}
           disabled={isLocating}
           className={`flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-white text-brand-600 transition-colors hover:border-brand-200 ${isLocating ? 'opacity-50 cursor-not-allowed' : ''}`}
-          title="Find my location"
-          aria-label="Find my location"
+          title={copy.findMyLocation}
+          aria-label={copy.findMyLocation}
         >
           {isLocating ? (
             <div className="w-5 h-5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
@@ -401,7 +404,7 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
             <button
               onClick={onDeselect}
               className="absolute end-2 top-2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-white text-muted transition-colors hover:text-ink"
-              aria-label="Close"
+              aria-label={copy.close}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -432,8 +435,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
               {/* Info */}
               <div className="min-w-0 flex-1 p-3 pe-9">
                 <p className="text-base font-bold leading-tight tabular-nums text-ink">
-                  {formatPrice(selectedSublet.price, currency as import('../types').CurrencyCode, 'en-US', selectedSublet.currency)}
-                  <span className="ms-1 text-xs font-normal text-muted">/mo</span>
+                  {formatPrice(selectedSublet.price, currency as import('../types').CurrencyCode, language, selectedSublet.currency)}
+                  <span className="ms-1 text-xs font-normal text-muted">{copy.perMonth}</span>
                 </p>
                 <p className="mt-1 truncate font-display text-[15px] font-bold text-ink">{popupTitle}</p>
                 {popupBeds !== null && (
@@ -445,8 +448,8 @@ const MapVisualizer: React.FC<MapVisualizerProps> = ({
                   </p>
                 )}
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-700">
-                  View listing
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  {copy.viewListing}
+                  <svg className="w-3 h-3 rtl:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </span>

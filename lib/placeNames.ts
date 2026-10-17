@@ -206,19 +206,30 @@ function neighborhoodToHebrew(raw: string): string | undefined {
   return EN_NEIGHBORHOODS_TO_HE[raw.trim().toLowerCase()];
 }
 
+/**
+ * True when `text` can be shown in a `lang` UI without mixing languages:
+ * Hebrew UI → has Hebrew and no Latin words; any other UI → no Hebrew.
+ */
+export function inLanguage(text: string | undefined | null, lang: string): boolean {
+  if (!text) return false;
+  return lang === 'he' ? hasHebrew(text) && !/[A-Za-z]{2,}/.test(text) : !hasHebrew(text);
+}
+
 /** Neighborhood in the UI language, or undefined if we can't show it without mixing scripts. */
 export function neighborhoodFor(raw: string | undefined | null, lang: string, stored?: Record<string, string>): string | undefined {
   if (stored?.[lang]) return stored[lang];
   const value = raw?.trim();
   if (!value || value.toLowerCase() === 'null') return undefined;
-  if (lang === 'he') return hasHebrew(value) ? value : (neighborhoodToHebrew(value) ?? value);
-  return hasHebrew(value) ? neighborhoodToEnglish(value) : value;
+  const localized = lang === 'he'
+    ? (hasHebrew(value) ? value : neighborhoodToHebrew(value))
+    : (hasHebrew(value) ? neighborhoodToEnglish(value) : value);
+  return localized && inLanguage(localized, lang) ? localized : undefined;
 }
 
-/** City in the UI language (cities are stored in English). */
+/** City in the UI language (cities are stored in English); undefined when we only have it in the other language. */
 export function cityFor(raw: string | undefined | null, lang: string): string | undefined {
   const value = raw?.trim();
   if (!value || value.toLowerCase() === 'null' || value.toLowerCase() === 'unknown') return undefined;
-  if (lang === 'he') return HE_CITIES[value] ?? value;
-  return value;
+  const localized = lang === 'he' ? (HE_CITIES[value] ?? value) : value;
+  return inLanguage(localized, lang) ? localized : undefined;
 }

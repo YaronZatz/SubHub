@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { homeCopy } from '@/lib/homeCopy';
 
 interface PhotoGalleryProps {
   images: string[];
@@ -41,9 +42,11 @@ const ImagePlaceholder = ({ size = 32 }: { size?: number }) => (
   </div>
 );
 
-export default function PhotoGallery({ images, alt = "Photo", sourceUrl, onShowAll, onImageClick }: PhotoGalleryProps) {
+export default function PhotoGallery({ images, alt: altProp, sourceUrl, onShowAll, onImageClick }: PhotoGalleryProps) {
   const { language } = useLanguage();
   const t = translations[language];
+  const copy = homeCopy(language);
+  const alt = altProp ?? copy.photoAlt(1);
   const handleClick = (index: number) => {
     if (onImageClick) onImageClick(index);
     else onShowAll?.();
@@ -73,10 +76,10 @@ export default function PhotoGallery({ images, alt = "Photo", sourceUrl, onShowA
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            View photos on Facebook
+            {copy.viewOnFacebook}
           </a>
         ) : (
-          <span className="text-sm font-medium">Photos unavailable</span>
+          <span className="text-sm font-medium">{copy.photosUnavailable}</span>
         )}
       </div>
     );

@@ -18,7 +18,7 @@ import { useSaved } from '@/contexts/SavedContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
-import { formatPrice, formatDate } from '@/utils/formatters';
+import { formatPrice } from '@/utils/formatters';
 import {
   Sublet, Filters, ListingStatus, SubletType,
   DateMode, RentTerm, Language,
@@ -74,16 +74,7 @@ function getBedroomCount(s: Sublet): number | null {
 }
 
 function getCardTitle(s: Sublet, lang: string): string {
-  return listingTitle(s, lang, 'Unknown location');
-}
-
-function getDateRange(s: Sublet): string {
-  const start = s.startDate ? formatDate(s.startDate) : '';
-  const end = s.endDate ? formatDate(s.endDate) : '';
-  if (start && end) return `${start} – ${end}`;
-  if (start) return `From ${start}`;
-  if (s.immediateAvailability) return 'Available now';
-  return '';
+  return listingTitle(s, lang, translations[lang as Language]?.unknownLocation);
 }
 
 // ─── Price Slider (dual-thumb) ────────────────────────────────────────────────
@@ -132,6 +123,8 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
 }) {
   const { language } = useLanguage();
   const t = translations[language];
+  const copy = homeCopy(language);
+  const locale = language === Language.HE ? 'he' : 'en';
   const set = useCallback(
     (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch }),
     [filters, onFiltersChange],
@@ -160,7 +153,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
         {/* Header */}
         <div className="px-6 py-5 border-b border-line flex items-center justify-between shrink-0">
           <h2 className="font-display text-[22px] font-extrabold tracking-tight text-ink">{t.filters}</h2>
-          <button onClick={onClose} aria-label="Close" className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
+          <button onClick={onClose} aria-label={copy.close} className="flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-brand-50 hover:text-ink transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -173,7 +166,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             <div className="flex justify-between items-end">
               <span className={sLabel}>{t.priceRange}</span>
               <span className="text-sm font-semibold tabular-nums text-brand-700">
-                ₪{filters.minPrice.toLocaleString()} — {filters.maxPrice >= PRICE_MAX ? '₪30k+' : `₪${filters.maxPrice.toLocaleString()}`}
+                ₪{filters.minPrice.toLocaleString(locale)} — {filters.maxPrice >= PRICE_MAX ? copy.priceAndUp(`₪${PRICE_MAX.toLocaleString(locale)}`) : `₪${filters.maxPrice.toLocaleString(locale)}`}
               </span>
             </div>
             <PriceSlider minVal={filters.minPrice} maxVal={filters.maxPrice} onChange={(min, max) => set({ minPrice: min, maxPrice: max })} />
@@ -299,7 +292,7 @@ function FiltersDrawer({ open, onClose, filters, onFiltersChange, onClear, resul
             {t.clearAll}
           </button>
           <button onClick={onClose} className="flex h-12 items-center gap-2 px-6 bg-brand-600 text-white rounded-xl font-semibold text-[15px] hover:bg-brand-700 transition-colors">
-            {t.showResults.replace('{n}', resultCount.toLocaleString())}
+            {t.showResults.replace('{n}', resultCount.toLocaleString(locale))}
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
           </button>
         </div>
@@ -441,7 +434,7 @@ const ListingCard = React.forwardRef<HTMLDivElement, ListingCardProps>(
           className={`absolute end-2 top-2 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white transition-colors ${
             isSaved ? 'text-accent-600' : 'text-ink hover:text-accent-600'
           }`}
-          aria-label={isSaved ? 'Unsave listing' : 'Save listing'}
+          aria-label={isSaved ? copy.unsaveListing : copy.saveListing}
         >
           <svg className="h-[18px] w-[18px]" fill={isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -612,7 +605,7 @@ function WebMapPage() {
     e.stopPropagation();
     const wasSaved = savedListingIds.has(id);
     toggleSavedById(id);
-    if (!wasSaved && user) setToastMessage('Saved ♡');
+    if (!wasSaved && user) setToastMessage(copy.savedToast);
   }, [user, savedListingIds, toggleSavedById]);
 
   const handleClearFilters = useCallback(() => {

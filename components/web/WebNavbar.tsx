@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
+import { homeCopy } from '@/lib/homeCopy';
 import { CurrencyCode } from '@/types';
 import AuthModal from '@/components/shared/AuthModal';
 import MobileTabBar from '@/components/shared/MobileTabBar';
@@ -101,14 +102,6 @@ const CURRENCY_OPTIONS: PillOption[] = [
 const LANGUAGE_OPTIONS: PillOption[] = [
   { value: 'en', label: 'EN', display: <><Flag code="us" /> EN</> },
   { value: 'he', label: 'HE', display: <><Flag code="il" /> HE</> },
-  { value: 'fr', label: 'FR', display: <><Flag code="fr" /> FR</> },
-  { value: 'ru', label: 'RU', display: <><Flag code="ru" /> RU</> },
-  { value: 'es', label: 'ES', display: <><Flag code="es" /> ES</> },
-  { value: 'de', label: 'DE', display: <><Flag code="de" /> DE</> },
-  { value: 'pt', label: 'PT', display: <><Flag code="pt" /> PT</> },
-  { value: 'uk', label: 'UK', display: <><Flag code="ua" /> UK</> },
-  { value: 'it', label: 'IT', display: <><Flag code="it" /> IT</> },
-  { value: 'zh', label: 'ZH', display: <><Flag code="cn" /> ZH</> },
 ];
 
 const LANG_CURRENCY: Record<string, CurrencyCode> = {
@@ -174,7 +167,7 @@ export default function WebNavbar() {
   };
 
   const firebaseUser = user as (typeof user & { photoURL?: string; displayName?: string }) | null;
-  const displayName = firebaseUser?.displayName || (user as any)?.name || 'User';
+  const displayName = firebaseUser?.displayName || (user as any)?.name || homeCopy(language).userFallback;
   const initials = displayName.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
 
   return (
@@ -269,7 +262,7 @@ export default function WebNavbar() {
                   <button
                     onClick={() => setIsUserMenuOpen(v => !v)}
                     className="flex items-center gap-1.5 p-1 rounded-full hover:bg-slate-100 transition-colors focus:outline-none"
-                    aria-label="Account menu"
+                    aria-label={homeCopy(language).accountMenu}
                   >
                     {firebaseUser?.photoURL ? (
                       <img src={firebaseUser.photoURL} alt={displayName} className="w-10 h-10 rounded-full shadow-sm object-cover" />

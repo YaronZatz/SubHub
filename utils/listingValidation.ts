@@ -3,6 +3,8 @@
  * Use in AddListingModal, EditListingModal, and any API that accepts listing payloads.
  */
 
+import { accountCopy } from '../lib/accountCopy';
+
 const MAX_TEXT = 2000;
 const MAX_LOCATION = 300;
 const MAX_CITY = 100;
@@ -91,24 +93,26 @@ export function validateListingForm(data: ListingFormData): ValidationResult {
 }
 
 /**
- * Auth input validation. Returns an error message or null if valid.
+ * Auth input validation. Returns an error message (in `language`, English by default) or null if valid.
  */
-export function validateAuthEmail(email: string): string | null {
+export function validateAuthEmail(email: string, language: string = 'en'): string | null {
+  const c = accountCopy(language).auth;
   const trimmed = email.trim();
-  if (!trimmed) return 'Email is required.';
-  if (!EMAIL_REGEX.test(trimmed)) return 'Please enter a valid email address.';
+  if (!trimmed) return c.emailRequired;
+  if (!EMAIL_REGEX.test(trimmed)) return c.emailInvalid;
   return null;
 }
 
-export function validateAuthPassword(password: string): string | null {
-  if (!password) return 'Password is required.';
+export function validateAuthPassword(password: string, language: string = 'en'): string | null {
+  const c = accountCopy(language).auth;
+  if (!password) return c.passwordRequired;
   if (password.length < MIN_PASSWORD_LENGTH) {
-    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    return c.passwordTooShort(MIN_PASSWORD_LENGTH);
   }
   return null;
 }
 
-export function validateAuthName(name: string): string | null {
-  if (!name.trim()) return 'Name is required.';
+export function validateAuthName(name: string, language: string = 'en'): string | null {
+  if (!name.trim()) return accountCopy(language).auth.nameRequired;
   return null;
 }

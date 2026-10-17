@@ -16,7 +16,8 @@ import { useCurrency } from '@/contexts/CurrencyContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { translations } from '@/translations';
 import { useRouter } from 'next/navigation';
-import { localizedLocation, listingTitle } from '@/lib/locationUtils';
+import { locationInLanguage, listingTitle } from '@/lib/locationUtils';
+import { inLanguage } from '@/lib/placeNames';
 import EditListingModal from '@/components/EditListingModal';
 import ListingActionMenu from '@/components/ListingActionMenu';
 import { TranslatedText } from '@/components/TranslatedText';
@@ -213,13 +214,8 @@ export default function ListingDetailClient({
         } else {
           setSublet(null);
           setNotFound(false);
-          const msg =
-            result.reason === 'no_db'
-              ? 'Firestore is not available in this browser session.'
-              : result.error instanceof Error
-                ? result.error.message
-                : 'Something went wrong while loading this listing.';
-          setFetchError(msg);
+          // Technical detail goes to the console; users get one message in their language.
+          setFetchError('load_failed');
           if (process.env.NODE_ENV === 'development') {
             console.warn('[ListingDetail] fetchListingById failed', listingId, result);
           }
@@ -247,8 +243,8 @@ export default function ListingDetailClient({
     if (!listingId) return;
     const wasSaved = savedIds.has(listingId);
     toggleSavedById(listingId);
-    if (!wasSaved && user) setToastMessage('Saved ♡');
-  }, [listingId, user, savedIds, toggleSavedById]);
+    if (!wasSaved && user) setToastMessage(homeCopy(lang).savedToast);
+  }, [listingId, user, savedIds, toggleSavedById, lang]);
 
   const handleContact = useCallback(() => {
     if (!user) {
@@ -266,7 +262,7 @@ export default function ListingDetailClient({
     const url = window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: sublet ? getPageTitle(sublet, lang) : 'SubHub listing', url });
+        await navigator.share({ title: sublet ? getPageTitle(sublet, lang) : homeCopy(lang).shareTitle, url });
       } else {
         await navigator.clipboard.writeText(url);
         setShareCopied(true);
@@ -289,12 +285,13 @@ export default function ListingDetailClient({
   const hasAI = !!(sublet?.ai_summary || sublet?.parsedAmenities || sublet?.parsedRooms);
   const pageTitleText = sublet ? getPageTitle(sublet, lang) : '';
   const pageTitleDir = contentTextDir(sublet ? pageTitleText : null);
-  const addressLine = sublet ? (sublet.fullAddress || localizedLocation(sublet, lang) || '') : '';
+  // Addresses are free text from the post; show one only when it is already in the UI language.
+  const addressLine = sublet ? ((inLanguage(sublet.fullAddress, lang) ? sublet.fullAddress : undefined) || locationInLanguage(sublet, lang) || '') : '';
   // Hide the address line when it just repeats the title.
   const showAddress = !!addressLine && addressLine.trim().toLowerCase() !== (sublet ? getPageTitle(sublet, lang) : '').trim().toLowerCase();
   const addressDir = contentTextDir(addressLine || null);
-  const summaryDir = contentTextDir(translatedSummary ?? sublet?.ai_summary ?? null);
-  const originalDir = contentTextDir(sublet?.originalText ?? null);
+  const summaryText = translatedSummary ?? (inLanguage(sublet?.ai_summary, lang) ? sublet?.ai_summary : null);
+  const summaryDir = contentTextDir(summaryText ?? null);
   const isUiRTL = lang === 'he';
   const priceLocale = isUiRTL ? 'he-IL' : 'en-US';
 
@@ -315,7 +312,7 @@ export default function ListingDetailClient({
     dateRange ? { key: 'dates', icon: Calendar, label: copy.factDates, value: dateRange } : null,
     beds !== null ? { key: 'beds', icon: BedDouble, label: copy.factBedrooms, value: String(beds) } : null,
     sublet.parsedRooms?.bathrooms ? { key: 'baths', icon: Bath, label: copy.factBathrooms, value: String(sublet.parsedRooms.bathrooms) } : null,
-    sublet.parsedRooms?.floorArea ? { key: 'size', icon: Ruler, label: copy.factSize, value: `${sublet.parsedRooms.floorArea} ${sublet.parsedRooms.floorAreaUnit || t.sqm}` } : null,
+    sublet.parsedRooms?.floorArea ? { key: 'size', icon: Ruler, label: copy.factSize, value: `${sublet.parsedRooms.floorArea} ${/ft/i.test(sublet.parsedRooms.floorAreaUnit ?? '') ? copy.sqft : t.sqm}` } : null,
     { key: 'type', icon: House, label: copy.factType, value: t.subletTypes[sublet.type] },
   ].filter(Boolean) as { key: string; icon: typeof Calendar; label: string; value: string }[] : [];
 
@@ -358,7 +355,7 @@ export default function ListingDetailClient({
         {isLoading ? (
           <DetailSkeleton />
         ) : fetchError ? (
-          <FetchErrorState message={fetchError} onRetry={loadFromClient} />
+          <FetchErrorState message={copy.listingLoadError} onRetry={loadFromClient} />
         ) : notFound || !sublet ? (
           <NotFound />
         ) : (
@@ -397,7 +394,7 @@ export default function ListingDetailClient({
                 <div className="mb-8">
                   <PhotoGallery
                     images={galleryImages}
-                    alt={sublet.location}
+                    alt={getPageTitle(sublet, lang)}
                     sourceUrl={sublet.sourceUrl}
                     onShowAll={() => { setLightboxIndex(0); setShowLightbox(true); }}
                     onImageClick={(i) => { setLightboxIndex(i); setShowLightbox(true); }}
@@ -446,7 +443,7 @@ export default function ListingDetailClient({
                 {/* About */}
                 <section className="flex flex-col gap-4">
                   <h2 className={sectionTitle}>{t.aboutThisPlace}</h2>
-                  {sublet.ai_summary ? (
+                  {summaryTranslating || summaryText ? (
                     summaryTranslating ? (
                       <div className="space-y-2" aria-busy="true">
                         <div className="h-4 w-full animate-pulse rounded bg-brand-50" />
@@ -458,13 +455,13 @@ export default function ListingDetailClient({
                         dir={summaryDir}
                         {...(summaryDir === 'rtl' ? { lang: 'he' as const } : {})}
                       >
-                        {translatedSummary ?? sublet.ai_summary}
+                        {summaryText}
                       </p>
                     )
                   ) : null}
 
                   {sublet.originalText?.trim() ? (
-                    <details className="group rounded-2xl border border-line" open={!sublet.ai_summary}>
+                    <details className="group rounded-2xl border border-line" open={!summaryText}>
                       <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden">
                         <svg className="h-5 w-5 shrink-0 text-[#1877F2]" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -474,14 +471,14 @@ export default function ListingDetailClient({
                             <span className="group-open:hidden">{copy.showOriginal}</span>
                             <span className="hidden group-open:inline">{copy.hideOriginal}</span>
                           </span>
-                          {sublet.sourceGroupName && (
+                          {inLanguage(sublet.sourceGroupName, lang) && (
                             <span className="truncate text-xs text-muted">{copy.postedIn} {sublet.sourceGroupName}</span>
                           )}
                         </span>
                         <ChevronDown className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180" strokeWidth={2.2} aria-hidden="true" />
                       </summary>
                       <div className="flex flex-col gap-3 border-t border-line px-4 py-4">
-                        <div dir={originalDir} {...(originalDir === 'rtl' ? { lang: 'he' as const } : {})}>
+                        <div>
                           <TranslatedText text={sublet.originalText} language={lang} />
                         </div>
                         {sublet.sourceUrl && (
@@ -670,7 +667,7 @@ export default function ListingDetailClient({
             <div className="flex-1 flex items-center justify-center relative overflow-hidden px-12">
               <img
                 src={imgs[lightboxIndex]}
-                alt={`${sublet?.location} ${lightboxIndex + 1}`}
+                alt={copy.photoAlt(lightboxIndex + 1)}
                 className="max-h-full max-w-full object-contain select-none"
                 referrerPolicy="no-referrer"
                 draggable={false}

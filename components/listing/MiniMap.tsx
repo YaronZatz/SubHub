@@ -42,7 +42,8 @@ export default function MiniMap({ lat, lng, price, currency }: MiniMapProps) {
       // Price pill marker
       const sym = SYMBOLS[currency] || '₪';
       const converted = Math.round(price);
-      const priceStr = `${sym}${converted >= 1000 ? (converted / 1000).toFixed(1) + 'k' : converted}`;
+      // Full number (no "k") so the pin reads the same in English and Hebrew.
+      const priceStr = `${sym}${converted.toLocaleString('en')}`;
 
       const pin = new google.maps.OverlayView() as google.maps.OverlayView & { _div: HTMLDivElement | null };
       pin._div = null;

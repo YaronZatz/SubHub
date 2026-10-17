@@ -1,4 +1,5 @@
 import type { Sublet, ParsedAmenities } from '@/types';
+import { cityFor, neighborhoodFor } from '@/lib/placeNames';
 
 // Free-text matching for the search box. A query matches when the whole
 // phrase appears, or when every meaningful word does ("Florentin with a
@@ -34,7 +35,10 @@ function haystack(s: Sublet): string {
         .filter(k => s.parsedAmenities?.[k] === true)
         .map(k => AMENITY_TERMS[k] ?? String(k))
     : [];
-  return [s.location, s.originalText, s.city, s.neighborhood, s.street, s.fullAddress, ...amenities]
+  // City and neighborhood in both UI languages, so a Hebrew suggestion ("תל אביב") finds
+  // listings stored in English and vice versa.
+  const places = (['en', 'he'] as const).flatMap(l => [cityFor(s.city, l), neighborhoodFor(s.neighborhood, l, s.neighborhoodTranslations)]);
+  return [s.location, s.originalText, s.city, s.neighborhood, s.street, s.fullAddress, ...places, ...amenities]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();

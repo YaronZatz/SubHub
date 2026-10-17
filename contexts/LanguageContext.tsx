@@ -15,7 +15,9 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   useEffect(() => {
     try {
       const saved = localStorage.getItem('subhub_lang');
-      if (saved) setLanguageState(saved as Language);
+      // Only English and Hebrew are offered; anything else saved earlier falls back to English.
+      if (saved === Language.HE || saved === Language.EN) setLanguageState(saved);
+      else if (saved) localStorage.setItem('subhub_lang', Language.EN);
     } catch {
       // localStorage unavailable
     }
