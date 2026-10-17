@@ -7,7 +7,7 @@
  *   node eval/run-extract-eval.js
  */
 
-export const EXTRACT_PROMPT_VERSION = 'v1.0';
+export const EXTRACT_PROMPT_VERSION = 'v1.1';
 export const EXTRACT_MODEL = 'gemini-2.5-flash';
 
 export function buildExtractionPrompt(postText: string, groupName?: string): string {
@@ -57,6 +57,12 @@ Return strict JSON. Follow every rule below exactly.
 
 ━━━ OTHER RULES ━━━
 - type: exactly "Entire Place", "Room in Shared", or "Studio".
+- property_type: exactly one of
+    "entire"       — a whole apartment/house for the tenant (דירה שלמה), more than one room
+    "studio"       — a whole one-room unit / studio (סטודיו, דירת חדר, יחידת דיור)
+    "private_room" — a private bedroom inside a shared apartment (חדר בדירת שותפים)
+    "shared_room"  — a bed or space in a room shared with others (חדר משותף, מיטה בחדר)
+    "unknown"      — the post does not make it clear. Do not guess "entire".
 - ai_summary: one Airbnb-style marketing sentence in English (evocative, factual, 10–15 words). Always English regardless of post language.
 
 POST TEXT:

@@ -66,6 +66,23 @@ const en = {
   postedIn: 'Posted in',
   flexible: 'Flexible',
   yourListing: 'Your listing',
+  // City page
+  cityAvailableNow: (n: number) => `${n.toLocaleString()} sublets available now`,
+  cityShowOnMap: 'Show on map',
+  popularAreasTitle: 'Popular areas',
+  popularAreasSubtitle: 'Areas with the most available sublets this month',
+  areaSubletsCount: (n: number) => `${n.toLocaleString()} sublets`,
+  showAllAreas: 'Show all areas',
+  showFewerAreas: 'Show fewer areas',
+  byTypeTitle: 'Browse by property type',
+  typeEntire: 'Entire place',
+  typeStudio: 'Studio',
+  typePrivateRoom: 'Room in a shared flat',
+  typeSharedRoom: 'Shared room',
+  justAddedTitle: 'Just added',
+  cityLoadError: "Couldn't load areas right now.",
+  areaFilterLabel: 'Area',
+  clearFilter: 'Remove filter',
 };
 
 type HomeCopy = typeof en;
@@ -133,6 +150,22 @@ const he: HomeCopy = {
   postedIn: 'פורסם ב',
   flexible: 'גמיש',
   yourListing: 'המודעה שלך',
+  cityAvailableNow: (n: number) => `${n.toLocaleString()} סאבלטים זמינים עכשיו`,
+  cityShowOnMap: 'הצג במפה',
+  popularAreasTitle: 'אזורים מבוקשים',
+  popularAreasSubtitle: 'האזורים עם הכי הרבה סאבלטים זמינים החודש',
+  areaSubletsCount: (n: number) => `${n.toLocaleString()} סאבלטים`,
+  showAllAreas: 'הצג את כל האזורים',
+  showFewerAreas: 'הצג פחות אזורים',
+  byTypeTitle: 'לפי סוג נכס',
+  typeEntire: 'דירה שלמה',
+  typeStudio: 'סטודיו',
+  typePrivateRoom: 'חדר בדירת שותפים',
+  typeSharedRoom: 'חדר משותף',
+  justAddedTitle: 'נוספו לאחרונה',
+  cityLoadError: 'לא הצלחנו לטעון את האזורים כרגע.',
+  areaFilterLabel: 'אזור',
+  clearFilter: 'הסרת סינון',
 };
 
 export function homeCopy(language: string): HomeCopy {

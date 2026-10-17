@@ -132,6 +132,10 @@ export const extractStage = onDocumentWritten(
       startDate: parsed.start_date ?? '',
       endDate: parsed.end_date ?? '',
       type: parsed.type ?? 'Entire Place',
+      // Canonical type for the city page / filters; never defaulted to 'entire'.
+      property_type: ['entire', 'studio', 'private_room', 'shared_room'].includes(parsed.property_type ?? '')
+        ? parsed.property_type
+        : 'unknown',
       parsedRooms: parsed.rooms ?? null,
       parsedAmenities: parsed.amenities ?? null,
       // Legacy fields:
@@ -169,6 +173,7 @@ function buildExtractionSchema(): object {
       duration: { type: Type.STRING },
       immediate_availability: { type: Type.BOOLEAN },
       type: { type: Type.STRING },
+      property_type: { type: Type.STRING, enum: ['entire', 'studio', 'private_room', 'shared_room', 'unknown'] },
       rooms: {
         type: Type.OBJECT,
         properties: {

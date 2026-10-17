@@ -23,6 +23,7 @@ import {
 } from '@/types';
 import { CITY_CENTERS } from '@/constants';
 import { matchesFreeText } from '@/lib/searchMatch';
+import { useCityScope, matchesSubletType } from '@/hooks/useCityScope';
 import { listingTitle } from '@/lib/locationUtils';
 import { homeCopy } from '@/lib/homeCopy';
 import { formatDateRange, timelineWindow } from '@/lib/dateWindow';
@@ -735,6 +736,9 @@ export default function MapScreen() {
     })();
   }, []);
 
+  // ?city=…&area=…&type=… (shareable links from the city page)
+  const scope = useCityScope(filters, setFilters, setCityFlyTo);
+
   // ── Filtering ───────────────────────────────────────────────────────────────
   const filteredSublets = useMemo(() => {
     return sublets.filter(s => {
@@ -742,7 +746,7 @@ export default function MapScreen() {
 
       const matchesPrice  = s.price >= filters.minPrice && s.price <= filters.maxPrice;
       const matchesStatus = filters.showTaken || s.status !== ListingStatus.TAKEN;
-      const matchesType   = !filters.type || s.type === filters.type;
+      const matchesType   = matchesSubletType(s, filters.type);
       const matchesCity   = !filters.city.trim()
         || (s.city?.toLowerCase().includes(filters.city.toLowerCase()));
       const matchesNbhd   = !filters.neighborhood.trim()
@@ -779,9 +783,10 @@ export default function MapScreen() {
 
       return matchesSearch && matchesPrice && matchesStatus && matchesType
         && matchesCity && matchesNbhd && matchesDates && matchesRentTerm
-        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2;
+        && matchesBeds && matchesFurnished && matchesPostedWithin && matchesPrice2
+        && scope.matches(s);
     });
-  }, [sublets, filters, searchQuery]);
+  }, [sublets, filters, searchQuery, scope.matches]);
 
   const activeFilterCount = useMemo(() => [
     filters.minPrice !== 0,
@@ -795,7 +800,7 @@ export default function MapScreen() {
     !!filters.minRooms,
     (filters.postedWithin ?? 'all') !== 'all',
     ...AMENITY_FILTER_KEYS.map(k => !!filters.amenities?.[k]),
-  ].filter(Boolean).length, [filters]);
+  ].filter(Boolean).length + scope.activeCount, [filters, scope.activeCount]);
 
   const selectedSublet = useMemo(
     () => selectedId ? filteredSublets.find(s => s.id === selectedId) : undefined,
@@ -828,7 +833,8 @@ export default function MapScreen() {
   const handleClearFilters = useCallback(() => {
     setFilters(INITIAL_FILTERS);
     setSearchQuery('');
-  }, []);
+    scope.clearScope();
+  }, [scope.clearScope]);
 
   const handleNavigateToListing = useCallback(() => {
     _pendingMobileMapState = {
@@ -981,6 +987,17 @@ export default function MapScreen() {
 
         {/* Row 3: Quick filters */}
         <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {scope.city && (
+            <button
+              type="button"
+              onClick={scope.clearScope}
+              aria-label={`${copy.clearFilter}: ${scope.area ? (language === 'he' ? scope.area.he : scope.area.en) : (language === 'he' ? scope.city.he : scope.city.en)}`}
+              className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-brand-600 bg-brand-600 ps-3.5 pe-2.5 text-[13px] font-medium text-white"
+            >
+              {scope.area ? (language === 'he' ? scope.area.he : scope.area.en) : (language === 'he' ? scope.city.he : scope.city.en)}
+              <span aria-hidden="true" className="text-white/80">✕</span>
+            </button>
+          )}
           {quickFilters.map(q => (
             <button
               key={q.key}
@@ -1058,7 +1075,7 @@ export default function MapScreen() {
             <>
               <div className="px-4 pb-2 shrink-0 flex items-center justify-between">
                 <p className="font-display text-lg font-extrabold text-ink">
-                  {isLoading
+                  {isLoading || !scope.ready
                     ? <span className="inline-block w-24 h-4 bg-brand-50 rounded animate-pulse" />
                     : copy.resultsCount(filteredSublets.length)}
                 </p>
@@ -1074,7 +1091,7 @@ export default function MapScreen() {
                 className="flex-1 overflow-x-auto overflow-y-hidden px-4 pb-4"
                 style={{ scrollbarWidth: 'none' } as React.CSSProperties}>
                 <div className="flex gap-3 h-full items-start">
-                  {isLoading
+                  {isLoading || !scope.ready
                     ? Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="flex-shrink-0 w-52 overflow-hidden rounded-2xl border border-line bg-white animate-pulse">
                           <div className="aspect-[4/3] bg-brand-50" />
