@@ -1,6 +1,7 @@
 // Copy for /how-it-works. Keep every claim true to what the product does today:
 // no in-app messaging, no alerts, listings aren't verified, scraping runs daily
-// (pilot). When scraping moves to hourly, update `freshness` and the FAQ answer.
+// (pilot). When scraping moves to hourly, update the source step and the FAQ answer.
+// Never mix languages: Hebrew strings use Hebrew words only (no Latin names).
 
 const en = {
   eyebrow: 'How it works',
@@ -24,7 +25,7 @@ const en = {
   findTitle: 'Finding a sublet',
   findSubtitle: 'Four steps from search to the person renting it.',
   findSteps: [
-    { title: 'Search', body: 'Type an area, a street, or what you need. Hebrew or English both work.', chips: ['Florentin', 'balcony', 'מרפסת'] },
+    { title: 'Search', body: 'Type an area, a street, or what you need. Hebrew or English both work.', chips: ['Florentin', 'balcony', 'pets ok'] },
     { title: 'Filter', body: 'Narrow it down to what fits, and see every result on the map.', chips: ['Price', 'Dates', 'Type', 'Bedrooms', 'Amenities'] },
     { title: 'Check the details', body: 'Photos, dates, the original post translated into your language, and the location on a map.', chips: [] as string[] },
     { title: 'Contact and save', body: 'Sign in and tap “Message Owner on Facebook” to open the original post. Tap the heart to keep a shortlist.', chips: [] as string[] },
@@ -71,7 +72,7 @@ const he: HowItWorksCopy = {
   sourceTitle: 'מאיפה המודעות מגיעות',
   sourceSteps: [
     { title: 'קבוצות פייסבוק ציבוריות', body: 'בכל יום אנחנו אוספים פוסטים חדשים מקבוצות סאבלטים ציבוריות.' },
-    { title: 'נקראות על ידי AI', body: 'Gemini מחלץ מחיר, תאריכים, סוג נכס ומיקום, בעברית או באנגלית.' },
+    { title: 'נקראות על ידי בינה מלאכותית', body: 'הבינה המלאכותית מחלצת מחיר, תאריכים, סוג נכס ומיקום, בעברית או באנגלית.' },
     { title: 'המקור במרחק לחיצה', body: 'כל מודעה מקושרת לפוסט שממנו היא הגיעה.' },
   ],
   exampleEyebrow: 'דוגמה',
@@ -79,7 +80,7 @@ const he: HowItWorksCopy = {
   findTitle: 'מוצאים סאבלט',
   findSubtitle: 'ארבעה שלבים מהחיפוש ועד מי שמשכיר.',
   findSteps: [
-    { title: 'מחפשים', body: 'מקלידים אזור, רחוב או מה שחשוב לכם. אפשר בעברית או באנגלית.', chips: ['פלורנטין', 'מרפסת', 'balcony'] },
+    { title: 'מחפשים', body: 'מקלידים אזור, רחוב או מה שחשוב לכם. אפשר בעברית או באנגלית.', chips: ['פלורנטין', 'מרפסת', 'חיות מחמד'] },
     { title: 'מסננים', body: 'מצמצמים למה שמתאים לכם, ורואים כל תוצאה על המפה.', chips: ['מחיר', 'תאריכים', 'סוג נכס', 'חדרים', 'מאפיינים'] },
     { title: 'בודקים את הפרטים', body: 'תמונות, תאריכים, הפוסט המקורי מתורגם לשפה שלכם, והמיקום על המפה.', chips: [] },
     { title: 'פונים ושומרים', body: 'מתחברים ולוחצים על "שלח הודעה לבעלים בפייסבוק" כדי לפתוח את הפוסט המקורי. לוחצים על הלב כדי לשמור רשימה.', chips: [] },
@@ -99,8 +100,8 @@ const he: HowItWorksCopy = {
 
   faqTitle: 'שאלות',
   faq: [
-    { q: 'האם SubHub בחינם?', a: 'כן. חיפוש, שמירה ופרסום הם בחינם.' },
-    { q: 'צריך חשבון?', a: 'לא כדי לגלוש. מתחברים עם Google או מייל כדי לשמור מודעות, לפנות למפרסמים או לפרסם סאבלט.' },
+    { q: 'האם השירות בחינם?', a: 'כן. חיפוש, שמירה ופרסום הם בחינם.' },
+    { q: 'צריך חשבון?', a: 'לא כדי לגלוש. מתחברים עם גוגל או מייל כדי לשמור מודעות, לפנות למפרסמים או לפרסם סאבלט.' },
     { q: 'למה פונים למפרסם דרך פייסבוק?', a: 'המודעות מגיעות מקבוצות פייסבוק, ושם נמצא המפרסם. הכפתור פותח את הפוסט המקורי, ושם אפשר להגיב או לשלוח הודעה.' },
     { q: 'כמה עדכניות המודעות?', a: 'אנחנו בודקים את הקבוצות כל יום. מודעות יורדות כשהתאריכים שלהן עוברים, או 60 יום אחרי שפורסמו.' },
     { q: 'אילו ערים יש באתר?', a: 'רוב המודעות היום הן בתל אביב-יפו.' },

@@ -23,9 +23,7 @@ export default function PostToListingSection({ eyebrow }: PostToListingSectionPr
         </div>
         <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5 rounded-2xl border border-white/15 bg-white/[0.07] p-5">
           <span className="text-xs font-medium uppercase tracking-wide text-white/70">{copy.sampleSource}</span>
-          <p lang="he" dir="rtl" className="text-[15px] leading-relaxed">
-            דירת יחיד מטופחת ביהודה הלוי, קומה 2, 4500 לחודש. פנויה מנובמבר עד סוף ינואר, מרוהטת, מזגן…
-          </p>
+          <p className="text-[15px] leading-relaxed">{copy.samplePost}</p>
         </div>
         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true" className="mx-auto shrink-0 rotate-90 text-accent-500 xl:mx-0 xl:rotate-0 xl:rtl:rotate-180">
           <path d="M4 12h15" /><path d="M13 6l6 6-6 6" />
