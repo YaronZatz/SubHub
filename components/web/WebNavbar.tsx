@@ -102,6 +102,14 @@ const CURRENCY_OPTIONS: PillOption[] = [
 const LANGUAGE_OPTIONS: PillOption[] = [
   { value: 'en', label: 'EN', display: <><Flag code="us" /> EN</> },
   { value: 'he', label: 'HE', display: <><Flag code="il" /> HE</> },
+  { value: 'fr', label: 'FR', display: <><Flag code="fr" /> FR</> },
+  { value: 'ru', label: 'RU', display: <><Flag code="ru" /> RU</> },
+  { value: 'es', label: 'ES', display: <><Flag code="es" /> ES</> },
+  { value: 'de', label: 'DE', display: <><Flag code="de" /> DE</> },
+  { value: 'pt', label: 'PT', display: <><Flag code="pt" /> PT</> },
+  { value: 'uk', label: 'UK', display: <><Flag code="ua" /> UK</> },
+  { value: 'it', label: 'IT', display: <><Flag code="it" /> IT</> },
+  { value: 'zh', label: 'ZH', display: <><Flag code="cn" /> ZH</> },
 ];
 
 const LANG_CURRENCY: Record<string, CurrencyCode> = {

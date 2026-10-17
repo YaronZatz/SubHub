@@ -900,6 +900,14 @@ export default function MapScreen() {
             options={[
               { value: Language.EN, label: 'EN', display: <><img src="https://flagcdn.com/w20/us.png" alt="EN" className="w-4 h-3 rounded-sm object-cover" /> EN</> },
               { value: Language.HE, label: 'HE', display: <><img src="https://flagcdn.com/w20/il.png" alt="HE" className="w-4 h-3 rounded-sm object-cover" /> HE</> },
+              { value: Language.FR, label: 'FR', display: <><img src="https://flagcdn.com/w20/fr.png" alt="FR" className="w-4 h-3 rounded-sm object-cover" /> FR</> },
+              { value: Language.RU, label: 'RU', display: <><img src="https://flagcdn.com/w20/ru.png" alt="RU" className="w-4 h-3 rounded-sm object-cover" /> RU</> },
+              { value: Language.ES, label: 'ES', display: <><img src="https://flagcdn.com/w20/es.png" alt="ES" className="w-4 h-3 rounded-sm object-cover" /> ES</> },
+              { value: Language.DE, label: 'DE', display: <><img src="https://flagcdn.com/w20/de.png" alt="DE" className="w-4 h-3 rounded-sm object-cover" /> DE</> },
+              { value: Language.PT, label: 'PT', display: <><img src="https://flagcdn.com/w20/pt.png" alt="PT" className="w-4 h-3 rounded-sm object-cover" /> PT</> },
+              { value: Language.UK, label: 'UK', display: <><img src="https://flagcdn.com/w20/ua.png" alt="UK" className="w-4 h-3 rounded-sm object-cover" /> UK</> },
+              { value: Language.IT, label: 'IT', display: <><img src="https://flagcdn.com/w20/it.png" alt="IT" className="w-4 h-3 rounded-sm object-cover" /> IT</> },
+              { value: Language.ZH, label: 'ZH', display: <><img src="https://flagcdn.com/w20/cn.png" alt="ZH" className="w-4 h-3 rounded-sm object-cover" /> ZH</> },
             ]}
             onChange={handleLanguageChange}
           />

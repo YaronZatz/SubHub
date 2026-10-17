@@ -207,12 +207,17 @@ function neighborhoodToHebrew(raw: string): string | undefined {
 }
 
 /**
- * True when `text` can be shown in a `lang` UI without mixing languages:
- * Hebrew UI → has Hebrew and no Latin words; any other UI → no Hebrew.
+ * True when `text` can be shown in a `lang` UI without mixing languages.
+ * Hebrew UI → mostly Hebrew; occasional English terms Israelis write in English
+ * (Wi-Fi, AI, Google) are fine, but half-and-half text like "בן יהודה, Tel Aviv" is not.
+ * Any other UI → no Hebrew.
  */
 export function inLanguage(text: string | undefined | null, lang: string): boolean {
   if (!text) return false;
-  return lang === 'he' ? hasHebrew(text) && !/[A-Za-z]{2,}/.test(text) : !hasHebrew(text);
+  if (lang !== 'he') return !hasHebrew(text);
+  const hebrew = (text.match(new RegExp(HEBREW.source, 'g')) ?? []).length;
+  const latin = (text.match(/[A-Za-z]/g) ?? []).length;
+  return hebrew > 0 && latin / (hebrew + latin) <= 0.25;
 }
 
 /** Neighborhood in the UI language, or undefined if we can't show it without mixing scripts. */

@@ -1,8 +1,9 @@
 // Copy for /how-it-works. Keep every claim true to what the product does today:
 // no in-app messaging, no alerts, listings aren't verified, scraping runs daily
 // (pilot). When scraping moves to hourly, update `sourceBody` and the FAQ answer.
-// Never mix languages: Hebrew strings use Hebrew words only (no Latin names),
-// and the preview examples are written separately for each language.
+// Never mix languages: the same content must not appear in two languages, and examples
+// are written separately per language. Brand/product names and technical terms that
+// Israelis normally write in English (SubHub, Google, AI, Wi-Fi, URL, MB) stay in English.
 
 const en = {
   title: 'Find your next sublet in four steps.',
@@ -83,7 +84,7 @@ const he: HowItWorksCopy = {
   opensOriginal: 'פותח את הפוסט המקורי בפייסבוק',
 
   sourceTitle: 'מאיפה המודעות מגיעות',
-  sourceBody: 'בכל יום אנחנו אוספים פוסטים חדשים מקבוצות סאבלטים ציבוריות בפייסבוק. בינה מלאכותית קוראת כל פוסט ומחלצת מחיר, תאריכים, סוג נכס ומיקום. הפוסט המקורי תמיד במרחק לחיצה.',
+  sourceBody: 'בכל יום אנחנו אוספים פוסטים חדשים מקבוצות סאבלטים ציבוריות בפייסבוק. AI קורא כל פוסט ומחלץ מחיר, תאריכים, סוג נכס ומיקום. הפוסט המקורי תמיד במרחק לחיצה.',
 
   postTitle: 'מפרסמים סאבלט?',
   postBody: 'מדביקים את הפוסט מפייסבוק, והמחיר, התאריכים והמיקום מתמלאים לבד. בודקים, מוסיפים תמונות ומפרסמים. זה בחינם.',
@@ -91,8 +92,8 @@ const he: HowItWorksCopy = {
 
   faqTitle: 'שאלות',
   faq: [
-    { q: 'האם השירות בחינם?', a: 'כן. חיפוש, שמירה ופרסום הם בחינם.' },
-    { q: 'צריך חשבון?', a: 'לא כדי לגלוש. מתחברים עם גוגל או מייל כדי לשמור מודעות, לפנות למפרסמים או לפרסם סאבלט.' },
+    { q: 'האם SubHub בחינם?', a: 'כן. חיפוש, שמירה ופרסום הם בחינם.' },
+    { q: 'צריך חשבון?', a: 'לא כדי לגלוש. מתחברים עם Google או מייל כדי לשמור מודעות, לפנות למפרסמים או לפרסם סאבלט.' },
     { q: 'למה פונים למפרסם דרך פייסבוק?', a: 'המודעות מגיעות מקבוצות פייסבוק, ושם נמצא המפרסם. הכפתור פותח את הפוסט המקורי, ושם אפשר להגיב או לשלוח הודעה.' },
     { q: 'כמה עדכניות המודעות?', a: 'אנחנו בודקים את הקבוצות כל יום. מודעות יורדות כשהתאריכים שלהן עוברים, או 60 יום אחרי שפורסמו.' },
     { q: 'אילו ערים יש באתר?', a: 'רוב המודעות היום הן בתל אביב-יפו.' },
